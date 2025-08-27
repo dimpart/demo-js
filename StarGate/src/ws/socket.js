@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Web Socket
@@ -37,12 +37,7 @@
 
 //! require 'namespace.js'
 
-(function (ns, sys) {
-    "use strict";
-
-    var Class = sys.type.Class;
-
-    var connect = function (url, proxy) {
+    var ws_connect = function (url, proxy) {
         var ws = new WebSocket(url);
         ws.onopen = function (ev) {
             proxy.onConnected();
@@ -59,7 +54,7 @@
             if (!data || data.length === 0) {
                 return;
             } else if (typeof data === 'string') {
-                data = sys.format.UTF8.encode(data);
+                data = UTF8.encode(data);
             } else if (data instanceof Uint8Array) {
                 // do nothing
             } else {
@@ -71,7 +66,7 @@
         return ws;
     };
 
-    var build_url = function (host, port) {
+    var build_ws_url = function (host, port) {
         if ('https' === window.location.protocol.split(':')[0]) {
             return 'wss://' + host + ':' + port;
         } else {
@@ -112,8 +107,8 @@
     //     };
     // };
 
-    var Socket = function () {
-        Object.call(this);
+    sg.ws.Socket = function () {
+        BaseObject.call(this);
         this.__packages = [];
         this.__connected = -1;
         this.__closed = -1;
@@ -123,7 +118,9 @@
         this.__remote = null;
         this.__local = null;
     };
-    Class(Socket, Object, null);
+    var Socket = sg.ws.Socket;
+
+    Class(Socket, BaseObject, null);
 
     Socket.prototype.getHost = function () {
         return this.__host;
@@ -194,7 +191,7 @@
     /**
      *  Connect to remote address
      *
-     * @param {SocketAddress} remote
+     * @param {st.type.SocketAddress} remote
      */
     // Override
     Socket.prototype.connect = function (remote) {
@@ -204,8 +201,8 @@
         this.__remote = remote;
         this.__host = remote.getHost();
         this.__port = remote.getPort();
-        var url = build_url(this.__host, this.__port);
-        this.__ws = connect(url, this);
+        var url = build_ws_url(this.__host, this.__port);
+        this.__ws = ws_connect(url, this);
     };
 
     // Override
@@ -233,15 +230,17 @@
 
     // Override
     Socket.prototype.receive = function (maxLen) {
-        return this.read(maxLen);
+        var remote;
+        var data = this.read(maxLen);
+        if (data) {
+            remote = this.getRemoteAddress();
+        } else {
+            remote = null;
+        }
+        return new Pair(data, remote);
     };
 
     // Override
     Socket.prototype.send = function (data, remote) {
         return this.write(data);
     };
-
-    //-------- namespace --------
-    ns.ws.Socket = Socket;
-
-})(StarGate, MONKEY);

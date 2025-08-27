@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Web Socket
@@ -33,14 +33,6 @@
 //! require <startrek.js>
 //! require 'hub.js'
 
-(function (ns, sys) {
-    "use strict";
-
-    var Class            = sys.type.Class;
-    var Log              = ns.lnc.Log;
-    var ActiveConnection = ns.socket.ActiveConnection;
-    var StarGate         = ns.StarGate;
-
     /**
      *  Common Gate
      *  ~~~~~~~~~~~
@@ -48,10 +40,12 @@
      *
      * @param {PorterDelegate} keeper
      */
-    var BaseGate = function (keeper) {
+    sg.BaseGate = function (keeper) {
         StarGate.call(this, keeper);
         this.__hub = null;
     };
+    var BaseGate = sg.BaseGate;
+
     Class(BaseGate, StarGate, null, {
 
         //
@@ -130,25 +124,14 @@
         }
     });
 
-    //-------- namespace --------
-    ns.BaseGate = BaseGate;
 
-})(StarGate, MONKEY);
-
-(function (ns, fsm, sys) {
-    "use strict";
-
-    var Class       = sys.type.Class;
-    var Log         = ns.lnc.Log;
-    var Runnable    = fsm.skywalker.Runnable;
-    var Thread      = fsm.threading.Thread;
-    var BaseGate    = ns.BaseGate;
-
-    var AutoGate = function (delegate) {
+    sg.AutoGate = function (delegate) {
         BaseGate.call(this, delegate);
         this.__running = false;
         this.__thread = new Thread(this);
     };
+    var AutoGate = sg.AutoGate;
+
     Class(AutoGate, BaseGate, [Runnable], {
 
         isRunning: function () {
@@ -197,22 +180,12 @@
         }
     });
 
-    //-------- namespace --------
-    ns.AutoGate = AutoGate;
 
-})(StarGate, FiniteStateMachine, MONKEY);
-
-(function (ns, sys) {
-    "use strict";
-
-    var Class       = sys.type.Class;
-    var Log         = ns.lnc.Log;
-    var AutoGate    = ns.AutoGate;
-    var PlainPorter = ns.PlainPorter;
-
-    var WSClientGate = function (delegate) {
+    sg.WSClientGate = function (delegate) {
         AutoGate.call(this, delegate);
     };
+    var WSClientGate = sg.WSClientGate;
+
     Class(WSClientGate, AutoGate, null, {
 
         // Override
@@ -243,8 +216,3 @@
             return docker.sendData(payload);
         }
     });
-
-    //-------- namespace --------
-    ns.WSClientGate = WSClientGate;
-
-})(StarGate, MONKEY);

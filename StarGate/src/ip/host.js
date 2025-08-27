@@ -67,7 +67,7 @@
         // ip data array
         this.data = data;
     };
-    var Host = st.ip.Host;
+    var Host = sg.ip.Host;
 
     Class(Host, ConstantString, null, null);
 

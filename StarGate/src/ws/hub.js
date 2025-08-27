@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Web Socket
@@ -33,17 +33,11 @@
 //! require 'socket.js'
 //! require 'channel.js'
 
-(function (ns, sys) {
-    "use strict";
-
-    var Class          = sys.type.Class;
-    var AddressPairMap = ns.type.AddressPairMap;
-    var BaseHub        = ns.socket.BaseHub;
-    var StreamChannel  = ns.ws.StreamChannel;
-
-    var ChannelPool = function () {
+    sg.ws.ChannelPool = function () {
         AddressPairMap.call(this);
     };
+    var ChannelPool = sg.ws.ChannelPool;
+
     Class(ChannelPool, AddressPairMap, null, {
 
         // Override
@@ -75,10 +69,12 @@
      *
      * @param {ConnectionDelegate} gate
      */
-    var StreamHub = function (gate) {
+    sg.ws.StreamHub = function (gate) {
         BaseHub.call(this, gate);
         this.__channelPool = this.createChannelPool();
     };
+    var StreamHub = sg.ws.StreamHub;
+
     Class(StreamHub, BaseHub, null, null);
 
     // protected
@@ -141,25 +137,12 @@
         return BaseHub.prototype.setConnection.call(this, remote, null, connection);
     };
 
-    //-------- namespace --------
-    ns.ws.ChannelPool = ChannelPool;
-    ns.ws.StreamHub = StreamHub;
 
-})(StarGate, MONKEY);
-
-(function (ns, sys) {
-    "use strict";
-
-    var Class            = sys.type.Class;
-    var Log              = ns.lnc.Log;
-    var BaseChannel      = ns.socket.BaseChannel;
-    var ActiveConnection = ns.socket.ActiveConnection;
-    var StreamHub        = ns.ws.StreamHub;
-    var Socket           = ns.ws.Socket;
-
-    var ClientHub = function (delegate) {
+    sg.ws.ClientHub = function (delegate) {
         StreamHub.call(this, delegate);
     };
+    var ClientHub = sg.ws.ClientHub;
+
     Class(ClientHub, StreamHub, null, {
 
         // Override
@@ -178,28 +161,45 @@
             if (!remote) {
                 throw new ReferenceError('remote address empty')
             }
-            var channel;
-            // try to get channel
-            var old = this.getChannel(remote, local);
-            if (!old) {
-                // create & cache channel
-                channel = this.createChannel(remote, local);
-                var cached = this.setChannel(remote, local, channel);
-                if (cached && cached !== channel) {
-                    cached.close();
+            //
+            //  0. pre-checking
+            //
+            var channel = this.getChannel(remote, local);
+            if (channel) {
+                // check local address
+                if (!local) {
+                    return channel;
                 }
-            } else {
-                channel = old;
+                var address = channel.getLocalAddress();
+                if (!address || address.equals(local)) {
+                    return channel;
+                }
             }
-            if (!old && channel instanceof BaseChannel) {
+            //
+            //  1. create new channel & cache it
+            //
+            channel = this.createChannel(remote, local);
+            if (!local) {
+                local = channel.getLocalAddress();
+            }
+            // cache the channel
+            var cached = this.setChannel(remote, local, channel);
+            if (cached && cached !== channel) {
+                cached.close();
+            }
+            //
+            //  2. create socket for this channel
+            //
+            if (channel instanceof BaseChannel) {
                 // initialize socket
-                var sock = createWebSocketClient.call(this, remote, local);
+                var sock = createWebSocketClient(remote, local);
                 if (sock) {
                     // set socket for this channel
                     channel.setSocket(sock);
                 } else {
                     Log.error('[WS] failed to prepare socket', remote, local);
                     this.removeChannel(remote, local, channel);
+                    channel = null;
                 }
             }
             return channel;
@@ -216,8 +216,3 @@
         sock.configureBlocking(false);
         return sock;
     };
-
-    //-------- namespace --------
-    ns.ws.ClientHub = ClientHub;
-
-})(StarGate, MONKEY);

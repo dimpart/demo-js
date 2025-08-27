@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Web Socket
@@ -32,29 +32,42 @@
 
 //! require 'namespace.js'
 
-(function (ns, sys) {
-    "use strict";
-
-    var Class         = sys.type.Class;
-    var ChannelReader = ns.socket.ChannelReader;
-    var ChannelWriter = ns.socket.ChannelWriter;
-    var BaseChannel   = ns.socket.BaseChannel;
-
     /**
      *  Stream Channel Reader
      *  ~~~~~~~~~~~~~~~~~~~~~
      *
      * @param {Channel} channel
      */
-    var StreamChannelReader = function (channel) {
-        ChannelReader.call(this, channel);
+    sg.ws.StreamChannelReader = function (channel) {
+        ChannelController.call(this, channel);
     };
-    Class(StreamChannelReader, ChannelReader, null, {
+    var StreamChannelReader = sg.ws.StreamChannelReader;
+
+    Class(StreamChannelReader, ChannelController, [SocketReader], {
+
+        // Override
+        read: function (maxLen) {
+            var sock = this.getSocket();
+            if (sock && sock.isOpen()) {
+                return SocketHelper.socketReceive(sock, maxLen);
+            } else {
+                throw new Error('Socket channel closed: ' + sock);
+            }
+        },
+
         // Override
         receive: function (maxLen) {
-            return this.read(maxLen);
+            var remote;
+            var data = this.read(maxLen);
+            if (data) {
+                remote = this.getRemoteAddress();
+            } else {
+                remote = null;
+            }
+            return new Pair(data, remote);
         }
     });
+
 
     /**
      *  Stream Channel Writer
@@ -62,10 +75,23 @@
      *
      * @param {Channel} channel
      */
-    var StreamChannelWriter = function (channel) {
-        ChannelWriter.call(this, channel);
+    sg.ws.StreamChannelWriter = function (channel) {
+        ChannelController.call(this, channel);
     };
-    Class(StreamChannelWriter, ChannelWriter, null, {
+    var StreamChannelWriter = sg.ws.StreamChannelWriter;
+
+    Class(StreamChannelWriter, ChannelController, [SocketWriter], {
+
+        // Override
+        write: function (data) {
+            var sock = this.getSocket();
+            if (sock && sock.isOpen()) {
+                return SocketHelper.socketSend(sock, data);
+            } else {
+                throw new Error('Socket channel closed: ' + sock);
+            }
+        },
+
         // Override
         send: function (data, target) {
             // TCP channel will be always connected,
@@ -81,23 +107,20 @@
      * @param {SocketAddress} remote - remote address
      * @param {SocketAddress} local  - local address
      */
-    var StreamChannel = function (remote, local) {
+    sg.ws.StreamChannel = function (remote, local) {
         BaseChannel.call(this, remote, local);
     };
+    var StreamChannel = sg.ws.StreamChannel;
+
     Class(StreamChannel, BaseChannel, null, {
+
         // Override
         createReader: function () {
             return new StreamChannelReader(this);
         },
+
         // Override
         createWriter: function () {
             return new StreamChannelWriter(this);
         }
     });
-
-    //-------- namespace --------
-    ns.ws.StreamChannelReader = StreamChannelReader;
-    ns.ws.StreamChannelWriter = StreamChannelWriter;
-    ns.ws.StreamChannel = StreamChannel;
-
-})(StarGate, MONKEY);

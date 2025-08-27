@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Web Socket
@@ -33,16 +33,6 @@
 //! require 'arrival.js'
 //! require 'departure.js'
 
-(function (ns, sys) {
-    "use strict";
-
-    var Class          = sys.type.Class;
-    var UTF8           = sys.format.UTF8;
-    var Departure      = ns.port.Departure;
-    var StarPorter     = ns.StarPorter;
-    var PlainArrival   = ns.PlainArrival;
-    var PlainDeparture = ns.PlainDeparture;
-
     /**
      *  Plain Docker
      *  ~~~~~~~~~~~~
@@ -50,9 +40,11 @@
      * @param {SocketAddress} remote
      * @param {SocketAddress} local
      */
-    var PlainPorter = function (remote, local) {
+    sg.PlainPorter = function (remote, local) {
         StarPorter.call(this, remote, local);
     };
+    var PlainPorter = sg.PlainPorter;
+
     Class(PlainPorter, StarPorter, null, {
 
         // protected
@@ -142,8 +134,3 @@
     var PING = 'PING';
     var PONG = 'PONG';
     var NOOP = 'NOOP';
-
-    //-------- namespace --------
-    ns.PlainPorter = PlainPorter;
-
-})(StarGate, MONKEY);

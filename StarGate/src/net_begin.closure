@@ -1,0 +1,26 @@
+/**
+ *  StarGate (v2.0.0)
+ *  (Interfaces for network connection)
+ *
+ * @author    moKy <albert.moky at gmail.com>
+ * @date      Aug. 28, 2025
+ * @copyright (c) 2020-2025 Albert Moky
+ * @license   {@link https://mit-license.org | MIT License}
+ */;
+
+(function (sdk) {
+
+    if (typeof sdk.fsm !== 'object') {
+        sdk.fsm = {};
+    }
+    if (typeof sdk.network !== 'object') {
+        sdk.network = {};
+    }
+
+    var FiniteStateMachine = sdk.fsm;
+    var StarTrek = sdk.network;
+    var MONKEY = sdk;
+
+    // ...
+
+// })(DIMP);

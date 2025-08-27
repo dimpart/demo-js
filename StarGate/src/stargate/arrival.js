@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Web Socket
@@ -32,57 +32,34 @@
 
 //! require 'namespace.js'
 
-(function (ns, sys) {
-    "use strict";
-
-    var Class         = sys.type.Class;
-    var DepartureShip = ns.DepartureShip;
-
     /**
-     *  Plain Departure Ship
-     *  ~~~~~~~~~~~~~~~~~~~~
+     *  Plain Arrival Ship
+     *  ~~~~~~~~~~~~~~~~~~
      *
-     * @param {Uint8Array} data - data to be sent
-     * @param {int|null} prior  - priority
+     * @param {Uint8Array} data - data received
+     * @param {number|null} now - received time
      */
-    var PlainDeparture = function (data, prior) {
-        if (!prior) {
-            prior = 0;
-        }
-        DepartureShip.call(this, prior, 1);
-        this.__completed = data;
-        this.__fragments = [data];
+    sg.PlainArrival = function (data, now) {
+        ArrivalShip.call(this, now);
+        this.__data = data;
     };
-    Class(PlainDeparture, DepartureShip, null, null);
+    var PlainArrival = sg.PlainArrival;
 
-    PlainDeparture.prototype.getPayload = function () {
-        return this.__completed;
+    Class(PlainArrival, ArrivalShip, null, null);
+
+    PlainArrival.prototype.getPayload = function () {
+        return this.__data;
     };
 
     // Override
-    PlainDeparture.prototype.getSN = function () {
+    PlainArrival.prototype.getSN = function () {
         // plain ship has no SN
         return null;
     };
 
     // Override
-    PlainDeparture.prototype.getFragments = function () {
-        return this.__fragments;
+    PlainArrival.prototype.assemble = function (arrival) {
+        // console.assert(arrival === this, 'plain arrival error', arrival, this);
+        // plain arrival needs no assembling
+        return arrival;
     };
-
-    // Override
-    PlainDeparture.prototype.checkResponse = function (arrival) {
-        // plain departure needs no response
-        return false;
-    };
-
-    // Override
-    PlainDeparture.prototype.isImportant = function (arrival) {
-        // plain departure needs no response
-        return false;
-    };
-
-    //-------- namespace --------
-    ns.PlainDeparture = PlainDeparture;
-
-})(StarGate, MONKEY);

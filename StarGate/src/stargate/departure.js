@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Web Socket
@@ -32,43 +32,48 @@
 
 //! require 'namespace.js'
 
-(function (ns, sys) {
-    "use strict";
-
-    var Class       = sys.type.Class;
-    var ArrivalShip = ns.ArrivalShip;
-
     /**
-     *  Plain Arrival Ship
-     *  ~~~~~~~~~~~~~~~~~~
+     *  Plain Departure Ship
+     *  ~~~~~~~~~~~~~~~~~~~~
      *
-     * @param {Uint8Array} data - data received
-     * @param {number|null} now - received time
+     * @param {Uint8Array} data - data to be sent
+     * @param {int|null} prior  - priority
      */
-    var PlainArrival = function (data, now) {
-        ArrivalShip.call(this, now);
-        this.__data = data;
+    sg.PlainDeparture = function (data, prior) {
+        if (!prior) {
+            prior = 0;
+        }
+        DepartureShip.call(this, prior, 1);
+        this.__completed = data;
+        this.__fragments = [data];
     };
-    Class(PlainArrival, ArrivalShip, null, null);
+    var PlainDeparture = sg.PlainDeparture;
 
-    PlainArrival.prototype.getPayload = function () {
-        return this.__data;
+    Class(PlainDeparture, DepartureShip, null, null);
+
+    PlainDeparture.prototype.getPayload = function () {
+        return this.__completed;
     };
 
     // Override
-    PlainArrival.prototype.getSN = function () {
+    PlainDeparture.prototype.getSN = function () {
         // plain ship has no SN
         return null;
     };
 
     // Override
-    PlainArrival.prototype.assemble = function (arrival) {
-        // console.assert(arrival === this, 'plain arrival error', arrival, this);
-        // plain arrival needs no assembling
-        return arrival;
+    PlainDeparture.prototype.getFragments = function () {
+        return this.__fragments;
     };
 
-    //-------- namespace --------
-    ns.PlainArrival = PlainArrival;
+    // Override
+    PlainDeparture.prototype.checkResponse = function (arrival) {
+        // plain departure needs no response
+        return false;
+    };
 
-})(StarGate, MONKEY);
+    // Override
+    PlainDeparture.prototype.isImportant = function (arrival) {
+        // plain departure needs no response
+        return false;
+    };

@@ -5,50 +5,41 @@
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>StarGate Test Cases</title>
-    <link href="/Crypto/tests/test.css" type="text/css" rel="stylesheet" />
-    <script src="/Crypto/libs/loader.js"></script>
-    <script src="/Crypto/libs/runner.js"></script>
-    <script src="/Crypto/libs/utils.js"></script>
+    <link href="../../Crypto/tests/test.css" type="text/css" rel="stylesheet" />
+    <script src="../../Crypto/libs/loader.js"></script>
+    <script src="../../Crypto/libs/runner.js"></script>
+    <script src="../../Crypto/libs/utils.js"></script>
 
     <script src="../../DIMP/dist/dimp.js"></script>
     <script src="../../Plugins/dist/plugins.js"></script>
+    <script>
+        if (typeof MONKEY !== 'object') {
+            var MONKEY = DIMP;
+        }
+    </script>
     <script src="../../FSM/dist/fsm.js"></script>
     <script src="../../StarTrek/dist/startrek.js"></script>
 
+    <script src="../src/sources.js"></script>
     <script>
         !function (ns) {
             var sources = [
-                'src/namespace.js',
-
-                'src/dos/storage.js',
-
-                'src/lnc/log.js',
-                'src/lnc/notification.js',
-                'src/lnc/observer.js',
-                'src/lnc/center.js',
-                'src/lnc/async.js',
-
-                'src/network/host.js',
-                'src/network/ipv4.js',
-                'src/network/ipv6.js',
-
-                'src/ws/socket.js',
-                'src/ws/channel.js',
-                'src/ws/hub.js',
-
-                'src/startrek/arrival.js',
-                'src/startrek/departure.js',
-                'src/startrek/docker.js',
-                'src/startrek/gate.js',
-                null
-            ];
-
+                'src/requires.js'
+            ].concat(sg_sources);
             var dist = 'dist/stargate.js';
 
             var tests = [
+                '../../Crypto/tests/format/utf8.js',
+                '../../Crypto/tests/format/json.js',
+                '../../Crypto/tests/format/hex.js',
+                '../../Crypto/tests/format/base58.js',
+                '../../Crypto/tests/format/base64.js',
                 '../../Crypto/tests/crypto_tests.js',
+
                 '../../FSM/tests/fsm_tests.js',
+
                 '../../StarTrek/tests/startrek_tests.js',
+
                 'tests/sg_tests.js',
                 null
             ];
@@ -56,6 +47,7 @@
             var base = window.location.href;
             base = base.substring(0, base.indexOf('tests/test.html'));
             var loader = new Loader(base);
+            loader.importJS('src/namespace.js');
 
             for (var i = 0; i < sources.length; ++i) {
                 loader.importJS(sources[i]);
@@ -111,16 +103,38 @@
 <p class="console">
     <script>
         !(function () {
-            var text = 'cat';
-            var file;
+            var targets = [
+                'src/ns_begin.closure'
+            ];
             for (var i = 0; i < sources.length; ++i) {
-                file = sources[i];
-                if (!file) {
-                    continue;
+                var file = sources[i];
+                if (file) {
+                    targets.push(file);
                 }
-                text += ' ' + file;
             }
-            text += ' >> ' + dist;
+            targets.push('src/ns_end.closure');
+
+            var text = targets.join(' ');
+            text = 'cat ' + text + ' > ' + dist;
+            document.writeln(text);
+        }());
+    </script>
+</p>
+<p class="console">
+    <script>
+        !(function () {
+            var targets = [
+                'src/net_begin.closure',
+
+                '../../../moky/FiniteStateMachine/fsm-js/FSM/dist/fsm.js',
+                '../../../moky/wormhole/startrek-js/StarTrek/dist/startrek.js',
+                dist,
+
+                'src/net_end.closure'
+            ];
+
+            var text = targets.join(' ');
+            text = 'cat ' + text + ' > dist/network.js';
             document.writeln(text);
         }());
     </script>

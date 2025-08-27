@@ -7,16 +7,16 @@ sg_tests = [];
 
 var g_variables = {};
 
-(function (ns, sys) {
+(function (sg, st, sys) {
     'use strict';
 
     var Class             = sys.type.Class;
-    var Log               = ns.type.Log;
     var UTF8              = sys.format.UTF8;
-    var InetSocketAddress = ns.type.InetSocketAddress;
-    var PorterDelegate    = ns.port.PorterDelegate;
-    var ClientHub         = ns.ws.ClientHub;
-    var WSClientGate      = ns.WSClientGate;
+    var InetSocketAddress = st.type.InetSocketAddress;
+    var PorterDelegate    = st.port.PorterDelegate;
+    var Log               = sg.lnc.Log;
+    var ClientHub         = sg.ws.ClientHub;
+    var WSClientGate      = sg.WSClientGate;
 
     var Client = function (remote, local) {
         Object.call(this);
@@ -111,4 +111,4 @@ var g_variables = {};
     };
     sg_tests.push(test_connection);
 
-})(StarTrek, MONKEY);
+})(StarTrek, StarTrek, MONKEY);
