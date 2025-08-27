@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Star Gate: Interfaces for network connection
@@ -32,18 +32,12 @@
 
 //! require 'host.js'
 
-(function (ns, sys) {
-    "use strict";
-
-    var Class = sys.type.Class;
-    var Host = ns.network.Host;
-
     //
     //  IPv4
     //      127.0.0.1
     //      127.0.0.1:9527
     //
-    var IPv4 = function (ip, port, data) {
+    sg.ip.IPv4 = function (ip, port, data) {
         if (data) {
             if (!ip) {
                 // get ip+port from data array
@@ -70,7 +64,9 @@
         }
         Host.call(this, string, ip, port, data);
     };
-    Class(IPv4, Host, null);
+    var IPv4 = sg.ip.IPv4;
+
+    Class(IPv4, Host, null, null);
 
     IPv4.patten = /^(\d{1,3}\.){3}\d{1,3}(:\d{1,5})?$/;  // 127.0.0.1:9527
 
@@ -92,8 +88,3 @@
         }
         return new IPv4(ip, port);
     };
-
-    //-------- namespace --------
-    ns.network.IPv4 = IPv4;
-
-})(StarGate, MONKEY);

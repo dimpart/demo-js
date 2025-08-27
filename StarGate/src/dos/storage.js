@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  File System
@@ -32,15 +32,8 @@
 
 //! require 'namespace.js'
 
-(function (ns, sys) {
-    "use strict";
-
-    var Class = sys.type.Class;
-    var JsON = sys.format.JSON;
-    var Base64 = sys.format.Base64;
-
-    var Storage = function (storage, prefix) {
-        Object.call(this);
+    sg.dos.Storage = function (storage, prefix) {
+        BaseObject.call(this);
         // Web storage
         this.storage = storage;
         // key prefix
@@ -50,7 +43,9 @@
             this.ROOT = 'dim';
         }
     };
-    Class(Storage, Object, null, null);
+    var Storage = sg.dos.Storage;
+
+    Class(Storage, BaseObject, null, null);
 
     Storage.prototype.getItem = function (key) {
         return this.storage.getItem(key);
@@ -121,7 +116,7 @@
         if (!json) {
             return null;
         }
-        return JsON.decode(json);
+        return JSONMap.decode(json);
     };
 
     //
@@ -177,13 +172,13 @@
     Storage.prototype.saveJSON = function (container, path) {
         var json = null;
         if (container) {
-            json = JsON.encode(container);
+            json = JSONMap.encode(container);
         }
         return this.saveText(json, path);
     };
 
-    //-------- namespace --------
-    ns.dos.LocalStorage = new Storage(window.localStorage, 'dim.fs');
-    ns.dos.SessionStorage = new Storage(window.sessionStorage, 'dim.mem');
-
-})(StarGate, MONKEY);
+    //
+    //  Singleton
+    //
+    sg.dos.LocalStorage = new Storage(window.localStorage, 'dim.fs');
+    sg.dos.SessionStorage = new Storage(window.sessionStorage, 'dim.mem');

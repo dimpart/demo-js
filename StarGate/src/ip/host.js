@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Star Gate: Interfaces for network connection
@@ -30,11 +30,8 @@
 // =============================================================================
 //
 
-//! require <crypto.js>
+//! require <monkey.js>
 //! require <startrek.js>
-
-(function (ns, sys) {
-    "use strict";
 
     //
     //  Host format
@@ -52,9 +49,6 @@
     //          [X:X:X:X:X:X:127.0.0.1]:9527
     //
 
-    var Class = sys.type.Class;
-    var ConstantString = sys.type.ConstantString;
-
     /**
      *  Create host info with IP, port, IP data
      *
@@ -64,7 +58,7 @@
      * @param {Uint8Array} data
      * @constructor
      */
-    var Host = function (string, ip, port, data) {
+    sg.ip.Host = function (string, ip, port, data) {
         ConstantString.call(this, string);
         // ip string
         this.ip = ip;
@@ -73,6 +67,8 @@
         // ip data array
         this.data = data;
     };
+    var Host = st.ip.Host;
+
     Class(Host, ConstantString, null, null);
 
     /**
@@ -103,8 +99,3 @@
         }
         return array;
     };
-
-    //-------- namespace --------
-    ns.network.Host = Host;
-
-})(StarGate, MONKEY);

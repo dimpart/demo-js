@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Local Notification Service
@@ -32,25 +32,37 @@
 
 //! require 'namespace.js'
 
-(function (ns, sys) {
-    "use strict";
+    /**
+     *  Notification observer
+     *  ~~~~~~~~~~~~~~~~~~~~~
+     */
+    sg.lnc.Observer = Interface(null, null);
+    var Observer = sg.lnc.Observer;
 
-    var Class = sys.type.Class;
+    /**
+     *  Callback when received notification
+     *
+     * @param {Notification} notification
+     */
+    Observer.prototype.onReceiveNotification = function (notification) {};
+
 
     /**
      *  Notification object with name, sender and extra info
      *
      * @param {string} name
-     * @param {*} sender
+     * @param {Object} sender
      * @param {{}} userInfo
      */
-    var Notification = function (name, sender, userInfo) {
-        Object.call(this);
+    sg.lnc.Notification = function (name, sender, userInfo) {
+        BaseObject.call(this);
         this.__name = name;
         this.__sender = sender;
         this.__info = userInfo;
     };
-    Class(Notification, Object, null, {
+    var Notification = sg.lnc.Notification;
+
+    Class(Notification, BaseObject, null, {
 
         // Override
         toString: function () {
@@ -73,8 +85,3 @@
     Notification.prototype.getUserInfo = function () {
         return this.__info;
     };
-
-    //-------- namespace --------
-    ns.lnc.Notification = Notification;
-
-})(StarGate, MONKEY);

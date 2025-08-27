@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Local Notification Service
@@ -31,71 +31,72 @@
 //
 
 //! require 'notification.js'
-//! require 'observer.js'
 
-(function (ns, sys) {
-    "use strict";
-
-    var Interface    = sys.type.Interface;
-    var Class        = sys.type.Class;
-    var HashSet      = sys.type.HashSet;
-    var Log          = ns.lnc.Log;
-    var Observer     = ns.lnc.Observer;
-
-    var BaseCenter = function () {
-        Object.call(this);
+    sg.lnc.BaseCenter = function () {
+        BaseObject.call(this);
         this.__observers = {}; // str(name) => Set<Observer>
     };
-    Class(BaseCenter, Object, null, null);
+    var BaseCenter = sg.lnc.BaseCenter;
 
+    Class(BaseCenter, BaseObject, null, null);
+
+    /**
+     *  Add observer with notification name
+     *
+     * @param {Observer} observer
+     * @param {string} name
+     */
     BaseCenter.prototype.addObserver = function (observer, name) {
-        var set = this.__observers[name];
-        if (!set) {
+        var listeners = this.__observers[name];
+        if (!listeners) {
             // new set
-            set = new HashSet();
-            this.__observers[name] = set;
-        } else if (set.contains(observer)) {
-            // already exists
-            return false;
+            listeners = new HashSet();
+            this.__observers[name] = listeners;
         }
-        return set.add(observer);
+        listeners.add(observer);
     };
 
+    /**
+     *  Remove observer from notification center
+     *
+     * @param {Object} observer
+     * @param {String} name
+     */
     BaseCenter.prototype.removeObserver = function (observer, name) {
-        if (name) {
-            remove.call(this, observer, name);
-        } else {
-            // Remove observer from notification center, no mather what names
-            var names = Object.keys(this.__observers);
-            for (var i = names.length - 1; i >= 0; --i) {
-                remove.call(this, observer, names[i]);
-            }
-        }
-    };
-    var remove = function (observer, name) {
-        // Remove observer for notification name
-        var set = this.__observers[name];
-        if (set/* instanceof HashSet*/) {
-            set.remove(observer);
-            if (set.isEmpty()) {
-                delete this.__observers[name];
+        var keys = !name ? Object.keys(this.__observers) : [name];
+        for (var i = keys.length - 1; i >= 0; --i) {
+            name = keys[i];
+            // Remove observer for notification name
+            var listeners = this.__observers[name];
+            if (listeners/* instanceof HashSet*/) {
+                listeners.remove(observer);
+                if (listeners.isEmpty()) {
+                    delete this.__observers[name];
+                }
             }
         }
     };
 
     /**
-     *  Post notification
+     *  Post notification with name
      *
-     * @param {Notification} notification
+     * @param {string} name
+     * @param {Object} sender
+     * @param {{}} userInfo
      */
-    BaseCenter.prototype.postNotification = function (notification) {
+    BaseCenter.prototype.postNotification = function (name, sender, userInfo) {
+        var notification = new Notification(name, sender, userInfo);
+        return this.post(notification);
+    };
+
+    BaseCenter.prototype.post = function (notification) {
         // send to all observers with this notification name
-        var set = this.__observers[notification.getName()];
-        if (!set || set.isEmpty()) {
+        var listeners = this.__observers[notification.getName()];
+        if (!listeners || listeners.isEmpty()) {
             // no listeners for this notification
             return;
         }
-        var observers = set.toArray();
+        var observers = listeners.toArray();
         var obs;  // Observer
         for (var i = observers.length - 1; i >= 0; --i) {
             obs = observers[i];
@@ -113,22 +114,12 @@
         }
     };
 
-    //-------- namespace --------
-    ns.lnc.BaseCenter = BaseCenter;
-
-})(StarGate, MONKEY);
-
-(function (ns) {
-    "use strict";
-
-    var BaseCenter   = ns.lnc.BaseCenter;
-    var Notification = ns.lnc.Notification;
 
     /**
      *  Singleton
      *  ~~~~~~~~~
      */
-    var NotificationCenter = {
+    sg.lnc.NotificationCenter = {
 
         /**
          *  Add observer with notification name
@@ -137,7 +128,7 @@
          * @param {string} name
          */
         addObserver: function (observer, name) {
-            this.defaultCenter.addObserver(observer, name);
+            this.center.addObserver(observer, name);
         },
 
         /**
@@ -147,33 +138,24 @@
          * @param {string} name - OPTIONAL
          */
         removeObserver: function (observer, name) {
-            this.defaultCenter.removeObserver(observer, name);
+            this.center.removeObserver(observer, name);
         },
 
         /**
          *  Post notification with name
          *
          * @param {Notification|String} notification - notification or name
-         * @param {*} sender
+         * @param {Object} sender
          * @param {{}} userInfo - OPTIONAL
          */
         postNotification: function (notification, sender, userInfo) {
             if (notification instanceof Notification) {
-                this.defaultCenter.postNotification(notification);
+                this.center.post(notification);
             } else {
-                notification = new Notification(notification, sender, userInfo);
-                this.defaultCenter.postNotification(notification);
+                this.center.postNotification(notification, sender, userInfo);
             }
         },
 
-        defaultCenter: new BaseCenter()
+        center: new BaseCenter()
     };
-
-    NotificationCenter.getInstance = function () {
-        return this;
-    };
-
-    //-------- namespace --------
-    ns.lnc.NotificationCenter = NotificationCenter;
-
-})(StarGate);
+    var NotificationCenter = sg.lnc.NotificationCenter;

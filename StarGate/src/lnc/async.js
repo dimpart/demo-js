@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Local Notification Service
@@ -32,35 +32,30 @@
 
 //! require 'center.js'
 
-(function (ns, fsm, sys) {
-    "use strict";
-
-    var Class    = sys.type.Class;
-    var Runnable = fsm.skywalker.Runnable;
-    var Thread   = fsm.threading.Thread;
-
-    var BaseCenter   = ns.lnc.BaseCenter;
-    var Notification = ns.lnc.Notification;
-
     /**
      *  Asynchronous Notification Center
      *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      *
      *  call for each observers in background thread
      */
-    var AsyncCenter = function () {
+    sg.lnc.AsyncCenter = function () {
         BaseCenter.call(this);
         this.__notifications = []; // List<Notification>
         this.__running = false;
         this.__thread = null;
     };
+    var AsyncCenter = sg.lnc.AsyncCenter;
+
     Class(AsyncCenter, BaseCenter, [Runnable], {
 
         // Override
-        postNotification: function (notification, sender, userInfo) {
-            if (typeof notification === 'string') {
-                notification = new Notification(notification, sender, userInfo);
-            }
+        postNotification: function (name, sender, userInfo) {
+            var notification = new Notification(name, sender, userInfo);
+            this.__notifications.push(notification);
+        },
+
+        // Override
+        post: function (notification) {
             this.__notifications.push(notification);
         },
 
@@ -81,7 +76,7 @@
         process: function () {
             var notification = this.__notifications.shift();
             if (notification) {
-                this.postNotification(notification);
+                BaseCenter.prototype.post.call(this, notification);
                 return true;
             } else {
                 // nothing to do now,
@@ -112,8 +107,3 @@
     AsyncCenter.prototype.isRunning = function () {
         return this.__running;
     };
-
-    //-------- namespace --------
-    ns.lnc.AsyncCenter = AsyncCenter;
-
-})(StarGate, FiniteStateMachine, MONKEY);

@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  LNC : Log & Notification Center
@@ -32,112 +32,101 @@
 
 //! require 'namespace.js'
 
-(function (ns, sys) {
-    "use strict";
-
-    var Interface = sys.type.Interface;
-    var Class     = sys.type.Class;
-    var Enum      = sys.type.Enum;
-
-    var   debugFlag = 1 << 0;
-    var    infoFlag = 1 << 1;
-    var warningFlag = 1 << 2;
-    var   errorFlag = 1 << 3;
-
-    var LogLevel = Enum('LogLevel', {
-        DEBUG: debugFlag|infoFlag|warningFlag|errorFlag,
-        DEVELOP:         infoFlag|warningFlag|errorFlag,
-        RELEASE:                  warningFlag|errorFlag
-    });
-
-    var check_level = function (flag) {
-        return shared.level & flag;
-    };
+    var DEBUG_FLAG   = 1 << 0;
+    var INFO_FLAG    = 1 << 1;
+    var WARNING_FLAG = 1 << 2;
+    var ERROR_FLAG   = 1 << 3;
 
     /**
      *  Log Interface
      *  ~~~~~~~~~~~~~
      */
-    var Log = {
+    sg.lnc.Log = {
 
+        //
+        //  Levels
+        //
+        DEBUG:   DEBUG_FLAG | INFO_FLAG | WARNING_FLAG | ERROR_FLAG,
+        DEVELOP:              INFO_FLAG | WARNING_FLAG | ERROR_FLAG,
+        RELEASE:                          WARNING_FLAG | ERROR_FLAG,
+
+        level: this.RELEASE,           // WARNING_FLAG | ERROR_FLAG
+
+        showTime: false,
+        showCaller: false,  // (Reserved)
+
+        logger: null,  // DefaultLogger
+
+        //
+        //  Interfaces
+        //
         debug: function (...data) {
-            if (check_level(debugFlag)) {
-                shared.logger.debug.apply(shared.logger, arguments);
+            var flag = this.level & DEBUG_FLAG;
+            if (flag > 0) {
+                this.logger.debug.apply(this.logger, arguments);
             }
         },
-
         info: function (...data) {
-            if (check_level(infoFlag)) {
-                shared.logger.info.apply(shared.logger, arguments);
+            var flag = this.level & INFO_FLAG;
+            if (flag > 0) {
+                this.logger.info.apply(this.logger, arguments);
             }
         },
-
         warning: function (...data) {
-            if (check_level(warningFlag)) {
-                shared.logger.warning.apply(shared.logger, arguments);
+            var flag = this.level & WARNING_FLAG;
+            if (flag > 0) {
+                this.logger.warning.apply(this.logger, arguments);
             }
         },
-
         error: function (...data) {
-            if (check_level(errorFlag)) {
-                shared.logger.error.apply(shared.logger, arguments);
+            var flag = this.level & ERROR_FLAG;
+            if (flag > 0) {
+                this.logger.error.apply(this.logger, arguments);
             }
-        },
-
-        showTime: false
-    };
-
-    /**
-     *  Set log level
-     *
-     * @param {uint|LogLevel|*} level
-     */
-    Log.setLevel = function (level) {
-        if (Enum.isEnum(level)) {
-            level = level.getValue();
         }
-        shared.level = level;
-    };
 
-    /**
-     *  Change logger
-     *
-     * @param {Logger} logger
-     */
-    Log.setLogger = function (logger) {
-        shared.logger = logger;
     };
+    var Log = sg.lnc.Log;
 
-    var Logger = Interface(null, null);
+
+    sg.lnc.Logger = Interface(null, null);
+    var Logger = sg.lnc.Logger;
+
     Logger.prototype.debug   = function (...data) {};
     Logger.prototype.info    = function (...data) {};
     Logger.prototype.warning = function (...data) {};
     Logger.prototype.error   = function (...data) {};
 
-    var DefaultLogger = function () {
-        Object.call(this);
+
+    sg.lnc.DefaultLogger = function () {
+        BaseObject.call(this);
     };
-    Class(DefaultLogger, Object, [Logger], {
+    var DefaultLogger = sg.lnc.DefaultLogger;
+
+    Class(DefaultLogger, BaseObject, [Logger], {
 
         // Override
         debug: function () {
-            console.debug.apply(console, _args(arguments));
+            console.debug.apply(console, log_args(arguments));
         },
+
         // Override
         info: function () {
-            console.info.apply(console, _args(arguments));
+            console.info.apply(console, log_args(arguments));
         },
+
         // Override
         warning: function () {
-            console.warn.apply(console, _args(arguments));
+            console.warn.apply(console, log_args(arguments));
         },
+
         // Override
         error: function () {
-            console.error.apply(console, _args(arguments));
+            console.error.apply(console, log_args(arguments));
         }
     });
 
-    var _args = function (args) {
+    var log_args = function (args) {
         if (Log.showTime === false) {
             return args;
         }
@@ -159,10 +148,10 @@
         var hours   = now.getHours();
         var minutes = now.getMinutes();
         var seconds = now.getSeconds();
-        return year + '-' + _pad(month + 1) + '-' + _pad(date)
-            + ' ' + _pad(hours) + ':' + _pad(minutes) + ':' + _pad(seconds);
+        return year + '-' + two_digits(month + 1) + '-' + two_digits(date)
+            + ' ' + two_digits(hours) + ':' + two_digits(minutes) + ':' + two_digits(seconds);
     };
-    var _pad = function (value) {
+    var two_digits = function (value) {
         if (value < 10) {
             return '0' + value;
         } else {
@@ -170,14 +159,4 @@
         }
     };
 
-    var shared = {
-        logger: new DefaultLogger(),
-        level: LogLevel.RELEASE.getValue()
-    };
-
-    //-------- namespace --------
-    ns.lnc.LogLevel = LogLevel;
-    ns.lnc.Logger   = Logger;
-    ns.lnc.Log      = Log;
-
-})(StarGate, MONKEY);
+    Log.logger = new DefaultLogger();

@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Star Gate: Interfaces for network connection
@@ -31,12 +31,6 @@
 //
 
 //! require 'host.js'
-
-(function (ns, sys) {
-    "use strict";
-
-    var Class = sys.type.Class;
-    var Host = ns.network.Host;
 
     //
     //  IPv6
@@ -89,7 +83,7 @@
         return data;
     };
 
-    var hex_encode = function (hi, lo) {
+    var hex_encode_ip_number = function (hi, lo) {
         if (hi > 0) {
             if (lo >= 16) {
                 return Number(hi).toString(16) + Number(lo).toString(16);
@@ -100,13 +94,13 @@
         }
     };
 
-    var IPv6 = function (ip, port, data) {
+    sg.ip.IPv6 = function (ip, port, data) {
         if (data) {
             if (!ip) {
                 // get ip+port from data array
-                ip = hex_encode(data[0], data[1]);
+                ip = hex_encode_ip_number(data[0], data[1]);
                 for (var index = 2; index < 16; index += 2) {
-                    ip += ':' + hex_encode(data[index], data[index+1]);
+                    ip += ':' + hex_encode_ip_number(data[index], data[index+1]);
                 }
                 // compress it
                 ip = ip.replace(/:(0:){2,}/, '::');
@@ -147,6 +141,8 @@
         }
         Host.call(this, string, ip, port, data);
     };
+    var IPv6 = sg.ip.IPv6;
+
     Class(IPv6, Host, null);
 
     IPv6.patten = /^\[?([0-9A-Fa-f]{0,4}:){2,7}[0-9A-Fa-f]{0,4}(]:\d{1,5})?$/;
@@ -175,8 +171,3 @@
         }
         return new IPv6(ip, port);
     };
-
-    //-------- namespace --------
-    ns.network.IPv6 = IPv6;
-
-})(StarGate, MONKEY);
