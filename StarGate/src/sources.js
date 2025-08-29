@@ -12,8 +12,7 @@ var sg_sources = [
     //
     'src/lnc/log.js',
     'src/lnc/notification.js',
-    'src/lnc/center.js',
-    'src/lnc/async.js',
+    'src/lnc/cache.js',
 
     //
     //  Network

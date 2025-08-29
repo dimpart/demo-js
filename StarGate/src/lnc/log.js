@@ -1,7 +1,7 @@
 'use strict';
 // license: https://mit-license.org
 //
-//  LNC : Log & Notification Center
+//  LNC : Log, Notification & Cache
 //
 //                               Written in 2024 by Moky <albert.moky@gmail.com>
 //
@@ -30,7 +30,7 @@
 // =============================================================================
 //
 
-//! require 'namespace.js'
+//! require 'requires.js'
 
     var DEBUG_FLAG   = 1 << 0;
     var INFO_FLAG    = 1 << 1;
@@ -60,25 +60,25 @@
         //
         //  Interfaces
         //
-        debug: function (...data) {
+        debug: function (msg) {
             var flag = this.level & DEBUG_FLAG;
             if (flag > 0) {
                 this.logger.debug.apply(this.logger, arguments);
             }
         },
-        info: function (...data) {
+        info: function (msg) {
             var flag = this.level & INFO_FLAG;
             if (flag > 0) {
                 this.logger.info.apply(this.logger, arguments);
             }
         },
-        warning: function (...data) {
+        warning: function (msg) {
             var flag = this.level & WARNING_FLAG;
             if (flag > 0) {
                 this.logger.warning.apply(this.logger, arguments);
             }
         },
-        error: function (...data) {
+        error: function (msg) {
             var flag = this.level & ERROR_FLAG;
             if (flag > 0) {
                 this.logger.error.apply(this.logger, arguments);
@@ -92,10 +92,10 @@
     sg.lnc.Logger = Interface(null, null);
     var Logger = sg.lnc.Logger;
 
-    Logger.prototype.debug   = function (...data) {};
-    Logger.prototype.info    = function (...data) {};
-    Logger.prototype.warning = function (...data) {};
-    Logger.prototype.error   = function (...data) {};
+    Logger.prototype.debug   = function (msg) {};
+    Logger.prototype.info    = function (msg) {};
+    Logger.prototype.warning = function (msg) {};
+    Logger.prototype.error   = function (msg) {};
 
 
     sg.lnc.DefaultLogger = function () {

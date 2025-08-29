@@ -17,6 +17,8 @@ if (typeof sg.ws !== 'object') {
 //-------- requires --------
 var Interface      = mk.type.Interface;
 var Class          = mk.type.Class;
+var Converter      = mk.type.Converter;
+var Mapper         = mk.type.Mapper;
 var BaseObject     = mk.type.BaseObject;
 var HashSet        = mk.type.HashSet;
 var ConstantString = mk.type.ConstantString;
@@ -24,8 +26,10 @@ var UTF8    = mk.format.UTF8;
 var JSONMap = mk.format.JSONMap;
 var Base64  = mk.format.Base64;
 
-var Runnable  = fsm.skywalker.Runnable;
-var Thread    = fsm.threading.Thread;
+var Duration = fsm.type.Duration;
+var Runnable = fsm.skywalker.Runnable;
+var Runner   = fsm.skywalker.Runner;
+var Thread   = fsm.threading.Thread;
 
 var Pair           = st.type.Pair;
 var AddressPairMap = st.type.AddressPairMap;
