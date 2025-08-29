@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMP : Decentralized Instant Messaging Protocol
@@ -32,13 +32,6 @@
 
 //! require <dimp.js>
 
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-    var ID        = ns.protocol.ID;
-    var Command   = ns.protocol.Command;
-
     /**
      *  Command message: {
      *      type : 0x88,
@@ -48,7 +41,8 @@
      *      list    : []       // mute-list
      *  }
      */
-    var MuteCommand = Interface(null, [Command]);
+    dkd.protocol.MuteCommand = Interface(null, [Command]);
+    var MuteCommand = dkd.protocol.MuteCommand;
 
     Command.MUTE = 'mute';
 
@@ -68,19 +62,6 @@
         return new ns.dkd.cmd.BaseMuteCommand(contacts);
     };
 
-    //-------- namespace --------
-    ns.protocol.MuteCommand = MuteCommand;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Class       = ns.type.Class;
-    var ID          = ns.protocol.ID;
-    var Command     = ns.protocol.Command;
-    var MuteCommand = ns.protocol.MuteCommand;
-    var BaseCommand = ns.dkd.cmd.BaseCommand;
 
     /**
      *  Create mute command
@@ -90,7 +71,7 @@
      *      2. new BaseMuteCommand(list);
      *      3. new BaseMuteCommand();
      */
-    var BaseMuteCommand = function (info) {
+    dkd.dkd.BaseMuteCommand = function (info) {
         var list = null;
         if (arguments.length === 0) {
             // new BaseMuteCommand();
@@ -108,6 +89,8 @@
         }
         this.__list = list;
     };
+    var BaseMuteCommand = dkd.dkd.BaseMuteCommand;
+
     Class(BaseMuteCommand, BaseCommand, [MuteCommand], {
 
         // Override
@@ -132,8 +115,3 @@
             this.setValue('list', list);
         }
     });
-
-    //-------- namespace --------
-    ns.dkd.cmd.BaseMuteCommand = BaseMuteCommand;
-
-})(DIMP);

@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMP : Decentralized Instant Messaging Protocol
@@ -32,12 +32,6 @@
 
 //! require <dimp.js>
 
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-    var Command   = ns.protocol.Command;
-
     /**
      *  Command message: {
      *      type : 0x88,
@@ -53,7 +47,8 @@
      *      users    : ["{ID}"]         // user ID list
      *  }
      */
-    var SearchCommand = Interface(null, [Command]);
+    dkd.protocol.SearchCommand = Interface(null, [Command]);
+    var SearchCommand = dkd.protocol.SearchCommand;
 
     Command.SEARCH = 'search';
     Command.ONLINE_USERS = 'users'; // search online users
@@ -86,22 +81,9 @@
     //
 
     SearchCommand.fromKeywords = function (keywords) {
-        return new ns.dkd.cmd.BaseSearchCommand(keywords);
+        return new BaseSearchCommand(keywords);
     };
 
-    //-------- namespace --------
-    ns.protocol.SearchCommand = SearchCommand;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Class         = ns.type.Class;
-    var ID            = ns.protocol.ID;
-    var Command       = ns.protocol.Command;
-    var SearchCommand = ns.protocol.SearchCommand;
-    var BaseCommand   = ns.dkd.cmd.BaseCommand;
 
     /**
      *  Create search command
@@ -111,7 +93,7 @@
      *      2. new BaseSearchCommand(keywords);
      *      3. new BaseSearchCommand();
      */
-    var BaseSearchCommand = function () {
+    dkd.dkd.BaseSearchCommand = function () {
         var keywords = null;
         if (arguments.length === 0) {
             // new BaseSearchCommand();
@@ -128,6 +110,8 @@
             this.setKeywords(keywords);
         }
     };
+    var BaseSearchCommand = dkd.dkd.BaseSearchCommand;
+
     Class(BaseSearchCommand, BaseCommand, [SearchCommand], {
 
         // Override
@@ -180,8 +164,3 @@
             }
         }
     });
-
-    //-------- namespace --------
-    ns.dkd.cmd.BaseSearchCommand = BaseSearchCommand;
-
-})(DIMP);

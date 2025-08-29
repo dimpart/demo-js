@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Ming-Ke-Ming : Decentralized User Identity Authentication
@@ -30,18 +30,8 @@
 // =============================================================================
 //
 
-//! require 'base.js'
+//! require <dimsdk.js>
 //! require 'network.js'
-
-(function (ns) {
-    'use strict';
-
-    var Class             = ns.type.Class;
-    var EntityType        = ns.protocol.EntityType;
-    var NetworkID         = ns.protocol.NetworkID;
-    var ID                = ns.protocol.ID;
-    var Identifier        = ns.mkm.Identifier;
-    var IdentifierFactory = ns.mkm.GeneralIdentifierFactory;
 
     /**
      *  ID for entity (User/Group)
@@ -53,9 +43,11 @@
      *          address  - a string to identify an entity
      *          terminal - entity login resource(device), OPTIONAL
      */
-    var EntityID = function (identifier, name, address, terminal) {
+    app.compat.EntityID = function (identifier, name, address, terminal) {
         Identifier.call(this, identifier, name, address, terminal);
     };
+    var EntityID = app.compat.EntityID;
+
     Class(EntityID, Identifier, null, {
 
         // Override
@@ -64,11 +56,11 @@
             if (!name || name.length === 0) {
                 // all ID without 'name' field must be a user
                 // e.g.: BTC address
-                return EntityType.USER.getValue();
+                return EntityType.USER;
             }
             var network = this.getAddress().getType();
             // compatible with MKM 0.9.*
-            return NetworkID.getEntityType(network);
+            return NetworkType.getEntityType(network);
         }
     });
 
@@ -83,49 +75,54 @@
      *  EntityID Factory
      *  ~~~~~~~~~~~~~~~~
      */
-    var EntityIDFactory = function () {
+    app.compat.EntityIDFactory = function () {
         IdentifierFactory.call(this);
     };
-    Class(EntityIDFactory, IdentifierFactory, null, {
+    var EntityIDFactory = app.compat.EntityIDFactory;
 
-        // Override
-        newID: function (string, name, address, terminal) {
-            return new EntityID(string, name, address, terminal);
-        },
+    Class(EntityIDFactory, IdentifierFactory, null, null);
 
-        // Override
-        parse: function (identifier) {
-            if (!identifier) {
-                throw new ReferenceError('ID empty');
-            }
-            var len = identifier.length;
-            if (len === 15) {
-                // "anyone@anywhere"
-                if (identifier.toLowerCase() === 'anyone@anywhere') {
-                    return ID.ANYONE;
-                }
-            } else if (len === 19) {
-                // "everyone@everywhere"
-                if (identifier.toLowerCase() === 'everyone@everywhere') {
-                    return ID.EVERYONE;
-                }
-            } else if (len === 13) {
-                // "moky@anywhere"
-                if (identifier.toLowerCase() === 'moky@anywhere') {
-                    return ID.FOUNDER;
-                }
-            }
-            return IdentifierFactory.prototype.parse.call(this, identifier);
-        }
-    });
-
-    //-------- namespace --------
-    ns.registerEntityIDFactory = function () {
-        /**
-         *  Register EntityID Factory
-         *  ~~~~~~~~~~~~~~~~~~~~~~~~~
-         */
-        ID.setFactory(new EntityIDFactory());
+    // Override
+    EntityIDFactory.prototype.newID = function (string, name, address, terminal) {
+        return new EntityID(string, name, address, terminal);
     };
 
-})(DIMP);
+    // Override
+    EntityIDFactory.prototype.parse = function (identifier) {
+        if (!identifier) {
+            throw new ReferenceError('ID empty');
+        }
+        var size = identifier.length;
+        if (size < 4 || size > 64) {
+            return false;
+        } else if (size === 15) {
+            // "anyone@anywhere"
+            if (identifier.toLowerCase() === 'anyone@anywhere') {
+                return ID.ANYONE;
+            }
+        } else if (size === 19) {
+            // "everyone@everywhere"
+            // "stations@everywhere"
+            if (identifier.toLowerCase() === 'everyone@everywhere') {
+                return ID.EVERYONE;
+            }
+        } else if (size === 13) {
+            // "moky@anywhere"
+            if (identifier.toLowerCase() === 'moky@anywhere') {
+                return ID.FOUNDER;
+            }
+        }
+        return IdentifierFactory.prototype.parse.call(this, identifier);
+    };
+
+    /**
+     *  Call it when received 'UIApplicationDidReceiveMemoryWarningNotification',
+     *  this will remove 50% of cached objects
+     *
+     * @return {uint} number of survivors
+     */
+    EntityIDFactory.prototype.reduceMemory = function () {
+        var finger = 0;
+        finger = thanos(this._identifiers, finger);
+        return finger >> 1;
+    };

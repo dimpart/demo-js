@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Ming-Ke-Ming : Decentralized User Identity Authentication
@@ -32,12 +32,6 @@
 
 //! require <dimp.js>
 
-(function (ns) {
-    'use strict';
-
-    var IObject = ns.type.Object;
-    var Enum    = ns.type.Enum;
-
     /**
      *  @enum MetaType
      *
@@ -62,7 +56,7 @@
      *      0000 0100 - this meta generate ETH address
      *      ...
      */
-    var MetaType = Enum('MetaType', {
+    app.compat.MetaVersion = {
 
         DEFAULT: (0x01),
         MKM:     (0x01),  // 0000 0001
@@ -72,12 +66,17 @@
 
         ETH:     (0x04),  // 0000 0100
         ExETH:   (0x05)   // 0000 0101
-    });
+    };
+    var MetaVersion = app.compat.MetaVersion;
 
-    var toString = function (type) {
-        type = Enum.getInt(type);
-        return type.toString();
-
+    MetaVersion.parseString = function (type) {
+        if (IObject.isString(type)) {
+            return type;
+        } else if (IObject.isNumber(type)) {
+            return '' + type;
+        } else {
+            return type.toString();
+        }
     };
 
     /**
@@ -85,13 +84,12 @@
      *
      * @returns {boolean}
      */
-    var hasSeed = function (type) {
-        type = parseNumber(type, 0);
-        var mkm = MetaType.MKM.getValue();
-        return type > 0 && (type & mkm) === mkm;
+    MetaVersion.hasSeed  = function (type) {
+        var version = MetaVersion.parseInt(type, 0);
+        return 0 < version && (version & 1) === 1;
     };
 
-    var parseNumber = function (type, defaultValue) {
+    MetaVersion.parseInt = function (type, defaultValue) {
         if (type === null) {
             return defaultValue;
         } else if (IObject.isNumber(type)) {
@@ -106,9 +104,9 @@
                 return 4;
             }
             // TODO: other algorithms
-        } else if (Enum.isEnum(type)) {
-            // enum
-            return type.getValue();
+        // } else if (Enum.isEnum(type)) {
+        //     // enum
+        //     return type.getValue();
         } else {
             return -1;
         }
@@ -118,12 +116,3 @@
             return -1;
         }
     };
-
-    MetaType.toString = toString;
-    MetaType.hasSeed  = hasSeed;
-    MetaType.parseInt = parseNumber;
-
-    //-------- namespace --------
-    ns.protocol.MetaType = MetaType;
-
-})(DIMP);

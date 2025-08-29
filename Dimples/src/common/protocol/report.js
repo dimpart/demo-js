@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMP : Decentralized Instant Messaging Protocol
@@ -32,12 +32,6 @@
 
 //! require <dimp.js>
 
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-    var Command   = ns.protocol.Command;
-
     /**
      *  Command message: {
      *      type : 0x88,
@@ -49,7 +43,8 @@
      *      time    : 1234567890,    // timestamp
      *  }
      */
-    var ReportCommand = Interface(null, [Command]);
+    dkd.protocol.ReportCommand = Interface(null, [Command]);
+    var ReportCommand = dkd.protocol.ReportCommand;
 
     Command.REPORT = 'report';
     Command.ONLINE = 'online';
@@ -65,20 +60,9 @@
     //
 
     ReportCommand.fromTitle = function (title) {
-        return new ns.dkd.cmd.BaseReportCommand(title);
+        return new BaseReportCommand(title);
     };
 
-    //-------- namespace --------
-    ns.protocol.ReportCommand = ReportCommand;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Class         = ns.type.Class;
-    var ReportCommand = ns.protocol.ReportCommand;
-    var BaseCommand   = ns.dkd.cmd.BaseCommand;
 
     /**
      *  Create report command
@@ -88,7 +72,7 @@
      *      2. new BaseReportCommand(title);
      *      3. new BaseReportCommand();
      */
-    var BaseReportCommand = function () {
+    dkd.dkd.BaseReportCommand = function () {
         if (arguments.length === 0) {
             // new BaseReportCommand();
             BaseCommand.call(this, ReportCommand.REPORT);
@@ -101,6 +85,8 @@
             BaseCommand.call(this, arguments[0]);
         }
     };
+    var BaseReportCommand = dkd.dkd.BaseReportCommand;
+
     Class(BaseReportCommand, BaseCommand, [ReportCommand], {
 
         // Override
@@ -113,8 +99,3 @@
             return this.getString('title', null);
         }
     });
-
-    //-------- namespace --------
-    ns.dkd.cmd.BaseReportCommand = BaseReportCommand;
-
-})(DIMP);

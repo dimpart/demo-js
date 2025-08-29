@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Ming-Ke-Ming : Decentralized User Identity Authentication
@@ -30,29 +30,21 @@
 // =============================================================================
 //
 
-//! require 'base.js'
-
-(function (ns) {
-    'use strict';
-
-    var Class              = ns.type.Class;
-    var ConstantString     = ns.type.ConstantString;
-    var Address            = ns.protocol.Address;
-    var BaseAddressFactory = ns.mkm.BaseAddressFactory;
-    var BTCAddress         = ns.mkm.BTCAddress;
-    var ETHAddress         = ns.mkm.ETHAddress;
+//! require <dimsdk.js>
 
     /**
      *  Unsupported Address
      *  ~~~~~~~~~~~~~~~~~~~
      */
-    var UnknownAddress = function (string) {
+    app.compat.UnknownAddress = function (string) {
         ConstantString.call(this, string);
     };
+    var UnknownAddress = app.compat.UnknownAddress;
+
     Class(UnknownAddress, ConstantString, [Address], {
         // Override
         getType: function () {
-            return 0;
+            return 0;  // EntityType.USER;
         }
     });
 
@@ -60,13 +52,27 @@
      *  Compatible Address Factory
      *  ~~~~~~~~~~~~~~~~~~~~~~~~~~
      */
-    var CompatibleAddressFactory = function () {
+    app.compat.CompatibleAddressFactory = function () {
         BaseAddressFactory.call(this);
     };
+    var CompatibleAddressFactory = app.compat.CompatibleAddressFactory;
+
     Class(CompatibleAddressFactory, BaseAddressFactory, null, null);
 
+    /**
+     *  Call it when received 'UIApplicationDidReceiveMemoryWarningNotification',
+     *  this will remove 50% of cached objects
+     *
+     * @return {uint} number of survivors
+     */
+    CompatibleAddressFactory.prototype.reduceMemory = function () {
+        var finger = 0;
+        finger = thanos(this._addresses, finger);
+        return finger >> 1;
+    };
+
     // Override
-    CompatibleAddressFactory.prototype.createAddress = function(address) {
+    CompatibleAddressFactory.prototype.parse = function(address) {
         if (!address) {
             //throw new ReferenceError('address empty');
             return null;
@@ -98,14 +104,3 @@
         }
         return res;
     };
-
-    //-------- namespace --------
-    ns.registerCompatibleAddressFactory = function () {
-        /**
-         *  Register CompatibleAddress Factory
-         *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         */
-        Address.setFactory(new CompatibleAddressFactory());
-    };
-
-})(DIMP);

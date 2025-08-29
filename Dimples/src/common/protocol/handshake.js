@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMP : Decentralized Instant Messaging Protocol
@@ -32,19 +32,13 @@
 
 //! require <dimp.js>
 
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-    var Enum      = ns.type.Enum;
-    var Command   = ns.protocol.Command;
-
-    var HandshakeState = Enum('HandshakeState', {
+    dkd.protocol.HandshakeState = Enum('HandshakeState', {
         START:   0, // C -> S, without session key(or session expired)
         AGAIN:   1, // S -> C, with new session key
         RESTART: 2, // C -> S, with new session key
         SUCCESS: 3  // S -> C, handshake accepted
     });
+    var HandshakeState = dkd.protocol.HandshakeState;
 
     HandshakeState.checkState = function (title, session) {
         if (title === 'DIM!'/* || title === 'OK!'*/) {
@@ -70,7 +64,8 @@
      *      session : "{SESSION_KEY}" // session key
      *  }
      */
-    var HandshakeCommand = Interface(null, [Command]);
+    dkd.protocol.HandshakeCommand = Interface(null, [Command]);
+    var HandshakeCommand = dkd.protocol.HandshakeCommand;
 
     /**
      *  Get title
@@ -98,35 +93,21 @@
     //
 
     HandshakeCommand.start = function () {
-        return new ns.dkd.cmd.BaseHandshakeCommand('Hello world!', null);
+        return new BaseHandshakeCommand('Hello world!', null);
     };
 
     HandshakeCommand.restart = function (sessionKey) {
-        return new ns.dkd.cmd.BaseHandshakeCommand('Hello world!', sessionKey);
+        return new BaseHandshakeCommand('Hello world!', sessionKey);
     };
 
     HandshakeCommand.again = function (sessionKey) {
-        return new ns.dkd.cmd.BaseHandshakeCommand('DIM?', sessionKey);
+        return new BaseHandshakeCommand('DIM?', sessionKey);
     };
 
     HandshakeCommand.success = function (sessionKey) {
-        return new ns.dkd.cmd.BaseHandshakeCommand('DIM!', sessionKey);
+        return new BaseHandshakeCommand('DIM!', sessionKey);
     };
 
-    //-------- namespace --------
-    ns.protocol.HandshakeCommand = HandshakeCommand;
-    ns.protocol.HandshakeState = HandshakeState;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Class            = ns.type.Class;
-    var Command          = ns.protocol.Command;
-    var HandshakeCommand = ns.protocol.HandshakeCommand;
-    var HandshakeState   = ns.protocol.HandshakeState;
-    var BaseCommand      = ns.dkd.cmd.BaseCommand;
 
     /**
      *  Create handshake command
@@ -135,7 +116,7 @@
      *      1. new BaseHandshakeCommand(map);
      *      2. new BaseHandshakeCommand(title, session);
      */
-    var BaseHandshakeCommand = function () {
+    dkd.dkd.BaseHandshakeCommand = function () {
         var title = null;
         var session = null;
         if (arguments.length === 2) {
@@ -158,6 +139,8 @@
             this.setValue('session', session);
         }
     };
+    var BaseHandshakeCommand = dkd.dkd.BaseHandshakeCommand;
+
     Class(BaseHandshakeCommand, BaseCommand, [HandshakeCommand], {
 
         // Override
@@ -175,8 +158,3 @@
             return HandshakeState.checkState(this.getTitle(), this.getSessionKey());
         }
     });
-
-    //-------- namespace --------
-    ns.dkd.cmd.BaseHandshakeCommand = BaseHandshakeCommand;
-
-})(DIMP);

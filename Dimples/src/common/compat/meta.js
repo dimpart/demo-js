@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Ming-Ke-Ming : Decentralized User Identity Authentication
@@ -30,95 +30,47 @@
 // =============================================================================
 //
 
-//! require 'base.js'
-
-(function (ns) {
-    'use strict';
-
-    var Class           = ns.type.Class;
-    var Meta            = ns.protocol.Meta;
-    var DefaultMeta     = ns.mkm.DefaultMeta;
-    var BTCMeta         = ns.mkm.BTCMeta;
-    var ETHMeta         = ns.mkm.ETHMeta;
-    var BaseMetaFactory = ns.mkm.GeneralMetaFactory;
+//! require <dimsdk.js>
 
     /**
      *  Compatible Meta factory
      *  ~~~~~~~~~~~~~~~~~~~~~~~
      */
-    var CompatibleMetaFactory = function (type) {
+    app.compat.CompatibleMetaFactory = function (type) {
         BaseMetaFactory.call(this, type);
     };
-    Class(CompatibleMetaFactory, BaseMetaFactory, null, {
+    var CompatibleMetaFactory = app.compat.CompatibleMetaFactory;
 
-        // Override
-        createMeta: function(key, seed, fingerprint) {
-            var out;
-            var type = this.getType();
-            if (type === Meta.MKM) {
-                // MKM
-                out = new DefaultMeta('1', key, seed, fingerprint);
-            } else if (type === Meta.BTC) {
-                // BTC
-                out = new BTCMeta('2', key);
-            } else if (type === Meta.ETH) {
-                // ETH
-                out = new ETHMeta('4', key);
-            } else {
-                // unknown type
-                throw new TypeError('unknown meta type: ' + type);
-            }
-            return out;
-        },
+    Class(CompatibleMetaFactory, BaseMetaFactory, null, {
 
         // Override
         parseMeta: function(meta) {
             var out;
-            var gf = general_factory();
-            var type = gf.getMetaType(meta, '');
-            if (type === '1' || type === 'mkm' || type === 'MKM') {
-                // MKM
-                out = new DefaultMeta(meta);
-            } else if (type === '2' || type === 'btc' || type === 'BTC') {
-                // BTC
-                out = new BTCMeta(meta);
-            } else if (type === '4' || type === 'eth' || type === 'ETH') {
-                // ETH
-                out = new ETHMeta(meta);
-            } else {
-                // unknown type
-                throw new TypeError('unknown meta type: ' + type);
+            var helper = SharedAccountExtensions.getHelper();
+            var type = helper.getMetaType(meta, '');
+            switch (type) {
+
+                case 'MKM':
+                case 'mkm':
+                case '1':
+                    out = new DefaultMeta(meta);
+                    break;
+
+                case 'BTC':
+                case 'btc':
+                case '2':
+                    out = new BTCMeta(meta);
+                    break;
+
+                case 'ETH':
+                case 'eth':
+                case '4':
+                    out = new ETHMeta(meta);
+                    break;
+
+                default:
+                    throw new TypeError('unknown meta type: ' + type);
             }
-            return out.isValid() ? out : null;
+            return out.isValid() ? out : null
         }
     });
-
-    var general_factory = function () {
-        var man = ns.mkm.AccountFactoryManager;
-        return man.generalFactory;
-    };
-
-    //-------- namespace --------
-    ns.registerCompatibleMetaFactory = function () {
-        /**
-         *  Register Compatible Meta Factory
-         *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         */
-        var mkm = new CompatibleMetaFactory(Meta.MKM);
-        var btc = new CompatibleMetaFactory(Meta.BTC);
-        var eth = new CompatibleMetaFactory(Meta.ETH);
-
-        Meta.setFactory("1", mkm);
-        Meta.setFactory("2", btc);
-        Meta.setFactory("4", eth);
-
-        Meta.setFactory("mkm", mkm);
-        Meta.setFactory("btc", btc);
-        Meta.setFactory("eth", eth);
-
-        Meta.setFactory("MKM", mkm);
-        Meta.setFactory("BTC", btc);
-        Meta.setFactory("ETH", eth);
-    };
-
-})(DIMP);

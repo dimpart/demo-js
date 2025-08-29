@@ -1,14 +1,9 @@
-;
+'use strict';
 // license: https://mit-license.org
-//
-//  DBI : Database Interface
-//
-//                               Written in 2021 by Moky <albert.moky@gmail.com>
-//
 // =============================================================================
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 Albert Moky
+// Copyright (c) 2020 Albert Moky
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,52 +25,38 @@
 // =============================================================================
 //
 
-//! require <dimp.js>
-//! require <sdk.js>
-//! require <fsm.js>
-//! require <startrek.js>
-//! require <stargate.js>
+//! require <dimsdk.js>
 
-(function (ns, fsm, startrek) {
-    'use strict';
+    mk.digest.MD5 = {
 
-    //-------- namespace --------
-    if (typeof ns.fsm !== 'object') {
-        ns.fsm = fsm;
-    }
-    if (typeof ns.startrek !== 'object') {
-        ns.startrek = startrek;
-    }
+        /**
+         *  Get digest of binary data
+         *
+         * @param {Uint8Array} data - binary data
+         * @return {Uint8Array} binary data
+         */
+        digest: function (data) {
+            return this.getDigester().digest(data);
+        },
 
-})(DIMP, FiniteStateMachine, StarTrek);
+        /**
+         *  Get MD5 Digester
+         *
+         * @return {mk.digest.MessageDigester}
+         */
+        getDigester: function () {
+            return md5Digester;
+        },
 
-(function (ns, sg) {
-    'use strict';
+        /**
+         *  Set MD5 Digester
+         * @param {mk.digest.MessageDigester} digester
+         */
+        setDigester: function (digester) {
+            md5Digester = digester;
+        }
+    };
+    var MD5 = mk.digest.MD5;
 
-    //-------- namespace --------
-    if (typeof ns.dos !== 'object') {
-        ns.dos = sg.dos;
-    }
-    if (typeof ns.lnc !== 'object') {
-        ns.lnc = sg.lnc;
-    }
-    if (typeof ns.network !== 'object') {
-        ns.network = sg.network;
-    }
-    if (typeof ns.ws !== 'object') {
-        ns.ws = sg.ws;
-    }
-    if (typeof ns.mem !== 'object') {
-        ns.mem = {};
-    }
-    if (typeof ns.dbi !== 'object') {
-        ns.dbi = {};
-    }
-    if (typeof ns.group !== 'object') {
-        ns.group = {};
-    }
-    if (typeof ns.database !== 'object') {
-        ns.database = {};
-    }
-
-})(DIMP, StarGate);
+    // Singleton
+    var md5Digester = null;

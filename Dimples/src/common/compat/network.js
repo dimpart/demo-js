@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  Ming-Ke-Ming : Decentralized User Identity Authentication
@@ -31,9 +31,6 @@
 //
 
 //! require <mkm.js>
-
-(function (ns) {
-    'use strict';
 
     /**
      *  @enum NetworkType
@@ -88,7 +85,7 @@
      *
      *      (All above are just some advices to help choosing numbers :P)
      */
-    var NetworkType = ns.type.Enum(null, {
+    app.compat.NetworkType = {
 
         BTC_MAIN:        (0x00), // 0000 0000
         //BTC_TEST:      (0x6F), // 0110 1111
@@ -130,40 +127,8 @@
         //BOT_GROUP:     (0x74), // 0111 0100 (Content Provider)
         BOT:             (0xC8), // 1100 1000
         THING:           (0x80)  // 1000 0000 (IoT)
-    });
-
-    // NetworkType.prototype.toByte = function () {
-    //     return String.fromCharCode(this.value);
-    // };
-
-    /**
-     *  Indicates whether this is a user type
-     *
-     * @param {uint} network - network ID
-     * @returns {boolean}
-     */
-    /*/
-    NetworkType.isUser = function (network) {
-        var main = NetworkType.MAIN.getValue();
-        var btcMain = NetworkType.BTC_MAIN.getValue();
-        return ((network & main) === main) || (network === btcMain);
     };
-    /*/
-
-    /**
-     *  Indicates whether this is a group type
-     *
-     * @param {uint} network - network ID
-     * @returns {boolean}
-     */
-    /*/
-    NetworkType.isGroup = function (network) {
-        var group = NetworkType.GROUP.getValue();
-        return (network & group) === group;
-    };
-    /*/
-
-    var EntityType = ns.protocol.EntityType;
+    var NetworkType = app.compat.NetworkType;
 
     /**
      *  Convert entity type from network ID (MKM 0.9.*)
@@ -173,23 +138,19 @@
      */
     NetworkType.getEntityType = function (network) {
         // compatible with MKM 0.9.*
-        if (NetworkType.MAIN.equals(network)) {
-            return EntityType.USER.getValue();
-        } else if (NetworkType.GROUP.equals(network)) {
-            return EntityType.GROUP.getValue();
-        } else if (NetworkType.CHATROOM.equals(network)) {
-            return EntityType.GROUP.getValue() | EntityType.CHATROOM.getValue();
-        } else if (NetworkType.STATION.equals(network)) {
-            return EntityType.STATION.getValue();
-        } else if (NetworkType.PROVIDER.equals(network)) {
-            return EntityType.ISP.getValue();
-        } else if (NetworkType.BOT.equals(network)) {
-            return EntityType.BOT.getValue();
+        switch (network) {
+            case NetworkType.MAIN:
+                return EntityType.USER;
+            case NetworkType.GROUP:
+                return EntityType.GROUP;
+            case NetworkType.CHATROOM:
+                return EntityType.GROUP | NetworkType.CHATROOM;
+            case NetworkType.STATION:
+                return EntityType.STATION;
+            case NetworkType.PROVIDER:
+                return EntityType.ISP;
+            case NetworkType.BOT:
+                return EntityType.BOT;
         }
         return network;
     };
-
-    //-------- namespace --------
-    ns.protocol.NetworkID = NetworkType;
-
-})(DIMP);

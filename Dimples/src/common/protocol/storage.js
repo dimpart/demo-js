@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMP : Decentralized Instant Messaging Protocol
@@ -32,13 +32,6 @@
 
 //! require <dimp.js>
 
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-    var ID        = ns.protocol.ID;
-    var Command   = ns.protocol.Command;
-
     /**
      *  Command message: {
      *      type : 0x88,
@@ -54,7 +47,8 @@
      *      //...
      *  }
      */
-    var StorageCommand = Interface(null, [Command]);
+    dkd.protocol.StorageCommand = Interface(null, [Command]);
+    var StorageCommand = dkd.protocol.StorageCommand;
 
     Command.STORAGE = 'storage';
     // storage titles (should be encrypted)
@@ -103,30 +97,6 @@
     StorageCommand.prototype.setKey = function (data) {};
     StorageCommand.prototype.getKey = function () {};
 
-    //-------- namespace --------
-    ns.protocol.StorageCommand = StorageCommand;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-    var Class     = ns.type.Class;
-
-    var DecryptKey   = ns.crypto.DecryptKey;
-    var SymmetricKey = ns.crypto.SymmetricKey;
-    var PrivateKey   = ns.crypto.PrivateKey;
-
-    var Base64 = ns.format.Base64;
-    var JsON   = ns.format.JSON;
-    var UTF8   = ns.format.UTF8;
-
-    var ID             = ns.protocol.ID;
-    var Command        = ns.protocol.Command;
-    var StorageCommand = ns.protocol.StorageCommand;
-
-    var BaseCommand = ns.dkd.cmd.BaseCommand;
 
     /**
      *  Create storage command
@@ -135,7 +105,7 @@
      *      1. new BaseStorageCommand(map);
      *      2. new BaseStorageCommand(title);
      */
-    var BaseStorageCommand = function (info) {
+    dkd.dkd.BaseStorageCommand = function (info) {
         if (typeof info === 'string') {
             // new BaseStorageCommand(title);
             BaseCommand.call(this, Command.STORAGE);
@@ -150,6 +120,8 @@
         this.__key = null;       // encrypted symmetric key data
         this.__password = null;  // symmetric key for data
     };
+    var BaseStorageCommand = dkd.dkd.BaseStorageCommand;
+
     Class(BaseStorageCommand, BaseCommand, [StorageCommand], {
 
         // Override
@@ -266,11 +238,6 @@
         if (!key) {
             throw new Error('failed to decrypt key');
         }
-        var info = JsON.decode(UTF8.decode(key));
+        var info = JSONMap.decode(UTF8.decode(key));
         return SymmetricKey.parse(info);
     };
-
-    //-------- namespace --------
-    ns.dkd.cmd.BaseStorageCommand = BaseStorageCommand;
-
-})(DIMP);

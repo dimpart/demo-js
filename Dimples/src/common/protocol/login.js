@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMP : Decentralized Instant Messaging Protocol
@@ -32,12 +32,6 @@
 
 //! require <dimp.js>
 
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-    var Command   = ns.protocol.Command;
-
     /**
      *  Command message: {
      *      type : 0x88,
@@ -60,7 +54,8 @@
      *      }
      *  }
      */
-    var LoginCommand = Interface(null, [Command]);
+    dkd.protocol.LoginCommand = Interface(null, [Command]);
+    var LoginCommand = dkd.protocol.LoginCommand;
 
     Command.LOGIN = 'login';
 
@@ -132,26 +127,9 @@
     //
 
     LoginCommand.create = function (identifier) {
-        return new ns.dkd.cmd.BaseLoginCommand(identifier);
+        return new BaseLoginCommand(identifier);
     };
 
-    //-------- namespace --------
-    ns.protocol.LoginCommand = LoginCommand;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Interface       = ns.type.Interface;
-    var Class           = ns.type.Class;
-    var Wrapper         = ns.type.Wrapper;
-    var ID              = ns.protocol.ID;
-    var Command         = ns.protocol.Command;
-    var LoginCommand    = ns.protocol.LoginCommand;
-    var BaseCommand     = ns.dkd.cmd.BaseCommand;
-    var Station         = ns.mkm.Station;
-    var ServiceProvider = ns.mkm.ServiceProvider;
 
     /**
      *  Create login command
@@ -160,21 +138,23 @@
      *      1. new BaseLoginCommand(map);
      *      2. new BaseLoginCommand(identifier);
      */
-    var BaseLoginCommand = function (info) {
+    dkd.dkd.BaseLoginCommand = function (info) {
         if (Interface.conforms(info, ID)) {
             // new BaseLoginCommand(identifier);
             BaseCommand.call(this, Command.LOGIN);
-            this.setString('ID', info);
+            this.setString('did', info);
         } else {
             // new BaseLoginCommand(map);
             BaseCommand.call(this, info);
         }
     };
+    var BaseLoginCommand = dkd.dkd.BaseLoginCommand;
+
     Class(BaseLoginCommand, BaseCommand, [LoginCommand], {
 
         // Override
         getIdentifier: function () {
-            return ID.parse(this.getValue('ID'));
+            return ID.parse(this.getValue('did'));
         },
 
         // Override
@@ -216,7 +196,7 @@
                     }
                 } else {
                     info = {
-                        'ID': sid.toString(),
+                        'did': sid.toString(),
                         'host': station.getHost(),
                         'port': station.getPort()
                     }
@@ -239,11 +219,11 @@
                 info = null;
             } else if (provider instanceof ServiceProvider) {
                 info = {
-                    'ID': provider.getIdentifier().toString()
+                    'did': provider.getIdentifier().toString()
                 }
             } else if (Interface.conforms(provider, ID)) {
                 info = {
-                    'ID': provider.toString()
+                    'did': provider.toString()
                 }
             } else {
                 info = Wrapper.fetchMap(provider);
@@ -251,8 +231,3 @@
             this.setValue('provider', info);
         }
     });
-
-    //-------- namespace --------
-    ns.dkd.cmd.BaseLoginCommand = BaseLoginCommand;
-
-})(DIMP);

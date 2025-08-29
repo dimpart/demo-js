@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMP : Decentralized Instant Messaging Protocol
@@ -32,13 +32,6 @@
 
 //! require <dimp.js>
 
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-    var ID        = ns.protocol.ID;
-    var Command   = ns.protocol.Command;
-
     /**
      *  Command message: {
      *      type : 0x88,
@@ -48,7 +41,8 @@
      *      list    : []       // block-list
      *  }
      */
-    var BlockCommand = Interface(null, [Command]);
+    dkd.protocol.BlockCommand = Interface(null, [Command]);
+    var BlockCommand = dkd.protocol.BlockCommand;
 
     Command.BLOCK = 'block';
 
@@ -65,22 +59,9 @@
     //
 
     BlockCommand.fromList = function (contacts) {
-        return new ns.dkd.cmd.BaseBlockCommand(contacts);
+        return new BaseBlockCommand(contacts);
     };
 
-    //-------- namespace --------
-    ns.protocol.BlockCommand = BlockCommand;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Class        = ns.type.Class;
-    var ID           = ns.protocol.ID;
-    var Command      = ns.protocol.Command;
-    var BlockCommand = ns.protocol.BlockCommand;
-    var BaseCommand  = ns.dkd.cmd.BaseCommand;
 
     /**
      *  Create block command
@@ -90,7 +71,7 @@
      *      2. new BaseBlockCommand(list);
      *      3. new BaseBlockCommand();
      */
-    var BaseBlockCommand = function () {
+    dkd.dkd.BaseBlockCommand = function () {
         var list = null;
         if (arguments.length === 0) {
             // new BaseBlockCommand();
@@ -108,7 +89,18 @@
         }
         this.__list = list;
     };
+    var BaseBlockCommand = dkd.dkd.BaseBlockCommand;
+
     Class(BaseBlockCommand, BaseCommand, [BlockCommand], {
+
+        // Override
+        setBlockCList: function (list) {
+            this.__list = list;
+            if (list/* && list.length > 0*/) {
+                list = ID.revert(list);
+            }
+            this.setValue('list', list);
+        },
 
         // Override
         getBlockCList: function () {
@@ -121,19 +113,5 @@
                 }
             }
             return this.__list;
-        },
-
-        // Override
-        setBlockCList: function (list) {
-            this.__list = list;
-            if (list/* && list.length > 0*/) {
-                list = ID.revert(list);
-            }
-            this.setValue('list', list);
         }
     });
-
-    //-------- namespace --------
-    ns.dkd.cmd.BaseBlockCommand = BaseBlockCommand;
-
-})(DIMP);
