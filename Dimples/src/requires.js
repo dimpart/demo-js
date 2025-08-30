@@ -114,6 +114,7 @@ var BaseBulletin       = mkm.mkm.BaseBulletin;
 var BaseVisa           = mkm.mkm.BaseVisa;
 var Station            = mkm.mkm.Station;
 var ServiceProvider    = mkm.mkm.ServiceProvider;
+var MetaUtils          = mkm.mkm.MetaUtils;
 var DocumentUtils      = mkm.mkm.DocumentUtils;
 var GeneralAccountHelper    = mkm.ext.GeneralAccountHelper;
 var AddressHelper           = mkm.ext.AddressHelper;
@@ -193,8 +194,16 @@ var SharedMessageExtensions = dkd.ext.SharedMessageExtensions;
 var ExtensionLoader   = dimp.ext.ExtensionLoader;
 var PluginLoader      = dimp.ext.PluginLoader;
 
+var MessageUtils = sdk.msg.MessageUtils
 var MessageCompressor = sdk.core.MessageCompressor;
 var MessageShortener  = sdk.core.MessageShortener;
+var Archivist         = sdk.core.Archivist;
+var Barrack           = sdk.core.Barrack;
+var Facebook         = sdk.Facebook;
+var Messenger        = sdk.Messenger;
+var MessagePacker    = sdk.MessagePacker
+var MessageProcessor = sdk.MessageProcessor;
+var GeneralContentProcessorFactory = sdk.cpu.GeneralContentProcessorFactory;
 
 var Duration  = fsm.type.Duration;
 var Processor = fsm.skywalker.Processor;

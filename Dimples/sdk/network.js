@@ -2639,13 +2639,17 @@
         }
         var Interface = mk.type.Interface;
         var Class = mk.type.Class;
+        var Converter = mk.type.Converter;
+        var Mapper = mk.type.Mapper;
         var BaseObject = mk.type.BaseObject;
         var HashSet = mk.type.HashSet;
         var ConstantString = mk.type.ConstantString;
         var UTF8 = mk.format.UTF8;
         var JSONMap = mk.format.JSONMap;
         var Base64 = mk.format.Base64;
+        var Duration = fsm.type.Duration;
         var Runnable = fsm.skywalker.Runnable;
+        var Runner = fsm.skywalker.Runner;
         var Thread = fsm.threading.Thread;
         var Pair = st.type.Pair;
         var AddressPairMap = st.type.AddressPairMap;
@@ -2751,25 +2755,25 @@
             showTime: false,
             showCaller: false,
             logger: null,
-            debug: function (...data) {
+            debug: function (msg) {
                 var flag = this.level & DEBUG_FLAG;
                 if (flag > 0) {
                     this.logger.debug.apply(this.logger, arguments)
                 }
             },
-            info: function (...data) {
+            info: function (msg) {
                 var flag = this.level & INFO_FLAG;
                 if (flag > 0) {
                     this.logger.info.apply(this.logger, arguments)
                 }
             },
-            warning: function (...data) {
+            warning: function (msg) {
                 var flag = this.level & WARNING_FLAG;
                 if (flag > 0) {
                     this.logger.warning.apply(this.logger, arguments)
                 }
             },
-            error: function (...data) {
+            error: function (msg) {
                 var flag = this.level & ERROR_FLAG;
                 if (flag > 0) {
                     this.logger.error.apply(this.logger, arguments)
@@ -2779,13 +2783,13 @@
         var Log = sg.lnc.Log;
         sg.lnc.Logger = Interface(null, null);
         var Logger = sg.lnc.Logger;
-        Logger.prototype.debug = function (...data) {
+        Logger.prototype.debug = function (msg) {
         };
-        Logger.prototype.info = function (...data) {
+        Logger.prototype.info = function (msg) {
         };
-        Logger.prototype.warning = function (...data) {
+        Logger.prototype.warning = function (msg) {
         };
-        Logger.prototype.error = function (...data) {
+        Logger.prototype.error = function (msg) {
         };
         sg.lnc.DefaultLogger = function () {
             BaseObject.call(this)
@@ -2973,6 +2977,166 @@
         AsyncCenter.prototype.isRunning = function () {
             return this.__running
         };
+        var parseDuration = function (duration, defaultValueInSeconds) {
+            if (duration instanceof Duration) {
+                return duration
+            }
+            var seconds = Converter.getFloat(duration, defaultValueInSeconds);
+            return Duration.ofSeconds(seconds)
+        };
+        var parseDateTime = function (time) {
+            var date = Converter.getDateTime(time, null);
+            return date || new Date()
+        };
+        sg.lnc.CacheHolder = function (value, lifeSpan, now) {
+            lifeSpan = parseDuration(lifeSpan, 128);
+            now = parseDateTime(now);
+            this.__value = value;
+            this.__lifeSpan = lifeSpan;
+            var period = lifeSpan.multiplies(2);
+            this.__expired = lifeSpan.addTo(now);
+            this.__deprecated = period.addTo(now)
+        };
+        var CacheHolder = sg.lnc.CacheHolder;
+        CacheHolder.prototype.getValue = function () {
+            return this.__value
+        };
+        CacheHolder.prototype.updateValue = function (value, now) {
+            now = parseDateTime(now);
+            this.__value = value;
+            var lifeSpan = this.__lifeSpan;
+            var period = lifeSpan.multiplies(2);
+            this.__expired = lifeSpan.addTo(now);
+            this.__deprecated = period.addTo(now)
+        };
+        CacheHolder.prototype.isAlive = function (now) {
+            now = parseDateTime(now);
+            return now.getTime() < this.__expired.getTime()
+        };
+        CacheHolder.prototype.isDeprecated = function (now) {
+            now = parseDateTime(now);
+            return now.getTime() > this.__deprecated.getTime()
+        };
+        CacheHolder.prototype.renewal = function (duration, now) {
+            duration = parseDuration(duration, 128);
+            now = parseDateTime(now);
+            var lifeSpan = this.__lifeSpan;
+            var period = lifeSpan.multiplies(2);
+            this.__expired = duration.addTo(now);
+            this.__deprecated = period.addTo(now)
+        };
+        sg.lnc.CachePair = function (value, holder) {
+            this.value = value;
+            this.holder = holder
+        };
+        var CachePair = sg.lnc.CachePair;
+        sg.lnc.CachePool = function () {
+            this.__holders = {}
+        };
+        var CachePool = sg.lnc.CachePool
+        CachePool.prototype.getKeys = function () {
+            return Object.keys(this.__holders)
+        };
+        CachePool.prototype.updateHolder = function (key, holder) {
+            this.__holders[key] = holder;
+            return holder
+        };
+        CachePool.prototype.updateValue = function (key, value, lifeSpan, now) {
+            var holder = new CacheHolder(value, lifeSpan, now);
+            return this.updateHolder(key, holder)
+        };
+        CachePool.prototype.erase = function (key, now) {
+            var old = null;
+            if (now) {
+                old = this.fetch(key, now)
+            }
+            delete this.__holders[key];
+            return old
+        };
+        CachePool.prototype.fetch = function (key, now) {
+            var holder = this.__holders[key];
+            if (!holder) {
+                return null
+            } else if (holder.isAlive(now)) {
+                return new CachePair(holder.getValue(), holder)
+            } else {
+                return new CachePair(null, holder)
+            }
+        };
+        CachePool.prototype.purge = function (now) {
+            now = parseDateTime(now);
+            var count = 0;
+            var all_holders = this.__holders;
+            Mapper.forEach(all_holders, function (key, holder) {
+                if (!holder || holder.isDeprecated(now)) {
+                    delete all_holders[key];
+                    ++count
+                }
+                return false
+            });
+            return count
+        };
+        var CacheRunner = function (duration) {
+            Runner.call(this);
+            duration = parseDuration(duration, 300);
+            this.__interval = duration;
+            this.__expired = duration.addTo(new Date());
+            this.__pools = {};
+            this.__thread = new Thread(this)
+        };
+        Class(CacheRunner, Runner, null, null);
+        CacheRunner.prototype.start = function () {
+            this.__thread.start()
+        };
+        CacheRunner.prototype.stop = function () {
+            this.__thread.stop()
+        };
+        CacheRunner.prototype.process = function () {
+            var now = new Date();
+            if (now.getTime() > this.__expired.getTime()) {
+                this.__expired = this.__interval.addTo(now);
+                try {
+                    var cnt = this.purge(now);
+                    if (cnt > 0) {
+                        Log.info('CacheManager: ' + cnt + ' object(s) removed.')
+                    }
+                } catch (e) {
+                    Log.error('CacheManager::run()', e)
+                }
+            }
+            return false
+        };
+        CacheRunner.prototype.purge = function (now) {
+            var count = 0;
+            Mapper.forEach(this.__pools, function (name, pool) {
+                if (pool) {
+                    count += pool.purge(now)
+                }
+                return false
+            });
+            return count
+        };
+        CacheRunner.prototype.getPool = function (name) {
+            var pool = this.__pools[name];
+            if (!pool) {
+                pool = new CachePool();
+                this.__pools[name] = pool
+            }
+            return pool
+        };
+        sg.lnc.CacheManager = {
+            getPool: function (name) {
+                this.getInstance();
+                return this.cacheRunner.getPool(name)
+            }, getInstance: function () {
+                if (!this.cacheRunner) {
+                    this.cacheRunner = new CacheRunner();
+                    this.cacheRunner.start()
+                }
+                return this
+            }, cacheRunner: null
+        };
+        var CacheManager = sg.lnc.CacheManager;
         sg.ip.Host = function (string, ip, port, data) {
             ConstantString.call(this, string);
             this.ip = ip;

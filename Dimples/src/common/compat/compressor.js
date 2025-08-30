@@ -27,8 +27,6 @@
 
 //! require <dimsdk.js>
 
-(function () {
-
     app.compat.CompatibleCompressor = function () {
         MessageCompressor.call(this, new CompatibleShortener());
     };
@@ -92,5 +90,3 @@
         }
 
     });
-
-})();

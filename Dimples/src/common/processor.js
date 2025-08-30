@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,35 +32,48 @@
 
 //! require <dimsdk.js>
 
-(function (ns) {
-    'use strict';
-
-    var Class = ns.type.Class;
-    var MessageProcessor = ns.MessageProcessor;
-
-    var CommonProcessor = function (facebook, messenger) {
+    app.CommonProcessor = function (facebook, messenger) {
         MessageProcessor.call(this, facebook, messenger);
     };
-    Class(CommonProcessor, MessageProcessor, null, {
+    var CommonProcessor = app.CommonProcessor;
 
-        // Override
-        processContent: function (content, rMsg) {
-            var responses = MessageProcessor.processContent.call(this, content, rMsg);
+    Class(CommonProcessor, MessageProcessor, null, null);
 
-            // check sender's document times from the message
-            // to make sure the user info synchronized
-            checkVisaTime.call(this, content, rMsg);
-
-            return responses;
+    CommonProcessor.prototype.getEntityChecker = function () {
+        var facebook = this.getFacebook();
+        if (facebook instanceof CommonFacebook) {
+            return facebook.getEntityChecker();
         }
-    });
+        return null;
+    };
+    
+    // Override
+    CommonProcessor.prototype.createFactory = function (facebook, messenger) {
+        var creator = this.createCreator(facebook, messenger);
+        return new GeneralContentProcessorFactory(creator);
+    };
+
+    // protected
+    CommonProcessor.prototype.createCreator = function (facebook, messenger) {};
+
+    // Override
+    CommonProcessor.prototype.processContent = function (content, rMsg) {
+        var responses = MessageProcessor.processContent.call(this, content, rMsg);
+
+        // check sender's document times from the message
+        // to make sure the user info synchronized
+        this.checkVisaTime(content, rMsg);
+
+        return responses;
+    };
 
     // private
-    var checkVisaTime = function (content, rMsg) {
+    CommonProcessor.prototype.checkVisaTime = function (content, rMsg) {
         var facebook = this.getFacebook();
-        var archivist = facebook.getArchivist();
-        if (!archivist) {
-            throw new ReferenceError('archivist not found');
+        var checker = this.getEntityChecker();
+        if (!facebook || !checker) {
+            Log.error('should not happen');
+            return false;
         }
         var docUpdated = false;
         // check sender document time
@@ -72,16 +85,12 @@
                 lastDocumentTime = now;
             }
             var sender = rMsg.getSender();
-            docUpdated = archivist.setLastDocumentTime(sender, lastDocumentTime);
+            docUpdated = checker.setLastDocumentTime(sender, lastDocumentTime);
             // check whether needs update
             if (docUpdated) {
+                Log.info('checking for new visa:', sender);
                 facebook.getDocuments(sender);
             }
         }
         return docUpdated;
     };
-
-    //-------- namespace --------
-    ns.CommonProcessor = CommonProcessor;
-
-})(DIMP);

@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -30,21 +30,9 @@
 // =============================================================================
 //
 
-//! require <dimp.js>
-//! require <sdk.js>
+//! require <dimsdk.js>
 
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-    var Hex = ns.format.Hex;
-    var Base58 = ns.format.Base58;
-    var EntityType = ns.protocol.EntityType;
-    var ID = ns.protocol.ID;
-    var BTCAddress = ns.mkm.BTCAddress;
-    var ETHAddress = ns.mkm.ETHAddress;
-
-    var Anonymous = {
+    app.Anonymous = {
 
         getName: function (identifier) {
             var name;
@@ -84,16 +72,23 @@
             return 0;
         }
     };
+    var Anonymous = app.Anonymous;
 
     var get_name = function (type) {
-        if (EntityType.BOT.equals(type)) {
-            return 'Bot';
-        }
-        if (EntityType.STATION.equals(type)) {
-            return 'Station';
-        }
-        if (EntityType.ISP.equals(type)) {
-            return 'ISP';
+        switch (type) {
+
+            case EntityType.BOT:
+                return 'Bot';
+
+            case EntityType.STATION:
+                return 'Station';
+
+            case EntityType.ISP:
+                return 'ISP';
+
+            case EntityType.ICP:
+                return 'ICP';
+
         }
         if (EntityType.isUser(type)) {
             return 'User';
@@ -120,8 +115,3 @@
         var c4 = cc[len-4] & 0xFF;
         return (c1 | (c2 << 8) | (c3 << 16)) + c4 * 0x01000000;
     };
-
-    //-------- namespace --------
-    ns.Anonymous = Anonymous;
-
-})(DIMP);

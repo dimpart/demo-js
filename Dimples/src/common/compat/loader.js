@@ -69,9 +69,19 @@
             this.setCommandFactory(Command.BLOCK, null, BaseBlockCommand);
 
             // Report: online, offline
-            this.setCommandFactory(Command.REPORT, null, BaseReportCommand);
-            this.setCommandFactory(Command.ONLINE, null, BaseReportCommand);
+            this.setCommandFactory(Command.REPORT,  null, BaseReportCommand);
+            this.setCommandFactory(Command.ONLINE,  null, BaseReportCommand);
             this.setCommandFactory(Command.OFFLINE, null, BaseReportCommand);
+            this.setCommandFactory('broadcast',     null, BaseReportCommand);
+
+            // Search (users)
+            this.setCommandFactory(Command.SEARCH,       null, BaseSearchCommand);
+            this.setCommandFactory(Command.ONLINE_USERS, null, BaseSearchCommand);
+
+            // Storage (contacts, private_key)
+            this.setCommandFactory(Command.STORAGE,     null, BaseStorageCommand);
+            this.setCommandFactory(Command.CONTACTS,    null, BaseStorageCommand);
+            this.setCommandFactory(Command.PRIVATE_KEY, null, BaseStorageCommand);
 
             // Group command (deprecated)
             this.setCommandFactory(GroupCommand.QUERY, null, QueryGroupCommand);

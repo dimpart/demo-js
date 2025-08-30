@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,15 +32,72 @@
 
 //! require <dimp.js>
 
-(function (ns) {
-    'use strict';
+    app.AddressNameService = Interface(null, null);
+    var AddressNameService = app.AddressNameService;
 
-    var Class = ns.type.Class;
-    var ID = ns.protocol.ID;
-    var AddressNameService = ns.AddressNameService;
+    AddressNameService.KEYWORDS = [
+        "all", "everyone", "anyone", "owner", "founder",
+        // --------------------------------
+        "dkd", "mkm", "dimp", "dim", "dimt",
+        "rsa", "ecc", "aes", "des", "btc", "eth",
+        // --------------------------------
+        "crypto", "key", "symmetric", "asymmetric",
+        "public", "private", "secret", "password",
+        "id", "address", "meta",
+        "tai", "document", "profile", "visa", "bulletin",
+        "entity", "user", "group", "contact",
+        // --------------------------------
+        "member", "admin", "administrator", "assistant",
+        "main", "polylogue", "chatroom",
+        "social", "organization",
+        "company", "school", "government", "department",
+        "provider", "station", "thing", "bot", "robot",
+        // --------------------------------
+        "message", "instant", "secure", "reliable",
+        "envelope", "sender", "receiver", "time",
+        "content", "forward", "command", "history",
+        "keys", "data", "signature",
+        // --------------------------------
+        "type", "serial", "sn",
+        "text", "file", "image", "audio", "video", "page",
+        "handshake", "receipt", "block", "mute",
+        "register", "suicide", "found", "abdicate",
+        "invite", "expel", "join", "quit", "reset", "query",
+        "hire", "fire", "resign",
+        // --------------------------------
+        "server", "client", "terminal", "local", "remote",
+        "barrack", "cache", "transceiver",
+        "ans", "facebook", "store", "messenger",
+        "root", "supervisor"
+    ];
 
-    var AddressNameServer = function() {
-        Object.call(this);
+    /**
+     *  Check whether the alias is available
+     *
+     * @param {string} name
+     * @return {boolean} true on reserved
+     */
+    AddressNameService.prototype.isReserved = function (name) {};
+
+    /**
+     *  Get ID by short name
+     *
+     * @param {string} name - short name
+     * @returns {ID}
+     */
+    AddressNameService.prototype.getIdentifier = function (name) {};
+
+    /**
+     *  Get all short names with the same ID
+     *
+     * @param {ID} identifier
+     * @returns {string[]}
+     */
+    AddressNameService.prototype.getNames = function (identifier) {};
+
+
+    app.AddressNameServer = function() {
+        BaseObject.call(this);
         // constant ANS records
         var caches = {
             'all':      ID.EVERYONE,
@@ -58,13 +115,37 @@
         // init
         this.__reserved = reserved;  // String => Boolean
         this.__caches = caches;      // String => ID
-        this.__tables = {}           // String(ID) => String[], name list
+        this.__tables = {}           // String(ID) => String[]
     };
-    Class(AddressNameServer, Object, [AddressNameService], null);
+    var AddressNameServer = app.AddressNameServer;
+
+    Class(AddressNameServer, BaseObject, [AddressNameService], null);
 
     // Override
     AddressNameServer.prototype.isReserved = function (name) {
         return this.__reserved[name] === true;
+    };
+
+    // Override
+    AddressNameServer.prototype.getIdentifier = function (name) {
+        return this.__caches[name];
+    };
+
+    // Override
+    AddressNameServer.prototype.getNames = function (identifier) {
+        var array = this.__tables[identifier.toString()];
+        if (array === null) {
+            array = [];
+            // TODO: update all tables?
+            Mapper.forEach(this.__caches, function (name, did) {
+                if (identifier.equals(did)) {
+                    array.push(name);
+                }
+                return false;
+            });
+            this.__tables[identifier.toString()] = array;
+        }
+        return array;
     };
 
     // protected
@@ -85,37 +166,14 @@
         return true;
     };
 
-    // Override
-    AddressNameServer.prototype.getIdentifier = function (name) {
-        return this.__caches[name];
-    };
-
-    // Override
-    AddressNameServer.prototype.getNames = function (identifier) {
-        var array = this.__tables[identifier.toString()];
-        if (array === null) {
-            array = [];
-            // TODO: update all tables?
-            var keys = Object.keys(this.__caches);
-            var name;
-            for (var i = 0; i < keys.length; ++i) {
-                name = keys[i];
-                if (this.__caches[name] === identifier) {
-                    array.push(name);
-                }
-            }
-            this.__tables[identifier.toString()] = array;
-        }
-        return array;
-    };
-
-    // Override
+    /**
+     *  Save ANS record
+     *
+     * @param {string} name   - username
+     * @param {ID} identifier - user ID; if empty, means delete this name
+     * @return {boolean} true on success
+     */
     AddressNameServer.prototype.save = function (name, identifier) {
-        return this.cache(name, identifier);
         // TODO: override to save this record
+        return this.cache(name, identifier);
     };
-
-    //-------- namespace --------
-    ns.AddressNameServer = AddressNameServer;
-
-})(DIMP);
