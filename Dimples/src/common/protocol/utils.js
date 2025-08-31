@@ -32,11 +32,7 @@
 
 //! require <dimsdk.js>
 
-    /**
-     *  BroadcastHelper
-     *  ~~~~~~~~~~~~~~~
-     */
-    mkm.protocol.BroadcastHelper = {
+    mkm.protocol.BroadcastUtils = {
 
         getGroupSeed: function (group_id) {
             var name = group_id.getName();
@@ -92,4 +88,4 @@
             }
         }
     };
-    var BroadcastHelper = mkm.protocol.BroadcastHelper;
+    var BroadcastUtils = mkm.protocol.BroadcastUtils;

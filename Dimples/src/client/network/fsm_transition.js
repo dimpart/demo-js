@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,25 +32,18 @@
 
 //! require 'fsm_state.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class          = ns.type.Class;
-    var Enum           = ns.type.Enum;
-    var BaseTransition = ns.fsm.BaseTransition;
-    var PorterStatus   = ns.startrek.port.PorterStatus;
-    var StateOrder     = ns.network.SessionStateOrder;
-
     /**
      *  Session State Transition
      *  ~~~~~~~~~~~~~~~~~~~~~~~~
      * @param {SessionStateOrder} order
      * @param {Function} evaluate
      */
-    var StateTransition = function (order, evaluate) {
+    app.network.SessionStateTransition = function (order, evaluate) {
         BaseTransition.call(this, Enum.getInt(order));
         this.__evaluate = evaluate;
     };
+    var StateTransition = app.network.SessionStateTransition;
+
     Class(StateTransition, BaseTransition, null, null);
 
     // Override
@@ -67,14 +60,17 @@
         return enterTime.getTime() < recent;
     };
 
+
     /**
      *  Transition Builder
      *  ~~~~~~~~~~~~~~~~~~
      */
-    var TransitionBuilder = function () {
-        Object.call(this);
+    app.network.SessionStateTransitionBuilder = function () {
+        BaseObject.call(this);
     };
-    Class(TransitionBuilder, Object, null, {
+    var TransitionBuilder = app.net.SessionStateTransitionBuilder;
+
+    Class(TransitionBuilder, BaseObject, null, {
         ///  Default -> Connecting
         ///  ~~~~~~~~~~~~~~~~~~~~~
         ///  When the session ID was set, and connection is building.
@@ -258,9 +254,3 @@
             });
         }
     });
-
-    //-------- namespace --------
-    ns.network.SessionStateTransition        = StateTransition;
-    ns.network.SessionStateTransitionBuilder = TransitionBuilder;
-
-})(DIMP);

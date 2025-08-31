@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DBI : Database Interface
@@ -30,48 +30,29 @@
 // =============================================================================
 //
 
-//! require 'base.js'
+//! require <dimsdk.js>
 
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-    var CipherKeyDBI = ns.CipherKeyDelegate;
+    app.dbi.CipherKeyDBI = CipherKeyDelegate;
+    var CipherKeyDBI = app.dbi.CipherKeyDBI;
 
     /**
      *  Message DBI
      *  ~~~~~~~~~~~
      */
-    var GroupKeysDBI = Interface(null, null);
+    app.dbi.GroupKeysDBI = Interface(null, null);
+    var GroupKeysDBI = app.dbi.GroupKeysDBI;
 
     GroupKeysDBI.prototype.getGroupKeys = function (group, sender) {};
 
     GroupKeysDBI.prototype.saveGroupKeys = function (group, sender, keys) {};
 
-    //-------- namespace --------
-    ns.dbi.CipherKeyDBI = CipherKeyDBI;
-    ns.dbi.GroupKeysDBI = GroupKeysDBI;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-
-    var CipherKeyDBI = ns.dbi.CipherKeyDBI;
-    var GroupKeysDBI = ns.dbi.GroupKeysDBI;
 
     /**
      *  Message DBI
      *  ~~~~~~~~~~~
      */
-    var MessageDBI = Interface(null, [
+    app.dbi.MessageDBI = Interface(null, [
         CipherKeyDBI,
         GroupKeysDBI
     ]);
-
-    //-------- namespace --------
-    ns.dbi.MessageDBI = MessageDBI;
-
-})(DIMP);
+    var MessageDBI = app.dbi.MessageDBI;

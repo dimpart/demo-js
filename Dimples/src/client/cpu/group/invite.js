@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIM-SDK : Decentralized Instant Messaging Software Development Kit
@@ -32,29 +32,21 @@
 
 //! require '../group.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class = ns.type.Class;
-    var Log   = ns.lnc.Log;
-
-    var ID    = ns.protocol.ID;
-
-    var GroupCommandProcessor = ns.cpu.GroupCommandProcessor;
-
     ///  Invite Group Command Processor
     ///  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ///
     ///      1. add new member(s) to the group
     ///      2. any member can invite new member
     ///      3. invited by ordinary member should be reviewed by owner/administrator
-    var InviteCommandProcessor = function (facebook, messenger) {
+    app.cpu.InviteCommandProcessor = function (facebook, messenger) {
         GroupCommandProcessor.call(this, facebook, messenger);
     };
+    var InviteCommandProcessor = app.cpu.InviteCommandProcessor
+
     Class(InviteCommandProcessor, GroupCommandProcessor, null, {
 
         // Override
-        process: function (content, rMsg) {
+        processContent: function (content, rMsg) {
             var errors;  // List<Content>
 
             // 0. check command
@@ -160,8 +152,3 @@
         }
         return [newMembers, addedList];
     };
-
-    //-------- namespace --------
-    ns.cpu.InviteCommandProcessor = InviteCommandProcessor;
-
-})(DIMP);

@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,18 +32,7 @@
 
 //! require 'dbi/*.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class             = ns.type.Class;
-    var TransportableData = ns.format.TransportableData;
-
-    var ID          = ns.protocol.ID;
-    var Document    = ns.protocol.Document;
-    var Storage     = ns.dos.LocalStorage;
-    var DocumentDBI = ns.dbi.DocumentDBI;
-
-    var doc_path = function (entity) {
+    var db_doc_path = function (entity) {
         return 'pub.' + entity.getAddress().toString() + '.docs';
     };
 
@@ -53,10 +42,12 @@
      *
      *  storage path: 'dim.fs.pub.{ADDRESS}.docs'
      */
-    var DocumentStorage = function () {
-        Object.call(this);
+    app.database.DocumentStorage = function () {
+        BaseObject.call(this);
     };
-    Class(DocumentStorage, Object, [DocumentDBI], null);
+    var DocumentStorage = app.database.DocumentStorage;
+
+    Class(DocumentStorage, BaseObject, [DocumentDBI], null);
 
     // Override
     DocumentStorage.prototype.saveDocument = function (doc) {
@@ -76,18 +67,50 @@
         }
         // 2. save as JsON
         var array = revert_documents(documents);
-        var path = doc_path(entity);
+        var path = db_doc_path(entity);
         return Storage.saveJSON(array, path);
     };
 
     // Override
     DocumentStorage.prototype.getDocuments = function (entity) {
-        var path = doc_path(entity);
+        var path = db_doc_path(entity);
         var array = Storage.loadJSON(path);
         return !array ? [] : convert_documents(array);
     };
 
-    var parse_document = function (dict, identifier, type) {
+    var convert_documents = function (array) {
+        var documents = [];
+        var doc;
+        for (var i = 0; i < array.length; ++i) {
+            doc = DocumentStorage.parse_document(array[i]);
+            if (doc) {
+                documents.push(doc);
+            }
+        }
+        return documents;
+    };
+
+    var revert_documents = function (documents) {
+        var array = [];
+        for (var i = 0; i < documents.length; ++i) {
+            array.push(documents[i].toMap());
+        }
+        return array;
+    };
+
+    var find_document = function (documents, identifier, type) {
+        var item;  // Document
+        for (var i = 0; i < documents.length; ++i) {
+            item = documents[i];
+            if (item.getIdentifier().equals(identifier) &&
+                item.getString('type', '') === type) {
+                return i;
+            }
+        }
+        return -1;
+    };
+
+    DocumentStorage.parse_document = function (dict, identifier, type) {
         // check document ID
         var entity = ID.parse(dict['ID']);
         if (!identifier) {
@@ -117,42 +140,3 @@
         var ted = TransportableData.parse(signature);
         return Document.create(type, identifier, data, ted);
     };
-
-    var convert_documents = function (array) {
-        var documents = [];
-        var doc;
-        for (var i = 0; i < array.length; ++i) {
-            doc = parse_document(array[i]);
-            if (doc) {
-                documents.push(doc);
-            }
-        }
-        return documents;
-    };
-
-    var revert_documents = function (documents) {
-        var array = [];
-        for (var i = 0; i < documents.length; ++i) {
-            array.push(documents[i].toMap());
-        }
-        return array;
-    };
-
-    var find_document = function (documents, identifier, type) {
-        var item;  // Document
-        for (var i = 0; i < documents.length; ++i) {
-            item = documents[i];
-            if (item.getIdentifier().equals(identifier) &&
-                item.getString('type', '') === type) {
-                return i;
-            }
-        }
-        return -1;
-    };
-
-    DocumentStorage.parse = parse_document;
-
-    //-------- namespace --------
-    ns.database.DocumentStorage = DocumentStorage;
-
-})(DIMP);

@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DBI : Database Interface
@@ -30,20 +30,14 @@
 // =============================================================================
 //
 
-//! require 'base.js'
-
-(function (ns) {
-    'use strict';
-
-    var Interface  = ns.type.Interface;
-    var DecryptKey = ns.crypto.DecryptKey;
-    var PrivateKey = ns.crypto.PrivateKey;
+//! require <dimsdk.js>
 
     /**
      *  Account DBI
      *  ~~~~~~~~~~~
      */
-    var PrivateKeyDBI = Interface(null, null);
+    app.dbi.PrivateKeyDBI = Interface(null, null);
+    var PrivateKeyDBI = app.dbi.PrivateKeyDBI;
 
     PrivateKeyDBI.META = 'M';
     PrivateKeyDBI.VISA = 'V';
@@ -86,7 +80,7 @@
     //  Conveniences
     //
 
-    var convertDecryptKeys = function (privateKeys) {
+    PrivateKeyDBI.convertDecryptKeys = function (privateKeys) {
         var decryptKeys = [];
         var key;
         for (var index = 0; index < privateKeys.length; ++index) {
@@ -97,7 +91,8 @@
         }
         return decryptKeys;
     };
-    var convertPrivateKeys = function (decryptKeys) {
+
+    PrivateKeyDBI.convertPrivateKeys = function (decryptKeys) {
         var privateKeys = [];
         var key;
         for (var index = 0; index < decryptKeys.length; ++index) {
@@ -109,7 +104,7 @@
         return privateKeys;
     };
 
-    var revertPrivateKeys = function (privateKeys) {
+    PrivateKeyDBI.revertPrivateKeys = function (privateKeys) {
         var array = [];
         for (var index = 0; index < privateKeys.length; ++index) {
             array.push(privateKeys[index].toMap());
@@ -117,8 +112,8 @@
         return array;
     };
 
-    var insertKey = function (key, privateKeys) {
-        var index = findKey(key, privateKeys);
+    PrivateKeyDBI.insertKey = function (key, privateKeys) {
+        var index = PrivateKeyDBI.findKey(key, privateKeys);
         if (index === 0) {
             // nothing change
             return null;
@@ -132,7 +127,8 @@
         privateKeys.unshift(key);
         return privateKeys;
     };
-    var findKey = function (key, privateKeys) {
+
+    PrivateKeyDBI.findKey = function (key, privateKeys) {
         var data = key.getString('data', null);
         var item;  // PrivateKey
         for (var index = 0; index < privateKeys.length; ++index) {
@@ -144,29 +140,13 @@
         return -1;
     };
 
-    PrivateKeyDBI.convertDecryptKeys = convertDecryptKeys;
-    PrivateKeyDBI.convertPrivateKeys = convertPrivateKeys;
-
-    PrivateKeyDBI.revertPrivateKeys = revertPrivateKeys;
-
-    PrivateKeyDBI.insertKey = insertKey;
-    PrivateKeyDBI.findKey = findKey;
-
-    //-------- namespace --------
-    ns.dbi.PrivateKeyDBI = PrivateKeyDBI;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
 
     /**
      *  Account DBI
      *  ~~~~~~~~~~~
      */
-    var MetaDBI = Interface(null, null);
+    app.dbi.MetaDBI = Interface(null, null);
+    var MetaDBI = app.dbi.MetaDBI;
 
     /**
      *  Get meta for entity ID
@@ -185,21 +165,13 @@
      */
     MetaDBI.prototype.saveMeta = function (meta, entity) {};
 
-    //-------- namespace --------
-    ns.dbi.MetaDBI = MetaDBI;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
 
     /**
      *  Account DBI
      *  ~~~~~~~~~~~
      */
-    var DocumentDBI = Interface(null, null);
+    app.dbi.DocumentDBI = Interface(null, null);
+    var DocumentDBI = app.dbi.DocumentDBI;
 
     /**
      *  Get document list for entity
@@ -217,22 +189,16 @@
      */
     DocumentDBI.prototype.saveDocument = function (doc) {};
 
-    //-------- namespace --------
-    ns.dbi.DocumentDBI = DocumentDBI;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
 
     /**
      *  Account DBI
      *  ~~~~~~~~~~~
      */
-    var UserDBI = Interface(null, null);
-    var ContactDBI = Interface(null, null);
+    app.dbi.UserDBI = Interface(null, null);
+    var UserDBI = app.dbi.UserDBI;
+
+    app.dbi.ContactDBI = Interface(null, null);
+    var ContactDBI = app.dbi.ContactDBI;
 
     /**
      *  Get local user ID list
@@ -266,22 +232,13 @@
      */
     ContactDBI.prototype.saveContacts = function (contacts, user) {};
 
-    //-------- namespace --------
-    ns.dbi.UserDBI    = UserDBI;
-    ns.dbi.ContactDBI = ContactDBI;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
 
     /**
      *  Account DBI
      *  ~~~~~~~~~~~
      */
-    var GroupDBI = Interface(null, null);
+    app.dbi.GroupDBI = Interface(null, null);
+    var GroupDBI = app.dbi.GroupDBI;
 
     /**
      *  Get founder ID
@@ -362,21 +319,13 @@
      */
     GroupDBI.prototype.saveAdministrators = function (members, group) {};
 
-    //-------- namespace --------
-    ns.dbi.GroupDBI = GroupDBI;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
 
     /**
      *  Account DBI
      *  ~~~~~~~~~~~
      */
-    var GroupHistoryDBI = Interface(null, null);
+    app.dbi.GroupHistoryDBI = Interface(null, null);
+    var GroupHistoryDBI = app.dbi.GroupHistoryDBI;
 
     /**
      *  Save group commands:
@@ -438,36 +387,15 @@
      */
     GroupHistoryDBI.prototype.clearGroupAdminHistories = function (group) {};
 
-    //-------- namespace --------
-    ns.dbi.GroupHistoryDBI = GroupHistoryDBI;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-
-    var PrivateKeyDBI   = ns.dbi.PrivateKeyDBI;
-    var MetaDBI         = ns.dbi.MetaDBI;
-    var DocumentDBI     = ns.dbi.DocumentDBI;
-    var UserDBI         = ns.dbi.UserDBI;
-    var ContactDBI      = ns.dbi.ContactDBI;
-    var GroupDBI        = ns.dbi.GroupDBI;
-    var GroupHistoryDBI = ns.dbi.GroupHistoryDBI;
 
     /**
      *  Account DBI
      *  ~~~~~~~~~~~
      */
-    var AccountDBI = Interface(null, [
+    app.dbi.AccountDBI = Interface(null, [
         PrivateKeyDBI,
         MetaDBI, DocumentDBI,
         UserDBI, ContactDBI,
         GroupDBI, GroupHistoryDBI
     ]);
-
-    //-------- namespace --------
-    ns.dbi.AccountDBI = AccountDBI;
-
-})(DIMP);
+    var AccountDBI = app.dbi.AccountDBI;

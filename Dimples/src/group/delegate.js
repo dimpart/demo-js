@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,27 +32,17 @@
 
 //! require <dimsdk.js>
 
-(function (ns) {
-    'use strict';
-
-    var Class  = ns.type.Class;
-    var Log    = ns.lnc.Log;
-    var Runner = ns.fsm.skywalker.Runner;
-    var Thread = ns.fsm.threading.Thread;
-
-    var EntityType  = ns.protocol.EntityType;
-    var Group       = ns.mkm.Group;
-    var TwinsHelper = ns.TwinsHelper;
-
     /**
      *  Group Delegate
      *  ~~~~~~~~~~~~~~
      */
-    var GroupDelegate = function (facebook, messenger) {
+    app.group.GroupDelegate = function (facebook, messenger) {
         TwinsHelper.call(this, facebook, messenger);
-        botsManager.setMessenger(messenger);
+        groupBotsManager.setMessenger(messenger);
     };
-    Class(GroupDelegate, TwinsHelper, [Group.DataSource], {
+    var GroupDelegate = app.group.GroupDelegate;
+
+    Class(GroupDelegate, TwinsHelper, [GroupDataSource], {
 
         buildGroupName: function (members) {
             var barrack = this.getFacebook();
@@ -130,19 +120,19 @@
 
         // Override
         getAssistants: function (group) {
-            return botsManager.getAssistants(group);
+            return groupBotsManager.getAssistants(group);
         },
 
         getFastestAssistant: function (group) {
-            return botsManager.getFastestAssistant(group);
+            return groupBotsManager.getFastestAssistant(group);
         },
 
         setCommonAssistants: function (bots) {
-            botsManager.setCommonAssistants(bots);
+            groupBotsManager.setCommonAssistants(bots);
         },
 
         updateRespondTime: function (content, envelope) {
-            return botsManager.updateRespondTime(content, envelope);
+            return groupBotsManager.updateRespondTime(content, envelope);
         },
 
         //
@@ -235,16 +225,20 @@
 
     });
 
+
     /**
      *  Triplets Helper
      *  ~~~~~~~~~~~~~~~
      *  facebook messenger, archivist
      */
-    var TripletsHelper = function (delegate) {
-        Object.call(this);
+    app.group.TripletsHelper = function (delegate) {
+        BaseObject.call(this);
         this.__delegate = delegate;  // GroupDelegate
     };
-    Class(TripletsHelper, Object, null, null);
+    var TripletsHelper = app.group.TripletsHelper;
+
+    Class(TripletsHelper, BaseObject, null, null);
+
     // protected
     TripletsHelper.prototype.getDelegate = function () {
         return this.__delegate;
@@ -275,13 +269,15 @@
      *  ~~~~~~~~~~~~~~~~~~
      */
     // private
-    var GroupBotsManager = function () {
+    app.group.GroupBotsManager = function () {
         Runner.call(this);
         this.__transceiver = null;     // CommonMessenger
         this.__commonAssistants = [];  // List<ID>
         this.__candidates = [];        // Set<ID>
         this.__respondTimes = {};      // ID => milliseconds
     };
+    var GroupBotsManager = app.group.GroupBotsManager;
+
     Class(GroupBotsManager, Runner, null);
 
     GroupBotsManager.prototype.setMessenger = function (messenger) {
@@ -301,8 +297,8 @@
      *  When received receipt command from the bot
      *  update the speed of this bot.
      *
-     * @param {ReceiptCommand|Mapper} content
-     * @param {Envelope} envelope
+     * @param {dkd.protocol.ReceiptCommand} content
+     * @param {dkd.protocol.Envelope} envelope
      * @return {boolean}
      */
     GroupBotsManager.prototype.updateRespondTime = function (content, envelope) {
@@ -351,11 +347,11 @@
      * @param {ID[]} bots
      */
     GroupBotsManager.prototype.setCommonAssistants = function (bots) {
-        addAll(this.__candidates, bots);
+        addCandidateBots(this.__candidates, bots);
         this.__commonAssistants = bots;
     };
 
-    var addAll = function (toSet, fromItems) {
+    var addCandidateBots = function (toSet, fromItems) {
         var item;
         for (var i = 0; i < fromItems.length; ++i) {
             item = fromItems[i];
@@ -371,7 +367,7 @@
         if (!bots || bots.length === 0) {
             return this.__commonAssistants;
         }
-        addAll(this.__candidates, bots);
+        addCandidateBots(this.__candidates, bots);
         return bots;
     };
 
@@ -464,12 +460,7 @@
         return false;
     };
 
-    var botsManager = new GroupBotsManager();
-    var thread = new Thread(botsManager);
-    thread.start();
+    var groupBotsManager = new GroupBotsManager();
 
-    //-------- namespace --------
-    ns.TripletsHelper = TripletsHelper;
-    ns.group.GroupDelegate = GroupDelegate;
-
-})(DIMP);
+    var threadForGroupBotsManager = new Thread(groupBotsManager);
+    threadForGroupBotsManager.start();

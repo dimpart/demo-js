@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,16 +32,8 @@
 
 //! require 'delegate.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class  = ns.type.Class;
-    var Arrays = ns.type.Arrays;
-    var ID     = ns.protocol.ID;
-    var Group  = ns.mkm.Group;
-
-    var SharedGroupManager = function () {
-        Object.call(this);
+    app.group.SharedGroupManager = function () {
+        BaseObject.call(this);
         this.__barrack = null;      // CommonFacebook
         this.__transceiver = null;  // CommonMessenger
         // delegates
@@ -50,7 +42,9 @@
         this.__admin_man = null;    // AdminManager
         this.__emitter = null;      // GroupEmitter
     };
-    Class(SharedGroupManager, Object, [Group.DataSource], null);
+    var SharedGroupManager = app.group.SharedGroupManager;
+
+    Class(SharedGroupManager, BaseObject, [GroupDataSource], null);
 
     SharedGroupManager.prototype.getFacebook = function () {
         return this.__barrack;
@@ -61,13 +55,15 @@
 
     SharedGroupManager.prototype.setFacebook = function (facebook) {
         this.__barrack = facebook;
-        clearDelegates.call(this);
+        this.clearDelegates();
     };
     SharedGroupManager.prototype.setMessenger = function (messenger) {
         this.__transceiver = messenger;
-        clearDelegates.call(this);
+        this.clearDelegates();
     };
-    var clearDelegates = function () {
+
+    // private
+    SharedGroupManager.prototype.clearDelegates = function () {
         this.__delegate = null;
         this.__manager = null;
         this.__admin_man = null;
@@ -80,7 +76,7 @@
             var facebook = this.getFacebook();
             var messenger = this.getMessenger();
             if (facebook && messenger) {
-                delegate = new ns.group.GroupDelegate(facebook, messenger)
+                delegate = new GroupDelegate(facebook, messenger)
                 this.__delegate = delegate;
             }
         }
@@ -91,7 +87,7 @@
         if (!man) {
             var delegate = this.getGroupDelegate();
             if (delegate) {
-                man = new ns.group.GroupManager(delegate);
+                man = new GroupManager(delegate);
                 this.__manager = man;
             }
         }
@@ -102,7 +98,7 @@
         if (!man) {
             var delegate = this.getGroupDelegate();
             if (delegate) {
-                man = new ns.group.AdminManager(delegate);
+                man = new AdminManager(delegate);
                 this.__admin_man = man;
             }
         }
@@ -113,7 +109,7 @@
         if (!emitter) {
             var delegate = this.getGroupDelegate();
             if (delegate) {
-                emitter = new ns.group.GroupEmitter(delegate);
+                emitter = new GroupEmitter(delegate);
                 this.__emitter = emitter;
             }
         }
@@ -297,7 +293,7 @@
     /**
      *  Send group message content
      *
-     * @param {InstantMessage|Mapper} iMsg
+     * @param {InstantMessage|mk.type.Mapper} iMsg
      * @param {int} priority
      * @return {ReliableMessage}
      */
@@ -310,7 +306,15 @@
         return delegate.sendInstantMessage(iMsg, priority);
     };
 
-    //-------- namespace --------
-    ns.group.SharedGroupManager = new SharedGroupManager();
 
-})(DIMP);
+    // Singleton
+    var sharedGroupManager = new SharedGroupManager();
+
+    SharedGroupManager.getInstance = function () {
+        var manager = sharedGroupManager;
+        if (!manager) {
+            manager = new SharedGroupManager();
+            sharedGroupManager = manager;
+        }
+        return manager;
+    };

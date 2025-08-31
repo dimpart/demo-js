@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,34 +32,22 @@
 
 //! require 'delegate.js'
 
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-    var Class     = ns.type.Class;
-    var Log       = ns.lnc.Log;
-
-    var ID              = ns.protocol.ID;
-    var ResetCommand    = ns.protocol.group.ResetCommand;
-    var ResignCommand   = ns.protocol.group.ResignCommand;
-
-    var DocumentHelper  = ns.mkm.DocumentHelper;
-    var TripletsHelper  = ns.TripletsHelper;
-
     /**
      *  Group Command Helper
      *  ~~~~~~~~~~~~~~~~~~~~
      */
-    var GroupCommandHelper = function (delegate) {
+    app.group.GroupCommandHelper = function (delegate) {
         TripletsHelper.call(this, delegate);
     };
+    var GroupCommandHelper = app.group.GroupCommandHelper;
+
     Class(GroupCommandHelper, TripletsHelper, null, null);
 
     /**
      *  Save Group History Command
      *
-     * @param {GroupCommand|Command|Content} content
-     * @param {ReliableMessage|Message} rMsg
+     * @param {GroupCommand|dkd.protocol.Command|dkd.protocol.Content} content
+     * @param {ReliableMessage|dkd.protocol.Message} rMsg
      * @param {ID} group
      * @return {boolean}
      */
@@ -111,7 +99,7 @@
      *  Check command time
      *  (all group commands received must after the cached 'reset' command)
      *
-     * @param {GroupCommand|Content} content
+     * @param {GroupCommand|dkd.protocol.Content} content
      * @return {boolean}
      */
     GroupCommandHelper.prototype.isCommandExpired = function (content) {
@@ -128,7 +116,7 @@
                 Log.error('group document not exists: ' + group.toString());
                 return true;
             }
-            return DocumentHelper.isBefore(doc.getTime(), content.getTime());
+            return DocumentUtils.isBefore(doc.getTime(), content.getTime());
         }
         // membership command, check with reset command
         var pair = this.getResetCommandMessage(group);
@@ -137,7 +125,7 @@
         if (!cmd/* || !msg*/) {
             return false;
         }
-        return DocumentHelper.isBefore(cmd.getTime(), content.getTime());
+        return DocumentUtils.isBefore(cmd.getTime(), content.getTime());
     };
 
     GroupCommandHelper.prototype.getMembersFromCommand = function (content) {
@@ -153,8 +141,3 @@
         }
         return members;
     };
-
-    //-------- namespace --------
-    ns.group.GroupCommandHelper = GroupCommandHelper;
-
-})(DIMP);

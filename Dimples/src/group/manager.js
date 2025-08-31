@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,33 +32,18 @@
 
 //! require 'delegate.js'
 
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-    var Class     = ns.type.Class;
-    var Arrays    = ns.type.Arrays;
-    var Log       = ns.lnc.Log;
-
-    var ID              = ns.protocol.ID;
-    var MetaCommand     = ns.protocol.MetaCommand
-    var DocumentCommand = ns.protocol.DocumentCommand;
-    var ForwardContent  = ns.protocol.ForwardContent;
-    var GroupCommand    = ns.protocol.GroupCommand;
-
-    var Station         = ns.mkm.Station;
-    var TripletsHelper  = ns.TripletsHelper;
-
     /**
      *  Group Manager
      *  ~~~~~~~~~~~~~
      */
-    var GroupManager = function (delegate) {
+    app.group.GroupManager = function (delegate) {
         TripletsHelper.call(this, delegate);
         this.__packer = this.createPacker();
         this.__helper = this.createHelper();
         this.__builder = this.createBuilder();
     };
+    var GroupManager = app.group.GroupManager;
+
     Class(GroupManager, TripletsHelper, null, null);
 
     // protected
@@ -79,19 +64,19 @@
     /// override for customized packer
     GroupManager.prototype.createPacker = function () {
         var delegate = this.getDelegate();
-        return new ns.group.GroupPacker(delegate)
+        return new GroupPacker(delegate)
     };
 
     /// override for customized helper
     GroupManager.prototype.createHelper = function () {
         var delegate = this.getDelegate();
-        return new ns.group.GroupCommandHelper(delegate)
+        return new GroupCommandHelper(delegate)
     };
 
     /// override for customized builder
     GroupManager.prototype.createBuilder = function () {
         var delegate = this.getDelegate();
-        return new ns.group.GroupHistoryBuilder(delegate)
+        return new GroupHistoryBuilder(delegate)
     };
 
     /**
@@ -133,7 +118,7 @@
         //
         //  2. create group with name
         //
-        var register = new ns.Register(database);
+        var register = new Register(database);
         var group = register.createGroup(founder, groupName);
         Log.info('new group with founder', group, founder);
 
@@ -152,7 +137,7 @@
             Log.error('failed to get group info', groupName);
             return null;
         }
-        var ok = sendCommand.call(this, content, Station.ANY);  // to neighbor(s)
+        var ok = this.sendCommand(content, Station.ANY);  // to neighbor(s)
         if (!ok) {
             Log.error('failed to upload meta/document to neighbor station');
         }
@@ -268,12 +253,12 @@
         if (bots && bots.length > 0) {
             // let the group bots know the newest member ID list,
             // so they can split group message correctly for us.
-            return sendCommand.call(this, forward, bots);      // to all assistants
+            return this.sendCommand(forward, bots);      // to all assistants
         } else {
             // group bots not exist,
             // send the command to all members
-            sendCommand.call(this, forward, newMembers);       // to new members
-            sendCommand.call(this, forward, expelList);        // to removed members
+            this.sendCommand(forward, newMembers);       // to new members
+            this.sendCommand(forward, expelList);        // to removed members
         }
 
         return true;
@@ -351,18 +336,18 @@
         if (bots && bots.length > 0) {
             // let the group bots know the newest member ID list,
             // so they can split group message correctly for us.
-            return sendCommand.call(this, forward, bots);      // to all assistants
+            return this.sendCommand(forward, bots);      // to all assistants
         }
 
         // forward 'invite' to old members
-        sendCommand.call(this, forward, oldMembers);         // to old members
+        this.sendCommand(forward, oldMembers);         // to old members
 
         // forward all group history to new members
         var messages = builder.buildGroupHistories(group);
         forward = ForwardContent.create(messages);
 
         // TODO: remove that members already exist before sending?
-        sendCommand.call(this, forward, newMembers);         // to new members
+        this.sendCommand(forward, newMembers);         // to new members
         return true;
     };
 
@@ -438,15 +423,16 @@
         if (bots && bots.length > 0) {
             // let the group bots know the newest member ID list,
             // so they can split group message correctly for us.
-            return sendCommand.call(this, forward, bots);      // to group bots
+            return this.sendCommand(forward, bots);      // to group bots
         } else {
             // group bots not exist,
             // send the command to all members directly
-            return sendCommand.call(this, forward, members);   // to all members
+            return this.sendCommand(forward, members);   // to all members
         }
     };
-    
-    var sendCommand = function (content, receiver) {
+
+    // private
+    GroupManager.prototype.sendCommand = function (content, receiver) {
         var members;  // List<ID>
         if (Interface.conforms(receiver, ID)) {
             members = [receiver];
@@ -476,8 +462,3 @@
         }
         return true;
     };
-
-    //-------- namespace --------
-    ns.group.GroupManager = GroupManager;
-
-})(DIMP);

@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -33,37 +33,21 @@
 //! require 'fsm.js'
 //! require 'session.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class  = ns.type.Class;
-    var Log    = ns.lnc.Log;
-
-    var Runner = ns.fsm.skywalker.Runner;
-    var Thread = ns.fsm.threading.Thread;
-
-    var EntityType        = ns.protocol.EntityType;
-    var Station           = ns.mkm.Station;
-
-    var ClientSession     = ns.network.ClientSession;
-    var SessionState      = ns.network.SessionState;
-    var SessionStateOrder = ns.network.SessionStateOrder;
-    // var ClientMessagePacker    = ns.ClientMessagePacker;
-    // var ClientMessageProcessor = ns.ClientMessageProcessor;
-
     /**
      *  DIM Client
      *
-     * @param {CommonFacebook} facebook
+     * @param {app.CommonFacebook} facebook
      * @param {SessionDBI} db
      */
-    var Terminal = function(facebook, db) {
+    app.Terminal = function(facebook, db) {
         Runner.call(this);
         this.__facebook = facebook;
         this.__db = db;
         this.__messenger = null;  // ClientMessenger
         this.__last_time = null;  // Date: last online time
     };
+    var Terminal = app.Terminal;
+
     Class(Terminal, Runner, [SessionState.Delegate], null);
 
     // "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.113 Safari/537.36"
@@ -140,11 +124,11 @@
     };
     // protected
     Terminal.prototype.createPacker = function (facebook, messenger) {
-        return new ns.ClientMessagePacker(facebook, messenger);
+        return new ClientMessagePacker(facebook, messenger);
     };
     // protected
     Terminal.prototype.createProcessor = function (facebook, messenger) {
-        return new ns.ClientMessageProcessor(facebook, messenger);
+        return new ClientMessageProcessor(facebook, messenger);
     };
     // protected
     Terminal.prototype.createMessenger = function (session, facebook) {};
@@ -178,7 +162,7 @@
         var session = this.getSession();
         var state = !session ? null : session.getState();
         var ss_index = !state ? -1 : state.getIndex();
-        if (SessionStateOrder.RUNNING.equals(ss_index)) {
+        if (StateOrder.RUNNING.equals(ss_index)) {
             // handshake not accepted
             return false;
         } else if (!(session && session.isReady())) {
@@ -246,14 +230,14 @@
         // called after state changed
         var current = ctx.getCurrentState();
         var index = !current ? -1 : current.getIndex();
-        if (index === -1 || SessionStateOrder.ERROR.equals(index)) {
+        if (index === -1 || StateOrder.ERROR.equals(index)) {
             this.__last_time = null;
             return;
         }
         var messenger = this.getMessenger();
         var session = this.getSession();
-        if (SessionStateOrder.DEFAULT.equals(index) ||
-            SessionStateOrder.CONNECTING.equals(index)) {
+        if (StateOrder.DEFAULT.equals(index) ||
+            StateOrder.CONNECTING.equals(index)) {
             // check current user
             var user = ctx.getSessionID();
             if (!user) {
@@ -273,10 +257,10 @@
             } else {
                 Log.error('failed to connect: ' + remote.toString());
             }
-        } else if (SessionStateOrder.HANDSHAKING.equals(index)) {
+        } else if (StateOrder.HANDSHAKING.equals(index)) {
             // start handshake
             messenger.handshake(null);
-        } else if (SessionStateOrder.RUNNING.equals(index)) {
+        } else if (StateOrder.RUNNING.equals(index)) {
             // broadcast current meta & visa document to all stations
             messenger.handshakeSuccess();
             // update last online time
@@ -293,8 +277,3 @@
     Terminal.prototype.resumeState = function (current, ctx, now) {
         // TODO: clear session key for re-login?
     };
-
-    //-------- namespace --------
-    ns.network.Terminal = Terminal;
-
-})(DIMP);

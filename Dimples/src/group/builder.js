@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,32 +32,16 @@
 
 //! require 'delegate.js'
 
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-    var Class     = ns.type.Class;
-    var Log       = ns.lnc.Log;
-
-    var ID              = ns.protocol.ID;
-    var DocumentCommand = ns.protocol.DocumentCommand;
-    var GroupCommand    = ns.protocol.GroupCommand;
-    var ResetCommand    = ns.protocol.group.ResetCommand
-    var ResignCommand   = ns.protocol.group.ResignCommand
-    var Envelope        = ns.protocol.Envelope;
-    var InstantMessage  = ns.protocol.InstantMessage;
-
-    var DocumentHelper  = ns.mkm.DocumentHelper;
-    var TripletsHelper  = ns.TripletsHelper;
-
     /**
      *  Group History Builder
      *  ~~~~~~~~~~~~~~~~~~~~~
      */
-    var GroupHistoryBuilder = function (delegate) {
+    app.group.GroupHistoryBuilder = function (delegate) {
         TripletsHelper.call(this, delegate);
         this.__helper = this.createHelper();
     };
+    var GroupHistoryBuilder = app.group.GroupHistoryBuilder;
+
     Class(GroupHistoryBuilder, TripletsHelper, null, null);
 
     // protected
@@ -68,7 +52,7 @@
     /// override for customized helper
     GroupHistoryBuilder.prototype.createHelper = function () {
         var delegate = this.getDelegate();
-        return new ns.group.GroupCommandHelper(delegate)
+        return new GroupCommandHelper(delegate)
     };
 
     /**
@@ -128,13 +112,13 @@
                 continue;
             } else if (Interface.conforms(first, ResignCommand)) {
                 // 'resign' command, comparing it with document time
-                if (DocumentHelper.isBefore(doc.getTime(), first.getTime())) {
+                if (DocumentUtils.isBefore(doc.getTime(), first.getTime())) {
                     Log.warning('expired command in group', group);
                     continue;
                 }
             } else {
                 // other commands('invite', 'join', 'quit'), comparing with 'reset' time
-                if (DocumentHelper.isBefore(reset.getTime(), first.getTime())) {
+                if (DocumentUtils.isBefore(reset.getTime(), first.getTime())) {
                     Log.warning('expired command in group', group);
                     continue;
                 }
@@ -215,8 +199,3 @@
         }
         return rMsg;
     };
-
-    //-------- namespace --------
-    ns.group.GroupHistoryBuilder = GroupHistoryBuilder;
-
-})(DIMP);

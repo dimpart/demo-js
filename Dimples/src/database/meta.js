@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,15 +32,7 @@
 
 //! require 'dbi/*.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class = ns.type.Class;
-    var Meta = ns.protocol.Meta;
-    var Storage = ns.dos.LocalStorage;
-    var MetaDBI = ns.dbi.MetaDBI;
-
-    var meta_path = function (entity) {
+    var db_meta_path = function (entity) {
         return 'pub.' + entity.getAddress().toString() + '.meta';
     };
 
@@ -50,25 +42,22 @@
      *
      *  storage path: 'dim.fs.pub.{ADDRESS}.meta'
      */
-    var MetaStorage = function () {
-        Object.call(this);
+    app.database.MetaStorage = function () {
+        BaseObject.call(this);
     };
-    Class(MetaStorage, Object, [MetaDBI], null);
+    var MetaStorage = app.database.MetaStorage;
+
+    Class(MetaStorage, BaseObject, [MetaDBI], null);
 
     // Override
     MetaStorage.prototype.saveMeta = function (meta, entity) {
-        var path = meta_path(entity);
+        var path = db_meta_path(entity);
         return Storage.saveJSON(meta.toMap(), path);
     };
 
     // Override
     MetaStorage.prototype.getMeta = function (entity) {
-        var path = meta_path(entity);
+        var path = db_meta_path(entity);
         var info = Storage.loadJSON(path);
         return Meta.parse(info);
     };
-
-    //-------- namespace --------
-    ns.database.MetaStorage = MetaStorage;
-
-})(DIMP);

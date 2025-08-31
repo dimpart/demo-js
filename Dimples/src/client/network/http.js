@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,13 +32,10 @@
 
 //! require 'common/*.js'
 
-(function (ns) {
-    'use strict';
-
-    var HTTP = {
+    app.network.HTTPClient = {
 
         get: function (url, callback) {
-            var xhr = create();
+            var xhr = createXMLHttpRequest();
             xhr.open('GET', url);
             xhr.responseType = 'arraybuffer';
             xhr.onload = function(ev) {
@@ -48,7 +45,7 @@
         },
 
         post: function (url, headers, body, callback) {
-            var xhr = create();
+            var xhr = createXMLHttpRequest();
             xhr.open('POST', url);
             xhr.responseType = 'arraybuffer';
             xhr.onload = function(ev) {
@@ -57,13 +54,14 @@
                 }
             };
             if (headers) {
-                set_headers(xhr, headers);
+                setHTTPHeaders(xhr, headers);
             }
             xhr.send(body);
         }
     };
+    var HTTPClient = app.network.HTTPClient;
 
-    var create = function () {
+    var createXMLHttpRequest = function () {
         try {
             return new XMLHttpRequest();
         } catch (e) {
@@ -79,7 +77,7 @@
         }
     };
 
-    var set_headers = function (xhr, headers) {
+    var setHTTPHeaders = function (xhr, headers) {
         var keys = Object.keys(headers);
         var name;
         for (var i = 0; i < keys.length; ++i) {
@@ -87,17 +85,6 @@
             xhr.setRequestHeader(name, headers[name]);
         }
     };
-
-    //-------- namespace --------
-    ns.network.HTTP = HTTP;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var UTF8 = ns.format.UTF8;
-    var HTTP = ns.network.HTTP;
 
     /**
      *  Upload data with filename to URL
@@ -108,7 +95,7 @@
      * @param {String} name       - form variable name
      * @param {Function} callback - callback(xhr, url)
      */
-    HTTP.upload = function (url, data, filename, name, callback) {
+    HTTPClient.upload = function (url, data, filename, name, callback) {
         var body = http_body(data, filename, name);
         this.post(url, {
             'Content-Type': CONTENT_TYPE,
@@ -122,7 +109,7 @@
      * @param {String} url        - remote URL string
      * @param {Function} callback - callback(xhr, url)
      */
-    HTTP.download = function (url, callback) {
+    HTTPClient.download = function (url, callback) {
         if (s_downloading.indexOf(url) < 0) {
             // not downloaded yet
             s_downloading.push(url);
@@ -154,5 +141,3 @@
         body.set(end, begin.length + data.length);
         return body;
     };
-
-})(DIMP);

@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -33,14 +33,6 @@
 //! require 'transmitter.js'
 //! require 'gamekeeper.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class          = ns.type.Class;
-    var PlainDeparture = ns.startrek.PlainDeparture;
-    var Session        = ns.network.Session;
-    var GateKeeper     = ns.network.GateKeeper;
-
     /**
      *  Create session
      *
@@ -48,12 +40,14 @@
      * @param {uint} port     - remote port
      * @param {SessionDBI} db - messenger
      */
-    var BaseSession = function (db, host, port) {
+    app.network.BaseSession = function (db, host, port) {
         GateKeeper.call(this, host, port);
         this.__db = db;           // SessionDBI
         this.__id = null;         // login user ID
         this.__messenger = null;  // CommonMessenger
     };
+    var BaseSession = app.network.BaseSession;
+
     Class(BaseSession, GateKeeper, [Session], {
 
         // Override
@@ -116,8 +110,3 @@
         var messenger = this.getMessenger();
         return messenger.sendReliableMessage(rMsg, priority);
     };
-
-    //-------- namespace --------
-    ns.network.BaseSession = BaseSession;
-
-})(DIMP);

@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIM-SDK : Decentralized Instant Messaging Software Development Kit
@@ -32,51 +32,45 @@
 
 //! require <dimsdk.js>
 
-(function (ns) {
-    'use strict';
-
-    var Class = ns.type.Class;
-
-    var BaseCommandProcessor = ns.cpu.BaseCommandProcessor;
-
-    var HistoryCommandProcessor = function (facebook, messenger) {
+    app.cpu.HistoryCommandProcessor = function (facebook, messenger) {
         BaseCommandProcessor.call(this, facebook, messenger);
         this.__delegate = this.createGroupDelegate();
         this.__helper = this.createGroupHelper();
         this.__builder = this.createGroupBuilder();
     };
-    Class(HistoryCommandProcessor, BaseCommandProcessor, null, {
+    var HistoryCommandProcessor = app.cpu.HistoryCommandProcessor
 
-        /// override for customized data source
-        createGroupDelegate: function () {
-            var facebook = this.getFacebook();
-            var messenger = this.getMessenger();
-            return new ns.group.GroupDelegate(facebook, messenger);
-        },
+    Class(HistoryCommandProcessor, BaseCommandProcessor, null, null);
 
-        /// override for customized helper
-        createGroupHelper: function () {
-            var delegate = this.getGroupDelegate();
-            return new ns.group.GroupCommandHelper(delegate);
-        },
+    /// override for customized data source
+    HistoryCommandProcessor.prototype.createGroupDelegate = function () {
+        var facebook = this.getFacebook();
+        var messenger = this.getMessenger();
+        return new GroupDelegate(facebook, messenger);
+    };
 
-        /// override for customized builder
-        createGroupBuilder: function () {
-            var delegate = this.getGroupDelegate();
-            return new ns.group.GroupHistoryBuilder(delegate);
-        },
+    /// override for customized helper
+    HistoryCommandProcessor.prototype.createGroupHelper = function () {
+        var delegate = this.getGroupDelegate();
+        return new GroupCommandHelper(delegate);
+    };
 
-        // Override
-        process: function (content, rMsg) {
-            var text = 'Command not support.';
-            return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                'template': 'History command (name: ${command}) not support yet!',
-                'replacements': {
-                    'command': content.getCmd()
-                }
-            });
-        }
-    });
+    /// override for customized builder
+    HistoryCommandProcessor.prototype.createGroupBuilder = function () {
+        var delegate = this.getGroupDelegate();
+        return new GroupHistoryBuilder(delegate);
+    };
+
+    // Override
+    HistoryCommandProcessor.prototype.processContent = function (content, rMsg) {
+        var text = 'Command not support.';
+        return this.respondReceipt(text, rMsg.getEnvelope(), content, {
+            'template': 'History command (name: ${command}) not support yet!',
+            'replacements': {
+                'command': content.getCmd()
+            }
+        });
+    };
 
     //
     //  Group Delegates
@@ -97,20 +91,6 @@
         return this.__builder;
     };
 
-    //-------- namespace --------
-    ns.cpu.HistoryCommandProcessor = HistoryCommandProcessor;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Class = ns.type.Class;
-    var Log   = ns.lnc.Log;
-
-    var ForwardContent = ns.protocol.ForwardContent;
-
-    var HistoryCommandProcessor = ns.cpu.HistoryCommandProcessor;
 
     /**
      *  Group Command Processor
@@ -119,9 +99,11 @@
      * @param {Facebook} facebook
      * @param {Messenger} messenger
      */
-    var GroupCommandProcessor = function (facebook, messenger) {
+    app.cpu.GroupCommandProcessor = function (facebook, messenger) {
         HistoryCommandProcessor.call(this, facebook, messenger);
     };
+    var GroupCommandProcessor = app.cpu.GroupCommandProcessor;
+
     Class(GroupCommandProcessor, HistoryCommandProcessor, null, {
 
         // protected
@@ -165,7 +147,7 @@
         },
 
         // Override
-        process: function (content, rMsg) {
+        processContent: function (content, rMsg) {
             var text = 'Command not support.';
             return this.respondReceipt(text, rMsg.getEnvelope(), content, {
                 'template': 'Group command (name: ${command}) not support yet!',
@@ -182,8 +164,8 @@
         /**
          *  Check group command
          *
-         * @param {GroupCommand|Command|Content} content
-         * @param {ReliableMessage|Message} rMsg
+         * @param {GroupCommand|dkd.protocol.Command|dkd.protocol.Content} content
+         * @param {ReliableMessage|dkd.protocol.Message} rMsg
          * @return {[ID, Content[]]} group ID + error responds
          */
         // protected
@@ -215,8 +197,8 @@
         /**
          *  Check group command members
          *
-         * @param {GroupCommand|Content} content
-         * @param {ReliableMessage|Message} rMsg
+         * @param {GroupCommand|dkd.protocol.Content} content
+         * @param {ReliableMessage|dkd.protocol.Message} rMsg
          * @return {[ID[], Content[]]} members + error responds
          */
         // protected
@@ -246,8 +228,8 @@
         /**
          *  Check group members
          *
-         * @param {GroupCommand|Content} content
-         * @param {ReliableMessage|Message} rMsg
+         * @param {GroupCommand|dkd.protocol.Content} content
+         * @param {ReliableMessage|dkd.protocol.Message} rMsg
          * @return {[ID, ID[], Content[]]} owner + members + error responds
          */
         // protected
@@ -279,7 +261,7 @@
         /**
          *  Send a command list with newest members to the receiver
          *
-         * @param {ID} group
+         * @param {mkm.protocol.ID} group
          * @param {ID} receiver
          * @return {boolean}
          */
@@ -295,8 +277,3 @@
             return pair && pair[1];
         }
     });
-
-    //-------- namespace --------
-    ns.cpu.GroupCommandProcessor = GroupCommandProcessor;
-
-})(DIMP);

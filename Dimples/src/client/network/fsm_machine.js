@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,13 +32,6 @@
 
 //! require 'common/*.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class        = ns.type.Class;
-    var AutoMachine  = ns.fsm.AutoMachine;
-    var PorterStatus = ns.startrek.port.PorterStatus;
-
     /*
      *  Session States
      *  ~~~~~~~~~~~~~~
@@ -59,7 +52,7 @@
      *      |  4.Running   | <............. |  3.Handshaking   |
      *      +--------------+                +------------------+
      */
-    var StateMachine = function(session) {
+    app.network.SessionStateMachine = function(session) {
         AutoMachine.call(this);
         this.__session = session;  // ClientSession
         // init states
@@ -71,12 +64,14 @@
         this.addState(builder.getRunningState());
         this.addState(builder.getErrorState());
     };
+    var StateMachine = app.network.SessionStateMachine;
+
     Class(StateMachine, AutoMachine, null, null);
 
     // protected
     StateMachine.prototype.createStateBuilder = function () {
-        var stb = new ns.network.SessionStateTransitionBuilder();
-        return new ns.network.SessionStateBuilder(stb);
+        var stb = new TransitionBuilder();
+        return new StateBuilder(stb);
     };
 
     // Override
@@ -111,8 +106,3 @@
         }
         return docker.getStatus();
     };
-
-    //-------- namespace --------
-    ns.network.SessionStateMachine = StateMachine;
-
-})(DIMP);

@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DBI : Database Interface
@@ -30,24 +30,14 @@
 // =============================================================================
 //
 
-//! require 'base.js'
+//! require <dimsdk.js>
 
-(function (ns) {
-    'use strict';
-
-    var Interface  = ns.type.Interface;
-    var Class      = ns.type.Class;
-    var Converter  = ns.type.Converter;
-
-    var Address    = ns.protocol.Address;
-    var ID         = ns.protocol.ID;
-
-    var Identifier = ns.mkm.Identifier;
-
-    var ProviderInfo = function (pid, chosen) {
+    app.dbi.ProviderInfo = function (pid, chosen) {
         this.__identifier = pid;
         this.__chosen = chosen;
     };
+    var ProviderInfo = app.dbi.ProviderInfo;
+
     Class(ProviderInfo, null, null);
 
     ProviderInfo.prototype.getIdentifier = function () {
@@ -99,11 +89,13 @@
         return array;
     };
 
+
     /**
      *  Session DBI
      *  ~~~~~~~~~~~
      */
-    var ProviderDBI = Interface(null, null);
+    app.dbi.ProviderDBI = Interface(null, null);
+    var ProviderDBI = app.dbi.ProviderDBI;
 
     /**
      *  Get all providers
@@ -138,27 +130,16 @@
      */
     ProviderDBI.prototype.removeProvider = function (identifier) {};
 
-    //-------- namespace --------
-    ns.dbi.ProviderDBI = ProviderDBI;
 
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Interface  = ns.type.Interface;
-    var Class      = ns.type.Class;
-    var Converter  = ns.type.Converter;
-
-    var ID         = ns.protocol.ID;
-
-    var StationInfo = function (sid, chosen, host, port, provider) {
+    app.dbi.StationInfo = function (sid, chosen, host, port, provider) {
         this.__identifier = sid;
         this.__chosen = chosen;
         this.__host = host;
         this.__port = port;
         this.__provider = provider;
     };
+    var StationInfo = app.dbi.StationInfo;
+
     Class(StationInfo, null, null);
 
     StationInfo.prototype.getIdentifier = function () {
@@ -231,7 +212,8 @@
      *  Session DBI
      *  ~~~~~~~~~~~
      */
-    var StationDBI = Interface(null, null);
+    app.dbi.StationDBI = Interface(null, null);
+    var StationDBI = app.dbi.StationDBI;
 
     /**
      *  Get all stations of this sp
@@ -283,21 +265,13 @@
      */
     StationDBI.prototype.removeStations = function (provider) {};
 
-    //-------- namespace --------
-    ns.dbi.StationDBI = StationDBI;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
 
     /**
      *  Session DBI
      *  ~~~~~~~~~~~
      */
-    var LoginDBI = Interface(null, null);
+    app.dbi.LoginDBI = Interface(null, null);
+    var LoginDBI = app.dbi.LoginDBI;
 
     /**
      *  Get login command and its message
@@ -317,31 +291,14 @@
      */
     LoginDBI.prototype.saveLoginCommandMessage = function (user, content, message) {};
 
-    //-------- namespace --------
-    ns.dbi.LoginDBI = LoginDBI;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-
-    var LoginDBI    = ns.dbi.LoginDBI;
-    var ProviderDBI = ns.dbi.ProviderDBI;
-    var StationDBI  = ns.dbi.StationDBI;
 
     /**
      *  Session DBI
      *  ~~~~~~~~~~~
      */
-    var SessionDBI = Interface(null, [
+    app.dbi.SessionDBI = Interface(null, [
         LoginDBI,
         ProviderDBI,
         StationDBI
     ]);
-
-    //-------- namespace --------
-    ns.dbi.SessionDBI = SessionDBI;
-
-})(DIMP);
+    var SessionDBI = app.dbi.SessionDBI;

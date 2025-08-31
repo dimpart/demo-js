@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,47 +32,57 @@
 
 //! require 'common/*.js'
 
-(function (ns) {
-    'use strict';
-
-    var Interface       = ns.type.Interface;
-    var Class           = ns.type.Class;
-    var EntityType      = ns.protocol.EntityType;
-    var ID              = ns.protocol.ID;
-    var Bulletin        = ns.protocol.Bulletin;
-    var BroadcastHelper = ns.mkm.BroadcastHelper;
-    var CommonFacebook  = ns.CommonFacebook;
-
-    var ClientFacebook = function () {
-        CommonFacebook.call(this);
+    app.ClientArchivist = function (facebook, database) {
+        CommonArchivist.call(this, facebook, database);
     };
-    Class(ClientFacebook, CommonFacebook, null, {
+    var ClientArchivist = app.ClientArchivist;
 
-        // Override
-        saveDocument: function (doc) {
-            var ok = CommonFacebook.prototype.saveDocument.call(this, doc);
-            if (ok && Interface.conforms(doc, Bulletin)) {
-                // check administrators
-                var array = doc.getProperty('administrators');
-                if (array instanceof Array) {
-                    var group = doc.getIdentifier();
-                    var admins = ID.convert(array);
-                    ok = this.saveAdministrators(admins, group);
-                }
+    Class(ClientArchivist, CommonArchivist, null, null);
+
+    // Override
+    ClientArchivist.prototype.cacheGroup = function (group) {
+        var man = SharedGroupManager.getInstance();
+        group.setDataSource(man);
+        CommonArchivist.prototype.cacheGroup.call(this, group);
+    };
+
+    // Override
+    ClientArchivist.prototype.saveDocument = function (doc) {
+        var ok = CommonArchivist.prototype.saveDocument.call(this, doc);
+        if (ok && Interface.conforms(doc, Bulletin)) {
+            // check administrators
+            var array = doc.getProperty('administrators');
+            if (array instanceof Array) {
+                var group = doc.getIdentifier();
+                var admins = ID.convert(array);
+                var db = this.getDatabase();
+                ok = db.saveAdministrators(admins, group);
             }
-            return ok;
-        },
+        }
+        return ok;
+    };
+
+
+    /**
+     *  Client Facebook with Address Name Service
+     */
+    app.ClientFacebook = function (database) {
+        CommonFacebook.call(this, database);
+    };
+    var ClientFacebook = app.ClientFacebook;
+
+    Class(ClientFacebook, CommonFacebook, null, null);
 
         //
-        //  GroupDataSource
+        //  Group Data Source
         //
 
         // Override
-        getFounder: function (group) {
+        ClientFacebook.prototype.getFounder = function (group) {
             // check broadcast group
             if (group.isBroadcast()) {
                 // founder of broadcast group
-                return BroadcastHelper.getBroadcastFounder(group);
+                return BroadcastUtils.getBroadcastFounder(group);
             }
             // check bulletin document
             var doc = this.getBulletin(group);
@@ -81,22 +91,22 @@
                 return null;
             }
             // check local storage
-            var archivist = this.getArchivist();
-            var user = archivist.getFounder(group);
+            var db = this.getDatabase();
+            var user = db.getFounder(group);
             if (user) {
                 // got from local storage
                 return user;
             }
             // get from bulletin document
             return doc.getFounder();
-        },
+        };
 
         // Override
-        getOwner: function (group) {
+        ClientFacebook.prototype.getOwner = function (group) {
             // check broadcast group
             if (group.isBroadcast()) {
                 // owner of broadcast group
-                return BroadcastHelper.getBroadcastOwner(group);
+                return BroadcastUtils.getBroadcastOwner(group);
             }
             // check bulletin document
             var doc = this.getBulletin(group);
@@ -105,8 +115,8 @@
                 return null;
             }
             // check local storage
-            var archivist = this.getArchivist();
-            var user = archivist.getOwner(group);
+            var db = this.getDatabase();
+            var user = db.getOwner(group);
             if (user) {
                 // got from local storage
                 return user;
@@ -114,33 +124,36 @@
             // check group type
             if (EntityType.GROUP.equals(group.getType())) {
                 // Polylogue owner is its founder
-                user = archivist.getFounder(group);
+                user = db.getFounder(group);
                 if (!user) {
                     user = doc.getFounder();
                 }
             }
             return user;
-        },
+        };
 
         // Override
-        getMembers: function (group) {
+        ClientFacebook.prototype.getMembers = function (group) {
             var owner = this.getOwner(group);
             if (!owner) {
                 // assert(false, 'group owner not found: $group');
                 return [];
             }
             // check local storage
-            var archivist = this.getArchivist();
-            var members = archivist.getMembers(group);
-            archivist.checkMembers(group, members);
+            var db = this.getDatabase();
+            var members = db.getMembers(group);
+            var checker = this.getEntityChecker();
+            if (checker) {
+                checker.checkMembers(group, members);
+            }
             if (!members || members.length === 0) {
                 members = [owner];
             }
             return members;
-        },
-        
+        };
+
         // Override
-        getAssistants: function (group) {
+        ClientFacebook.prototype.getAssistants = function (group) {
             // check bulletin document
             var doc = this.getBulletin(group);
             if (!doc) {
@@ -148,8 +161,8 @@
                 return [];
             }
             // check local storage
-            var archivist = this.getArchivist();
-            var bots = archivist.getAssistants(group);
+            var db = this.getDatabase();
+            var bots = db.getAssistants(group);
             if (bots && bots.length > 0) {
                 // got from local storage
                 return bots;
@@ -157,13 +170,14 @@
             // get from bulletin document
             bots = doc.getAssistants();
             return !bots ? [] : bots;
-        },
+        };
 
         //
         //  Organizational Structure
         //
 
-        getAdministrators: function (group) {
+        // Override
+        ClientFacebook.prototype.getAdministrators = function (group) {
             // check bulletin document
             var doc = this.getBulletin(group);
             if (!doc) {
@@ -174,24 +188,20 @@
             // when the newest bulletin document received,
             // so we must get them from the local storage only,
             // not from the bulletin document.
-            var archivist = this.getArchivist();
-            return archivist.getAdministrators(group);
-        },
+            var db = this.getDatabase();
+            return db.getAdministrators(group);
+        };
 
-        saveAdministrators: function (admins, group) {
-            var archivist = this.getArchivist();
-            return archivist.saveAdministrators(admins, group);
-        },
+        // Override
+        ClientFacebook.prototype.saveAdministrators = function (admins, group) {
+            var db = this.getDatabase();
+            return db.saveAdministrators(admins, group);
+        };
 
-        saveMembers: function (newMembers, group) {
-            var archivist = this.getArchivist();
-            return archivist.saveMembers(newMembers, group);
-        }
-    });
+        // Override
+        ClientFacebook.prototype.saveMembers = function (newMembers, group) {
+            var db = this.getDatabase();
+            return db.saveMembers(newMembers, group);
+        };
 
     // TODO: identifier factory for ANS
-
-    //-------- namespace --------
-    ns.ClientFacebook = ClientFacebook;
-
-})(DIMP);

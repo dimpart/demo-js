@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,121 +32,106 @@
 
 //! require 'common/*.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class = ns.type.Class;
-    var Log   = ns.lnc.Log;
-
-    var ID               = ns.protocol.ID;
-    var MetaCommand      = ns.protocol.MetaCommand;
-    var DocumentCommand  = ns.protocol.DocumentCommand;
-    var GroupCommand     = ns.protocol.GroupCommand;
-
-    var Station          = ns.mkm.Station;
-    var FrequencyChecker = ns.utils.FrequencyChecker;
-
-    var CommonArchivist  = ns.CommonArchivist;
-
-    var ClientArchivist = function (db) {
-        CommonArchivist.call(this, db);
-        this.__documentResponses = new FrequencyChecker(ClientArchivist.RESPOND_EXPIRES);
-        this.__lastActiveMembers = {};  // group ID => member ID
+    app.ClientChecker = function (facebook, database) {
+        EntityChecker.call(this, database);
+        this.__facebook = facebook;
+        this.__messenger = null;
     };
-    Class(ClientArchivist, CommonArchivist, null, {
+    var ClientChecker = app.ClientChecker;
 
-        // Override
-        queryMeta: function (identifier) {
-            if (!this.isMetaQueryExpired(identifier)) {
-                // query not expired yet
-                return false;
-            }
-            var messenger = this.getMessenger();
-            Log.info('querying meta', identifier);
-            var content = MetaCommand.query(identifier);
-            var pair = messenger.sendContent(content, null, Station.ANY, 1);
-            return pair && pair[1];
-        },
+    Class(ClientChecker, EntityChecker, null, null);
 
-        // Override
-        queryDocuments: function (identifier, docs) {
-            if (!this.isDocumentQueryExpired(identifier)) {
-                // query not expired yet
-                return false;
-            }
-            var messenger = this.getMessenger();
-            var lastTime = this.getLastDocumentTime(identifier, docs);
-            Log.info('querying documents', identifier, lastTime);
-            var content = DocumentCommand.query(identifier, lastTime);
-            var pair = messenger.sendContent(content, null, Station.ANY, 1);
-            return pair && pair[1];
-        },
+    // protected
+    ClientChecker.prototype.getFacebook = function () {
+        return this.__facebook;
+    };
 
-        // Override
-        queryMembers: function (group, members) {
-            if (!this.isMembersQueryExpired(group)) {
-                // query not expired yet
-                return false;
-            }
-            var facebook = this.getFacebook();
-            var user = facebook.getCurrentUser();
-            if (!user) {
-                Log.error('failed to get current user');
-                return false;
-            }
-            var me = user.getIdentifier();
-            var lastTime = this.getLastGroupHistoryTime(group);
-            Log.info('querying members for group', group, lastTime);
-            // build query command for group members
-            var content = GroupCommand.query(group);
-            content.setDateTime('last_time', lastTime);
-            var ok;
-            // 1. check group bots
-            ok = this.queryMembersFromAssistants(content, me, group);
-            if (ok) {
-                return true;
-            }
-            // 2. check administrators
-            ok = this.queryMembersFromAdministrators(content, me, group);
-            if (ok) {
-                return true;
-            }
-            // 3. check group owner
-            ok = this.queryMembersFromOwner(content, me, group);
-            if (ok) {
-                return true;
-            }
-            // all failed, try last active member;
-            var pair = null;  // Pair<InstantMessage, ReliableMessage>
-            var lastMember = this.__lastActiveMembers[group];
-            if (lastMember) {
-                Log.info('querying members from last member', lastMember, group);
-                var messenger = this.getMessenger();
-                pair = messenger.sendContent(content, me, lastMember, 1);
-            }
-            return pair && pair[1];
+    // protected
+    ClientChecker.prototype.getMessenger = function () {
+        return this.__messenger;
+    };
+    // public
+    ClientChecker.prototype.setMessenger = function (transceiver) {
+        this.__messenger = transceiver;
+    };
+
+    // Override
+    ClientChecker.prototype.queryMeta = function (identifier) {
+        if (!this.isMetaQueryExpired(identifier)) {
+            // query not expired yet
+            Log.info('meta query not expired yet:', identifier);
+            return false;
         }
-    });
-
-    // each respond will be expired after 10 minutes
-    ClientArchivist.RESPOND_EXPIRES = 600 * 1000;  // milliseconds
-
-    // protected
-    ClientArchivist.prototype.isDocumentResponseExpired = function (identifier, force) {
-        return this.__documentResponses.isExpired(identifier, null, force);
+        var messenger = this.getMessenger();
+        Log.info('querying meta', identifier);
+        var content = MetaCommand.query(identifier);
+        var pair = messenger.sendContent(content, null, Station.ANY, 1);
+        return pair && pair[1];
     };
 
-    ClientArchivist.prototype.setLastActiveMember = function (group, member) {
-        this.__lastActiveMembers[group] = member;
+    // Override
+    ClientChecker.prototype.queryDocuments = function (identifier, docs) {
+        if (!this.isDocumentQueryExpired(identifier)) {
+            // query not expired yet
+            Log.info('document query not expired yet:', identifier);
+            return false;
+        }
+        var messenger = this.getMessenger();
+        var lastTime = this.getLastDocumentTime(identifier, docs);
+        Log.info('querying documents', identifier, lastTime);
+        var content = DocumentCommand.query(identifier, lastTime);
+        var pair = messenger.sendContent(content, null, Station.ANY, 1);
+        return pair && pair[1];
+    };
+
+    // Override
+    ClientChecker.prototype.queryMembers = function (group, members) {
+        var facebook = this.getFacebook();
+        var user = facebook.getCurrentUser();
+        if (!user) {
+            Log.error('failed to get current user');
+            return false;
+        }
+        if (!this.isMembersQueryExpired(group)) {
+            // query not expired yet
+            Log.info('members query not expired yet:', group);
+            return false;
+        }
+        var me = user.getIdentifier();
+        var lastTime = this.getLastGroupHistoryTime(group);
+        Log.info('querying members for group', group, lastTime);
+        // build query command for group members
+        var content = GroupCommand.query(group, lastTime);
+        content.setDateTime('last_time', lastTime);
+        var ok;
+        // 1. check group bots
+        ok = this.queryMembersFromAssistants(content, me, group);
+        if (ok) {
+            return true;
+        }
+        // 2. check administrators
+        ok = this.queryMembersFromAdministrators(content, me, group);
+        if (ok) {
+            return true;
+        }
+        // 3. check group owner
+        ok = this.queryMembersFromOwner(content, me, group);
+        if (ok) {
+            return true;
+        }
+        // all failed, try last active member;
+        var pair = null;  // Pair<InstantMessage, ReliableMessage>
+        var lastMember = this.getLastActiveMember(group);
+        if (lastMember) {
+            Log.info('querying members from last member', lastMember, group);
+            var messenger = this.getMessenger();
+            pair = messenger.sendContent(content, me, lastMember, 1);
+        }
+        return pair && pair[1];
     };
 
     // protected
-    ClientArchivist.prototype.getFacebook = function () {};
-    // protected
-    ClientArchivist.prototype.getMessenger = function () {};
-    
-    // protected
-    ClientArchivist.prototype.queryMembersFromAssistants = function (content, sender, group) {
+    ClientChecker.prototype.queryMembersFromAssistants = function (content, sender, group) {
         var facebook = this.getFacebook();
         var bots = facebook.getAssistants(group);
         if (!bots || bots.length === 0) {
@@ -171,7 +156,7 @@
             // failed
             return false;
         }
-        var lastMember = this.__lastActiveMembers[group];
+        var lastMember = this.getLastActiveMember(group);
         if (!lastMember || bots.indexOf(lastMember) >= 0) {
             // last active member is a bot??
         } else {
@@ -182,7 +167,7 @@
     };
     
     // protected
-    ClientArchivist.prototype.queryMembersFromAdministrators = function (content, sender, group) {
+    ClientChecker.prototype.queryMembersFromAdministrators = function (content, sender, group) {
         var barrack = this.getFacebook();
         var admins = barrack.getAdministrators(group);
         if (!admins || admins.length === 0) {
@@ -209,7 +194,7 @@
             // failed
             return false;
         }
-        var lastMember = this.__lastActiveMembers[group];
+        var lastMember = this.getLastActiveMember(group);
         if (!lastMember || admins.indexOf(lastMember) >= 0) {
             // last active member is an admin, already queried
         } else {
@@ -220,7 +205,7 @@
     };
     
     // protected
-    ClientArchivist.prototype.queryMembersFromOwner = function (content, sender, group) {
+    ClientChecker.prototype.queryMembersFromOwner = function (content, sender, group) {
         var facebook = this.getFacebook();
         var owner = facebook.getOwner(group);
         if (!owner) {
@@ -235,7 +220,7 @@
             // failed
             return false;
         }
-        var lastMember = this.__lastActiveMembers[group];
+        var lastMember = this.getLastActiveMember(group);
         if (!lastMember || lastMember.equals(owner)) {
             // last active member is the owner, already queried
         } else {
@@ -250,12 +235,13 @@
      *      if document is updated, force to send it again.
      *      else only send once every 10 minutes.
      *
-     * @param {Visa|Document} visa
+     * @param {Visa|mkm.protocol.Document} visa
      * @param {ID} receiver
      * @param {Boolean} updated
      * @return {boolean}
      */
-    ClientArchivist.prototype.sendDocument = function (visa, receiver, updated) {
+    // Override
+    ClientChecker.prototype.sendVisa = function (visa, receiver, updated) {
         var me = visa.getIdentifier();
         if (me.equals(receiver)) {
             return false;
@@ -270,8 +256,3 @@
         var pair = messenger.sendContent(content, me, receiver, 1);
         return pair && pair[1];
     };
-
-    //-------- namespace --------
-    ns.ClientArchivist = ClientArchivist;
-
-})(DIMP);

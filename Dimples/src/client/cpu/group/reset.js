@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIM-SDK : Decentralized Instant Messaging Software Development Kit
@@ -32,28 +32,20 @@
 
 //! require '../group.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class = ns.type.Class;
-    var Log   = ns.lnc.Log;
-
-    var ID    = ns.protocol.ID;
-
-    var GroupCommandProcessor = ns.cpu.GroupCommandProcessor;
-
     ///  Reset Group Command Processor
     ///  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ///
     ///      1. reset group members
     ///      2. only group owner or assistant can reset group members
-    var ResetCommandProcessor = function (facebook, messenger) {
+    app.cpu.ResetCommandProcessor = function (facebook, messenger) {
         GroupCommandProcessor.call(this, facebook, messenger);
     };
+    var ResetCommandProcessor = app.cpu.ResetCommandProcessor;
+
     Class(ResetCommandProcessor, GroupCommandProcessor, null, {
 
         // Override
-        process: function (content, rMsg) {
+        processContent: function (content, rMsg) {
             var errors;  // List<Content>
 
             // 0. check command
@@ -174,8 +166,3 @@
         }
         return [addList, removeList];
     };
-
-    //-------- namespace --------
-    ns.cpu.ResetCommandProcessor = ResetCommandProcessor;
-
-})(DIMP);

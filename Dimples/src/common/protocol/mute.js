@@ -59,7 +59,7 @@
     //
 
     MuteCommand.fromList = function (contacts) {
-        return new ns.dkd.cmd.BaseMuteCommand(contacts);
+        return new BaseMuteCommand(contacts);
     };
 
 

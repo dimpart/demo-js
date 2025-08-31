@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -33,27 +33,13 @@
 //! require 'queue.js'
 //! require 'gate.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class  = ns.type.Class;
-    var Log    = ns.lnc.Log;
-    var Runner = ns.fsm.skywalker.Runner;
-
-    var InetSocketAddress = ns.startrek.type.InetSocketAddress;
-    var PorterDelegate    = ns.startrek.port.PorterDelegate;
-    var ClientHub         = ns.ws.ClientHub;
-
-    var AckEnableGate     = ns.network.AckEnableGate;
-    var MessageQueue      = ns.network.MessageQueue;
-
     /**
      *  Gate Keeper
      *
      * @param {String} host             - remote host
      * @param {uint} port               - remote port
      */
-    var GateKeeper = function (host, port) {
+    app.network.GateKeeper = function (host, port) {
         Runner.call(this);
         this.__remote = new InetSocketAddress(host, port);
         this.__gate = this.createGate(this.__remote);
@@ -62,6 +48,8 @@
         this.__last_active = 0;  // last update time
         this.__reconnect_time = 0;
     };
+    var GateKeeper = app.network.GateKeeper;
+
     Class(GateKeeper, Runner, [PorterDelegate], null);
 
     // protected
@@ -237,8 +225,3 @@
     GateKeeper.prototype.onPorterError = function (error, departure, docker) {
         Log.info('GateKeeper::onPorterError()', error, departure, docker);
     };
-
-    //-------- namespace --------
-    ns.network.GateKeeper = GateKeeper;
-
-})(DIMP);

@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,32 +32,21 @@
 
 //! require 'delegate.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class = ns.type.Class;
-    var Log   = ns.lnc.Log;
-
-    var ID              = ns.protocol.ID;
-    var Envelope        = ns.protocol.Envelope;
-    var InstantMessage  = ns.protocol.InstantMessage;
-    var ReliableMessage = ns.protocol.ReliableMessage;
-
-    var TripletsHelper  = ns.TripletsHelper;
-
     /**
      *  Group Message Packer
      *  ~~~~~~~~~~~~~~~~~~~~
      */
-    var GroupPacker = function (delegate) {
+    app.group.GroupPacker = function (delegate) {
         TripletsHelper.call(this, delegate);
     };
+    var GroupPacker = app.group.GroupPacker;
+
     Class(GroupPacker, TripletsHelper, null, null);
 
     /**
      *  Pack as broadcast message
      *
-     * @param {Content} content
+     * @param {dkd.protocol.Content} content
      * @param {ID} sender
      * @return {ReliableMessage}
      */
@@ -154,8 +143,3 @@
 
         return messages;
     };
-
-    //-------- namespace --------
-    ns.group.GroupPacker = GroupPacker;
-
-})(DIMP);

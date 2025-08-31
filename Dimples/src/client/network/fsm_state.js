@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,14 +32,7 @@
 
 //! require 'common/*.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class     = ns.type.Class;
-    var Enum      = ns.type.Enum;
-    var BaseState = ns.fsm.BaseState;
-
-    var StateOrder = Enum('SessionStateOrder', {
+    app.network.SessionStateOrder = Enum('SessionStateOrder', {
         DEFAULT:     0,  // Init
         CONNECTING:  1,
         CONNECTED:   2,
@@ -47,6 +40,8 @@
         RUNNING:     4,
         ERROR:       5
     });
+    var StateOrder = app.network.SessionStateOrder;
+
 
     /**
      *  Session State
@@ -60,11 +55,13 @@
      *      RUNNING     - handshake accepted
      *      ERROR       - network error
      */
-    var SessionState = function(order) {
+    app.network.SessionState = function(order) {
         BaseState.call(this, Enum.getInt(order));
         this.__name = order.getName();
         this.__enterTime = null;  // Date
     };
+    var SessionState = app.network.SessionState;
+
     Class(SessionState, BaseState, null, {
 
         getName: function () {
@@ -118,23 +115,27 @@
     SessionState.prototype.onResume = function (ctx, now) {
     };
 
+
     /**
      *  Session State Delegate
      *  ~~~~~~~~~~~~~~~~~~~~~~
      *
      *  callback when session state changed
      */
-    SessionState.Delegate = ns.fsm.Delegate;
+    SessionState.Delegate = fsm.Delegate;
+
 
     /**
      *  State Builder
      *  ~~~~~~~~~~~~~
      */
-    var StateBuilder = function (transitionBuilder) {
-        Object.call(this);
+    app.network.SessionStateBuilder = function (transitionBuilder) {
+        BaseObject.call(this);
         this.builder = transitionBuilder;
     };
-    Class(StateBuilder, Object, null, {
+    var StateBuilder = app.network.SessionStateBuilder;
+
+    Class(StateBuilder, BaseObject, null, {
 
         getDefaultState: function () {
             var state = new SessionState(StateOrder.DEFAULT);
@@ -188,10 +189,3 @@
             return state;
         }
     });
-
-    //-------- namespace --------
-    ns.network.SessionState = SessionState;
-    ns.network.SessionStateBuilder = StateBuilder;
-    ns.network.SessionStateOrder = StateOrder;
-
-})(DIMP);

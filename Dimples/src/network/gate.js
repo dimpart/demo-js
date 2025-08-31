@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -31,22 +31,13 @@
 //
 
 //! require <dimsdk.js>
+//! require <network.js>
 
-(function (ns) {
-    'use strict';
-
-    var Class = ns.type.Class;
-    var UTF8  = ns.format.UTF8;
-
-    // var CommonGate   = ns.startrek.BaseGate;
-    // var CommonGate   = ns.startrek.AutoGate;
-    var CommonGate   = ns.startrek.WSClientGate;
-    var PlainPorter  = ns.startrek.PlainPorter;
-    var PlainArrival = ns.startrek.PlainArrival;
-
-    var AckEnableGate = function (keeper) {
+    app.network.AckEnableGate = function (keeper) {
         CommonGate.call(this, keeper);
     };
+    var AckEnableGate = app.network.AckEnableGate;
+
     Class(AckEnableGate, CommonGate, null, {
 
         // Override
@@ -57,9 +48,12 @@
         }
     });
 
-    var AckEnablePorter = function (remote, local) {
+
+    app.network.AckEnablePorter = function (remote, local) {
         PlainPorter.call(this, remote, local);
     };
+    var AckEnablePorter = app.network.AckEnablePorter;
+
     Class(AckEnablePorter, PlainPorter, null, {
 
         // Override
@@ -70,8 +64,8 @@
                 if (!payload || payload.length === 0) {
                     // return null;
                 } else if (payload[0] === jsonBegin) {
-                    var sig = fetchValue(payload, bytes('signature'));
-                    var sec = fetchValue(payload, bytes('time'));
+                    var sig = fetchJsonValue(payload, DataUtils.bytes('signature'));
+                    var sec = fetchJsonValue(payload, DataUtils.bytes('time'));
                     if (sig && sec) {
                         // respond
                         var signature = UTF8.decode(sig);
@@ -79,7 +73,7 @@
                         var text = 'ACK:{"time":' + timestamp + ',"signature":"' + signature + '"}';
                         // console.log('sending respond', text);
                         var priority = 1
-                        this.send(bytes(text), priority);
+                        this.send(DataUtils.bytes(text), priority);
                     }
                 }
             }
@@ -89,138 +83,123 @@
 
     var jsonBegin = '{'.charCodeAt(0);
 
-    var fetchValue = function (data, tag) {
+    var fetchJsonValue = function (data, tag) {
         if (tag.length === 0) {
             return null;
         }
         // search tag
-        var pos = find(data, tag, 0);
+        var pos = DataUtils.find(data, tag, 0);
         if (pos < 0) {
             return null;
         } else {
             pos += tag.length;
         }
         // skip to start of value
-        pos = find(data, bytes(':'), pos);
+        pos = DataUtils.find(data, DataUtils.bytes(':'), pos);
         if (pos < 0) {
             return null;
         } else {
             pos += 1;
         }
         // find end value
-        var end = find(data, bytes(','), pos);
+        var end = DataUtils.find(data, DataUtils.bytes(','), pos);
         if (end < 0) {
-            end = find(data, bytes('}'), pos);
+            end = DataUtils.find(data, DataUtils.bytes('}'), pos);
             if (end < 0) {
                 return null;
             }
         }
         var value = data.subarray(pos, end);
-        value = strip(value, bytes(' '));
-        value = strip(value, bytes('"'));
-        value = strip(value, bytes("'"));
+        value = DataUtils.strip(value, DataUtils.bytes(' '));
+        value = DataUtils.strip(value, DataUtils.bytes('"'));
+        value = DataUtils.strip(value, DataUtils.bytes("'"));
         return value;
     };
 
-    /**
-     *  Convert text string
-     *
-     * @param {string} text
-     * @return {Uint8Array}
-     */
-    var bytes = function (text) {
-        return UTF8.encode(text);
-    };
+    app.utils.DataUtils = {
 
-    /**
-     *  Get first position of sub
-     *
-     * @param {Uint8Array} data
-     * @param {Uint8Array} sub
-     * @param {int} start
-     * @return {int}
-     */
-    var find = function (data, sub, start) {
-        if (!start) {
-            start = 0;
-        }
-        var end = data.length - sub.length;
-        var i, j;   // int
-        var match;  // boolean
-        for (i = start; i <= end; ++i) {
-            match = true;
-            for (j = 0; j < sub.length; ++j) {
-                if (data[i + j] === sub[j]) {
-                    continue;
+        /**
+         *  Convert text string
+         *
+         * @param {string} text
+         * @return {Uint8Array}
+         */
+        bytes: function (text) {
+            return UTF8.encode(text);
+        },
+
+        /**
+         *  Get first position of sub
+         *
+         * @param {Uint8Array} data
+         * @param {Uint8Array} sub
+         * @param {int} start
+         * @return {int}
+         */
+        find: function (data, sub, start) {
+            if (!start) {
+                start = 0;
+            }
+            var end = data.length - sub.length;
+            var i, j;   // int
+            var match;  // boolean
+            for (i = start; i <= end; ++i) {
+                match = true;
+                for (j = 0; j < sub.length; ++j) {
+                    if (data[i + j] === sub[j]) {
+                        continue;
+                    }
+                    match = false;
+                    break;
                 }
-                match = false;
-                break;
+                if (match) {
+                    return i;
+                }
             }
-            if (match) {
-                return i;
-            }
-        }
-        return -1;
-    };
+            return -1;
+        },
 
-    var strip = function (data, removing) {
-        data = stripRight(data, removing);
-        return stripLeft(data, removing);
-    };
-    var stripLeft = function (data, leading) {
-        var c = leading.length;
-        if (c === 0) {
+        strip: function (data, removing) {
+            data = this.stripRight(data, removing);
+            return this.stripLeft(data, removing);
+        },
+        stripLeft: function (data, leading) {
+            var c = leading.length;
+            if (c === 0) {
+                return data;
+            }
+            var i;  // uint
+            while (c <= data.length) {
+                for (i = 0; i < c; ++i) {
+                    if (data[i] !== leading[i]) {
+                        // not match
+                        return data;
+                    }
+                }
+                // matched, remove the leading bytes
+                data = data.subarray(c);
+            }
+            return data;
+        },
+        stripRight: function (data, trailing) {
+            var c = trailing.length;
+            if (c === 0) {
+                return data;
+            }
+            var i;  // uint
+            var m = data.length - c;
+            while (m >= 0) {
+                for (i = 0; i < c; ++i) {
+                    if (data[m + i] !== trailing[i]) {
+                        // not match
+                        return data;
+                    }
+                }
+                // matched, remove the tailing bytes
+                data = data.subarray(0, m);
+                m -= c;
+            }
             return data;
         }
-        var i;  // uint
-        while (c <= data.length) {
-            for (i = 0; i < c; ++i) {
-                if (data[i] !== leading[i]) {
-                    // not match
-                    return data;
-                }
-            }
-            // matched, remove the leading bytes
-            data = data.subarray(c);
-        }
-        return data;
     };
-    var stripRight = function (data, trailing) {
-        var c = trailing.length;
-        if (c === 0) {
-            return data;
-        }
-        var i;  // uint
-        var m = data.length - c;
-        while (m >= 0) {
-            for (i = 0; i < c; ++i) {
-                if (data[m + i] !== trailing[i]) {
-                    // not match
-                    return data;
-                }
-            }
-            // matched, remove the tailing bytes
-            data = data.subarray(0, m);
-            m -= c;
-        }
-        return data;
-    };
-
-    var DataUtils = {
-
-        bytes: bytes,
-
-        find: find,
-
-        strip: strip,
-        stripLeft: stripLeft,
-        stripRight: stripRight
-    };
-
-    //-------- namespace --------
-    ns.network.AckEnableGate   = AckEnableGate;
-    ns.network.AckEnablePorter = AckEnablePorter;
-
-    ns.utils.DataUtils = DataUtils;
-
-})(DIMP);
+    var DataUtils = app.utils.DataUtils;

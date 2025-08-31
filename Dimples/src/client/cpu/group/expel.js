@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIM-SDK : Decentralized Instant Messaging Software Development Kit
@@ -32,29 +32,20 @@
 
 //! require '../group.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class = ns.type.Class;
-    var GroupCommandProcessor = ns.cpu.GroupCommandProcessor;
-
     ///  Expel Group Command Processor
     ///  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ///  Deprecated (use 'reset' instead)
-    var ExpelCommandProcessor = function (facebook, messenger) {
+    app.cpu.ExpelCommandProcessor = function (facebook, messenger) {
         GroupCommandProcessor.call(this, facebook, messenger);
     };
+    var ExpelCommandProcessor = app.cpu.ExpelCommandProcessor;
+
     Class(ExpelCommandProcessor, GroupCommandProcessor, null, {
 
         // Override
-        process: function (content, rMsg) {
+        processContent: function (content, rMsg) {
 
             // no need to response this group command
             return [];
         }
     });
-
-    //-------- namespace --------
-    ns.cpu.ExpelCommandProcessor = ExpelCommandProcessor;
-
-})(DIMP);

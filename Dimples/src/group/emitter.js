@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,27 +32,16 @@
 
 //! require 'delegate.js'
 
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-    var Class     = ns.type.Class;
-    var Log       = ns.lnc.Log;
-
-    var ID              = ns.protocol.ID;
-    var ForwardContent  = ns.protocol.ForwardContent;
-    var GroupCommand    = ns.protocol.GroupCommand;
-
-    var TripletsHelper  = ns.TripletsHelper;
-
     /**
      *  Group Message Emitter
      *  ~~~~~~~~~~~~~~~~~~~~~
      */
-    var GroupEmitter = function (delegate) {
+    app.group.GroupEmitter = function (delegate) {
         TripletsHelper.call(this, delegate);
         this.__packer = this.createPacker();
     };
+    var GroupEmitter = app.group.GroupEmitter
+
     Class(GroupEmitter, TripletsHelper, null, null);
 
     // NOTICE: group assistants (bots) can help the members to redirect messages
@@ -87,7 +76,7 @@
     /// override for customized packer
     GroupEmitter.prototype.createPacker = function () {
         var delegate = this.getDelegate();
-        return new ns.group.GroupPacker(delegate)
+        return new GroupPacker(delegate)
     };
 
     // private
@@ -180,7 +169,7 @@
     /**
      *  Encrypt & sign message, then forward to the bot
      *
-     * @param {InstantMessage|Message|Mapper} iMsg
+     * @param {InstantMessage|dkd.protocol.Message|mk.type.Mapper} iMsg
      * @param {ID} bot
      * @param {ID} group
      * @param {int} priority
@@ -231,7 +220,7 @@
     /**
      *  Encrypt & sign message, then disperse to all members
      *
-     * @param {InstantMessage|Message|Mapper} iMsg
+     * @param {InstantMessage|dkd.protocol.Message|mk.type.Mapper} iMsg
      * @param {ID[]} members
      * @param {ID} group
      * @param {int} priority
@@ -294,7 +283,7 @@
     /**
      *  Split and send (encrypt + sign) group messages to all members one by one
      *
-     * @param {InstantMessage|Message} iMsg
+     * @param {InstantMessage|dkd.protocol.Message} iMsg
      * @param {ID[]} members
      * @param {ID} group
      * @param {int} priority
@@ -346,8 +335,3 @@
         // done!
         return success;
     };
-
-    //-------- namespace --------
-    ns.group.GroupEmitter = GroupEmitter;
-
-})(DIMP);

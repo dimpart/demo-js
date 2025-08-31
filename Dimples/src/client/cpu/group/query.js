@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIM-SDK : Decentralized Instant Messaging Software Development Kit
@@ -32,26 +32,20 @@
 
 //! require '../group.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class = ns.type.Class;
-    var Log   = ns.lnc.Log;
-
-    var GroupCommandProcessor = ns.cpu.GroupCommandProcessor;
-
     ///  Query Group Command Processor
     ///  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ///
     ///      1. query for group members-list
     ///      2. any existed member or assistant can query group members-list
-    var QueryCommandProcessor = function (facebook, messenger) {
+    app.cpu.QueryCommandProcessor = function (facebook, messenger) {
         GroupCommandProcessor.call(this, facebook, messenger);
     };
+    var QueryCommandProcessor = app.cpu.QueryCommandProcessor
+
     Class(QueryCommandProcessor, GroupCommandProcessor, null, {
 
         // Override
-        process: function (content, rMsg) {
+        processContent: function (content, rMsg) {
             var errors;  // List<Content>
 
             // 0. check command
@@ -122,8 +116,3 @@
             return [];
         }
     });
-
-    //-------- namespace --------
-    ns.cpu.QueryCommandProcessor = QueryCommandProcessor;
-
-})(DIMP);

@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,26 +32,20 @@
 
 //! require 'wrapper.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class  = ns.type.Class;
-    var Arrays = ns.type.Arrays;
-    var Log    = ns.lnc.Log;
-
-    var MessageWrapper = ns.network.MessageWrapper;
-
-    var MessageQueue = function () {
+    app.network.MessageQueue = function () {
+        BaseObject.call(this);
         this.__priorities = [];  // List[Integer]
         this.__fleets = {};      // Integer => List[MessageWrapper]
     };
-    Class(MessageQueue, null, null, null);
+    var MessageQueue = app.network.MessageQueue
+
+    Class(MessageQueue, BaseObject, null, null);
 
     /**
      *  Append message with departure ship
      *
      * @param {ReliableMessage|*} rMsg   - outgoing message
-     * @param {Departure|Ship} departure - departure ship
+     * @param {st.port.Departure|Ship} departure - departure ship
      * @return {boolean} false on duplicated
      */
     MessageQueue.prototype.append = function (rMsg, departure) {
@@ -64,14 +58,14 @@
             array = [];
             this.__fleets[priority] = array;
             // 1.2. insert the priority in a sorted list
-            insert_priority(priority, this.__priorities);
+            insert_departure_priority(priority, this.__priorities);
         } else {
             // 1.3. check duplicated
             var signature = rMsg.getValue('signature');
             var item;
             for (var i = array.length - 1; i >= 0; --i) {
                 item = array[i].getMessage();
-                if (item && is_duplicated(item, rMsg)) {
+                if (item && is_msg_duplicated(item, rMsg)) {
                     // duplicated message
                     Log.warning('[QUEUE] duplicated message', signature);
                     ok = false;
@@ -85,7 +79,7 @@
         }
         return ok;
     };
-    var is_duplicated = function (msg1, msg2) {
+    var is_msg_duplicated = function (msg1, msg2) {
         var sig1 = msg1.getValue('signature');
         var sig2 = msg2.getValue('signature');
         if (!sig1 || !sig2) {
@@ -99,7 +93,7 @@
         var to2 = msg2.getReceiver();
         return to1.equals(to2);
     };
-    var insert_priority = function (prior, priorities) {
+    var insert_departure_priority = function (prior, priorities) {
         var total = priorities.length;
         var value;
         var index = 0;
@@ -157,8 +151,3 @@
         }
         return null;
     };
-
-    //-------- namespace --------
-    ns.network.MessageQueue = MessageQueue;
-
-})(DIMP);

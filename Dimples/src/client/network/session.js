@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,20 +32,6 @@
 
 //! require 'common/*.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class  = ns.type.Class;
-    var Log    = ns.lnc.Log;
-    var Thread = ns.fsm.threading.Thread;
-
-    var PorterStatus   = ns.startrek.port.PorterStatus;
-    var BaseConnection = ns.startrek.socket.BaseConnection;
-    var StarPorter     = ns.startrek.StarPorter;
-
-    var BaseSession         = ns.network.BaseSession;
-    var SessionStateMachine = ns.network.SessionStateMachine;
-
     /**
      *  Session for Connection
      *  ~~~~~~~~~~~~~~~~~~~~~~
@@ -68,14 +54,16 @@
      *          when first handshake responded, and we can trust
      *          all messages from this ID after that.
      */
-    var ClientSession = function (db, server) {
+    app.network.ClientSession = function (db, server) {
         BaseSession.call(this, db, server.getHost(), server.getPort());
         this.__station = server;  // Station
-        this.__fsm = new SessionStateMachine(this);
+        this.__fsm = new StateMachine(this);
         this.__key = null;        // String: session key
         this.__accepted = false;
         this.__thread = null;     // Thread
     };
+    var ClientSession = app.network.ClientSession;
+
     Class(ClientSession, BaseSession, null, {
 
         getStation: function () {
@@ -230,7 +218,8 @@
         }
     });
 
-    var force_stop = function () {
+    // private
+    ClientSession.prototype.force_stop = function () {
         var thread = this.__thread;
         if (thread) {
             this.__thread = null;
@@ -240,7 +229,7 @@
     /// start session in background thread
     /// start session state machine
     ClientSession.prototype.start = function (delegate) {
-        force_stop.call(this);
+        this.force_stop();
         // start a background thread
         var thread = new Thread(this);
         thread.start();
@@ -254,7 +243,7 @@
     ClientSession.prototype.stop = function () {
         //GateKeeper.prototype.stop.call(this);
         BaseSession.prototype.stop.call(this);
-        force_stop.call(this);
+        this.force_stop();
         var fsm = this.__fsm;
         fsm.stop();
     };
@@ -293,8 +282,3 @@
         return array;
     };
     var NEW_LINE = '\n'.charCodeAt(0);
-
-    //-------- namespace --------
-    ns.network.ClientSession = ClientSession;
-
-})(DIMP);

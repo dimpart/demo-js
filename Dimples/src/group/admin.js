@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,26 +32,15 @@
 
 //! require 'delegate.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class = ns.type.Class;
-    var Log   = ns.lnc.Log;
-
-    var ID              = ns.protocol.ID;
-    var Document        = ns.protocol.Document;
-    var DocumentCommand = ns.protocol.DocumentCommand;
-
-    var Station         = ns.mkm.Station;
-    var TripletsHelper  = ns.TripletsHelper;
-
     /**
      *  Group Admin Manager
      *  ~~~~~~~~~~~~~~~~~~~
      */
-    var AdminManager = function (delegate) {
+    app.group.AdminManager = function (delegate) {
         TripletsHelper.call(this, delegate);
     };
+    var AdminManager = app.group.AdminManager;
+
     Class(AdminManager, TripletsHelper, null, null);
 
     /**
@@ -125,7 +114,7 @@
     /**
      *  Broadcast group document
      *
-     * @param {Bulletin|Document} doc
+     * @param {Bulletin|mkm.protocol.Document} doc
      * @return {boolean}
      */
     AdminManager.prototype.broadcastGroupDocument = function (doc) {
@@ -187,8 +176,3 @@
         }
         return true;
     };
-
-    //-------- namespace --------
-    ns.group.AdminManager = AdminManager;
-
-})(DIMP);

@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIM-SDK : Decentralized Instant Messaging Software Development Kit
@@ -32,20 +32,14 @@
 
 //! require <dimsdk.js>
 
-(function (ns) {
-    'use strict';
-
-    var Class = ns.type.Class;
-    var Log   = ns.lnc.Log;
-
-    var BaseCommandProcessor = ns.cpu.BaseCommandProcessor;
-
     /**
      *  Login Command Processor
      */
-    var LoginCommandProcessor = function (facebook, messenger) {
+    app.cpu.LoginCommandProcessor = function (facebook, messenger) {
         BaseCommandProcessor.call(this, facebook, messenger);
     };
+    var LoginCommandProcessor = app.cpu.LoginCommandProcessor;
+
     Class(LoginCommandProcessor, BaseCommandProcessor, null, {
 
         // private
@@ -56,7 +50,7 @@
         },
 
         // Override
-        process: function (content, rMsg) {
+        processContent: function (content, rMsg) {
             var sender = content.getIdentifier();
             // save login command to session db
             var db = this.getDatabase();
@@ -70,41 +64,26 @@
         }
     });
 
-    //-------- namespace --------
-    ns.cpu.LoginCommandProcessor = LoginCommandProcessor;
-
-})(DIMP);
-
-(function (ns) {
-    'use strict';
-
-    var Interface            = ns.type.Interface;
-    var Class                = ns.type.Class;
-    var ReceiptCommand       = ns.protocol.ReceiptCommand;
-    var BaseCommandProcessor = ns.cpu.BaseCommandProcessor;
 
     /**
      *  Receipt Command Processor
      */
-    var ReceiptCommandProcessor = function (facebook, messenger) {
+    app.cpu.ReceiptCommandProcessor = function (facebook, messenger) {
         BaseCommandProcessor.call(this, facebook, messenger);
     };
+    var ReceiptCommandProcessor = app.cpu.ReceiptCommandProcessor;
+
     Class(ReceiptCommandProcessor, BaseCommandProcessor, null, null);
 
     // Override
-    ReceiptCommandProcessor.prototype.process = function (content, rMsg) {
+    ReceiptCommandProcessor.prototype.processContent = function (content, rMsg) {
         // check & update respond time
         if (Interface.conforms(content, ReceiptCommand)) {
             var envelope = rMsg.getEnvelope();
-            var groupManager = ns.group.SharedGroupManager;
+            var groupManager = SharedGroupManager.getInstance();
             var delegate = groupManager.getGroupDelegate();
             delegate.updateRespondTime(content, envelope);
         }
         // no need to response receipt command
         return [];
     };
-
-    //-------- namespace --------
-    ns.cpu.ReceiptCommandProcessor = ReceiptCommandProcessor;
-
-})(DIMP);

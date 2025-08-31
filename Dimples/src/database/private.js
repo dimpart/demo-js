@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,20 +32,10 @@
 
 //! require 'dbi/*.js'
 
-(function (ns) {
-    'use strict';
-
-    var Interface     = ns.type.Interface;
-    var Class         = ns.type.Class;
-    var DecryptKey    = ns.crypto.DecryptKey;
-    var PrivateKey    = ns.crypto.PrivateKey;
-    var Storage       = ns.dos.LocalStorage;
-    var PrivateKeyDBI = ns.dbi.PrivateKeyDBI;
-
-    var id_key_path = function (user) {
+    var db_id_key_path = function (user) {
         return 'pri.' + user.getAddress().toString() + '.secret';
     };
-    var msg_keys_path = function (user) {
+    var db_msg_keys_path = function (user) {
         return 'pri.' + user.getAddress().toString() + '.secret_keys';
     };
 
@@ -58,10 +48,12 @@
      *  (2) Message Keys - paired to visa.key, VOLATILE
      *      storage path: 'dim.fs.pri.{ADDRESS}.secret_keys'
      */
-    var PrivateKeyStorage = function () {
-        Object.call(this);
+    app.database.PrivateKeyStorage = function () {
+        BaseObject.call(this);
     };
-    Class(PrivateKeyStorage, Object, [PrivateKeyDBI], {
+    var PrivateKeyStorage = app.database.PrivateKeyStorage;
+
+    Class(PrivateKeyStorage, BaseObject, [PrivateKeyDBI], {
 
         // Override
         savePrivateKey: function (key, type, user) {
@@ -102,20 +94,20 @@
 
     // protected
     PrivateKeyStorage.prototype.loadIdKey = function (user) {
-        var path = id_key_path(user);
+        var path = db_id_key_path(user);
         var info = Storage.loadJSON(path);
         return PrivateKey.parse(info);
     };
     // protected
     PrivateKeyStorage.prototype.saveIdKey = function (key, user) {
-        var path = id_key_path(user);
+        var path = db_id_key_path(user);
         return Storage.saveJSON(key.toMap(), path);
     };
 
     // protected
     PrivateKeyStorage.prototype.loadMsgKeys = function (user) {
         var privateKeys = [];
-        var path = msg_keys_path(user);
+        var path = db_msg_keys_path(user);
         var array = Storage.loadJSON(path);
         if (array) {
             var key;
@@ -137,11 +129,6 @@
             return false;
         }
         var plain = PrivateKeyDBI.revertPrivateKeys(privateKeys);
-        var path = msg_keys_path(user);
+        var path = db_msg_keys_path(user);
         return Storage.saveJSON(plain, path);
     };
-
-    //-------- namespace --------
-    ns.database.PrivateKeyStorage = PrivateKeyStorage;
-
-})(DIMP);

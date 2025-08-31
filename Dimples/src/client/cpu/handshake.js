@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIM-SDK : Decentralized Instant Messaging Software Development Kit
@@ -32,24 +32,18 @@
 
 //! require <dimsdk.js>
 
-(function (ns) {
-    'use strict';
-
-    var Class = ns.type.Class;
-    var Log   = ns.lnc.Log;
-
-    var BaseCommandProcessor = ns.cpu.BaseCommandProcessor;
-
     /**
      *  Handshake Command Processor
      */
-    var HandshakeCommandProcessor = function (facebook, messenger) {
+    app.cpu.HandshakeCommandProcessor = function (facebook, messenger) {
         BaseCommandProcessor.call(this, facebook, messenger);
     };
+    var HandshakeCommandProcessor = app.cpu.HandshakeCommandProcessor
+
     Class(HandshakeCommandProcessor, BaseCommandProcessor, null, {
 
         // Override
-        process: function (content, rMsg) {
+        processContent: function (content, rMsg) {
             var messenger = this.getMessenger();
             var session = messenger.getSession();
             // update station's default ID ('station@anywhere') to sender (real ID)
@@ -106,8 +100,3 @@
             return [];
         }
     });
-
-    //-------- namespace --------
-    ns.cpu.HandshakeCommandProcessor = HandshakeCommandProcessor;
-
-})(DIMP);

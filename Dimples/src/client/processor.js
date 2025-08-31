@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,27 +32,15 @@
 
 //! require 'common/*.js'
 
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-    var Class     = ns.type.Class;
-    var Log       = ns.lnc.Log;
-
-    var EntityType       = ns.protocol.EntityType;
-    var TextContent      = ns.protocol.TextContent;
-    var HandshakeCommand = ns.protocol.HandshakeCommand;
-    var ReceiptCommand   = ns.protocol.ReceiptCommand;
-
-    var MessageProcessor = ns.MessageProcessor;
-
-    var ClientMessageProcessor = function (facebook, messenger) {
+    app.ClientMessageProcessor = function (facebook, messenger) {
         MessageProcessor.call(this, facebook, messenger);
     };
-    Class(ClientMessageProcessor, MessageProcessor, null, {
+    var ClientMessageProcessor = app.ClientMessageProcessor;
+
+    Class(ClientMessageProcessor, MessageProcessor, null, null);
 
         // private
-        checkGroupTimes: function (content, rMsg) {
+        ClientMessageProcessor.prototype.checkGroupTimes = function (content, rMsg) {
             var group = content.getGroup();
             if (!group) {
                 return false;
@@ -95,10 +83,10 @@
                 }
             }
             return docUpdated || memUpdated;
-        },
+        };
 
         // Override
-        processContent: function (content, rMsg) {
+        ClientMessageProcessor.prototype.processContent = function (content, rMsg) {
             var responses = MessageProcessor.prototype.processContent.call(this, content, rMsg);
 
             // check group's document & history times from the message
@@ -153,16 +141,9 @@
             }
             // DON'T respond to station directly
             return [];
-        },
+        };
 
-        createCreator: function () {
-            var facebook = this.getFacebook();
-            var messenger = this.getMessenger();
-            return new ns.cpu.ClientContentProcessorCreator(facebook, messenger);
-        }
-    });
-
-    //-------- namespace --------
-    ns.ClientMessageProcessor = ClientMessageProcessor;
-
-})(DIMP);
+        // Override
+        ClientMessageProcessor.prototype.createCreator = function (facebook, messenger) {
+            return new ClientContentProcessorCreator(facebook, messenger);
+        };

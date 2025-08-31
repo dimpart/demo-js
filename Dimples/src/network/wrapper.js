@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -31,18 +31,16 @@
 //
 
 //! require <dimsdk.js>
+//! require <network.js>
 
-(function (ns) {
-    'use strict';
-
-    var Class = ns.type.Class;
-    var Departure = ns.startrek.port.Departure;
-
-    var MessageWrapper = function (rMsg, departure) {
+    app.network.MessageWrapper = function (rMsg, departure) {
+        BaseObject.call(this);
         this.__msg = rMsg;
         this.__ship = departure;
     };
-    Class(MessageWrapper, null, [Departure], null);
+    var MessageWrapper = app.network.MessageWrapper;
+
+    Class(MessageWrapper, BaseObject, [Departure], null);
 
     MessageWrapper.prototype.getMessage = function () {
         return this.__msg;
@@ -86,8 +84,3 @@
     MessageWrapper.prototype.getStatus = function (now) {
         return this.__ship.getStatus(now);
     };
-
-    //-------- namespace --------
-    ns.network.MessageWrapper = MessageWrapper;
-
-})(DIMP);

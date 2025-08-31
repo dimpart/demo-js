@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,28 +32,24 @@
 
 //! require 'common/*.js'
 
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-    var Class     = ns.type.Class;
-    var Log       = ns.lnc.Log;
-
-    var ID             = ns.protocol.ID;
-    var InstantMessage = ns.protocol.InstantMessage;
-    var ContentType    = ns.protocol.ContentType;
-    var TextContent    = ns.protocol.TextContent;
-    var FileContent    = ns.protocol.FileContent;
-
-    var CommonPacker   = ns.CommonPacker;
-
-    var ClientMessagePacker = function (facebook, messenger) {
+    app.ClientMessagePacker = function (facebook, messenger) {
         CommonPacker.call(this, facebook, messenger);
     };
-    Class(ClientMessagePacker, CommonPacker, null, {
+    var ClientMessagePacker = app.ClientMessagePacker;
+
+    Class(ClientMessagePacker, CommonPacker, null, null);
+
+    /**
+     *  for checking whether group's ready
+     */
+    // protected
+    ClientMessagePacker.prototype.getMembers = function (group) {
+        var facebook = this.getFacebook();
+        return facebook.getMembers(group);
+    };
 
         // Override
-        checkReceiver: function (iMsg) {
+        ClientMessagePacker.prototype.checkReceiver = function (iMsg) {
             var receiver = iMsg.getReceiver();
             if (receiver.isBroadcast()) {
                 // broadcast message
@@ -105,10 +101,10 @@
             // so we must return true here to let the messaging continue;
             // when the member's visa is responded, we should send the suspended message again.
             return waiting.length < members.length;
-        },
+        };
 
         // protected
-        checkGroup: function (sMsg) {
+        ClientMessagePacker.prototype.checkGroup = function (sMsg) {
             var receiver = sMsg.getReceiver();
             // check group
             var group = ID.parse(sMsg.getValue('group'));
@@ -141,10 +137,10 @@
             };
             this.suspendReliableMessage(sMsg, error);  // rMsg.put("error", error);
             return false;
-        },
+        };
 
         // Override
-        verifyMessage: function (rMsg) {
+        ClientMessagePacker.prototype.verifyMessage = function (rMsg) {
             // check receiver/group with local user
             if (this.checkGroup(rMsg)) {
                 // receiver is ready
@@ -153,9 +149,10 @@
                 return null;
             }
             return CommonPacker.prototype.verifyMessage.call(this, rMsg);
-        },
+        };
 
-        decryptMessage: function (sMsg) {
+        // Override
+        ClientMessagePacker.prototype.decryptMessage = function (sMsg) {
             var iMsg;
             try {
                 iMsg = CommonPacker.prototype.decryptMessage.call(this, sMsg);
@@ -198,14 +195,18 @@
                 iMsg = this.getFailedMessage(sMsg);
             }
             return iMsg;
-        },
+        };
 
         // protected
-        pushVisa: function (receiver) {
+        ClientMessagePacker.prototype.pushVisa = function (receiver) {
             var facebook = this.getFacebook();
-            var messenger = this.getMessenger();
-            var user = !facebook ? null : facebook.getCurrentUser();
+            if (!facebook) {
+                Log.error('facebook not found');
+                return false;
+            }
+            var user = facebook.getCurrentUser();
             if (!user) {
+                Log.error('current user not found');
                 return false;
             }
             var visa = user.getVisa();
@@ -213,15 +214,20 @@
                 // FIXME: user visa not found?
                 throw new ReferenceError('user visa error' + user.toString());
             }
-            return messenger.sendVisa(visa, receiver, false);
-        },
+            var checker = facebook.getEntityChecker();
+            if (!checker) {
+                Log.error('failed to get entity checker');
+                return false;
+            }
+            return checker.sendVisa(visa, receiver, false);
+        };
 
         // protected
-        getFailedMessage: function (sMsg) {
+        ClientMessagePacker.prototype.getFailedMessage = function (sMsg) {
             var sender = sMsg.getSender();
             var group = sMsg.getGroup();
             var type = sMsg.getType();
-            if (ContentType.COMMAND.equals(type) || ContentType.HISTORY.equals(type)) {
+            if (ContentType.COMMAND === type || ContentType.HISTORY === type) {
                 Log.warning('ignore message unable to decrypt', type, sender);
                 return null;
             }
@@ -241,10 +247,4 @@
             delete info['data'];
             info['content'] = content.toMap();
             return InstantMessage.parse(info);
-        }
-    });
-
-    //-------- namespace --------
-    ns.ClientMessagePacker = ClientMessagePacker;
-
-})(DIMP);
+        };

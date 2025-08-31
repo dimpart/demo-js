@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIM-SDK : Decentralized Instant Messaging Software Development Kit
@@ -35,26 +35,12 @@
 //! require 'group.js'
 //! require 'group/*.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class = ns.type.Class;
-
-    var ContentType  = ns.protocol.ContentType;
-    var Command      = ns.protocol.Command;
-    var GroupCommand = ns.protocol.GroupCommand;
-
-    var BaseContentProcessor      = ns.cpu.BaseContentProcessor;
-    var ContentProcessorCreator   = ns.cpu.ContentProcessorCreator;
-    var ReceiptCommandProcessor   = ns.cpu.ReceiptCommandProcessor;
-    var HandshakeCommandProcessor = ns.cpu.HandshakeCommandProcessor;
-    var LoginCommandProcessor     = ns.cpu.LoginCommandProcessor;
-    var HistoryCommandProcessor   = ns.cpu.HistoryCommandProcessor
-
-    var ClientContentProcessorCreator = function (facebook, messenger) {
-        ContentProcessorCreator.call(this, facebook, messenger);
+    app.cpu.ClientContentProcessorCreator = function (facebook, messenger) {
+        BaseContentProcessorCreator.call(this, facebook, messenger);
     };
-    Class(ClientContentProcessorCreator, ContentProcessorCreator, null, {
+    var ClientContentProcessorCreator = app.cpu.ClientContentProcessorCreator;
+
+    Class(ClientContentProcessorCreator, BaseContentProcessorCreator, null, {
 
         // Override
         createContentProcessor: function (type) {
@@ -70,7 +56,7 @@
                 return new BaseContentProcessor(facebook, messenger);
             }
             // others
-            return ContentProcessorCreator.prototype.createContentProcessor.call(this, type);
+            return BaseContentProcessorCreator.prototype.createContentProcessor.call(this, type);
         },
 
         // Override
@@ -90,26 +76,21 @@
 
                 // group commands
                 case 'group':
-                    return new ns.cpu.GroupCommandProcessor(facebook, messenger);
+                    return new GroupCommandProcessor(facebook, messenger);
                 case GroupCommand.INVITE:
-                    return new ns.cpu.InviteCommandProcessor(facebook, messenger);
+                    return new InviteCommandProcessor(facebook, messenger);
                 case GroupCommand.EXPEL:
                     /// Deprecated (use 'reset' instead)
-                    return new ns.cpu.ExpelCommandProcessor(facebook, messenger);
+                    return new ExpelCommandProcessor(facebook, messenger);
                 case GroupCommand.QUIT:
-                    return new ns.cpu.QuitCommandProcessor(facebook, messenger);
+                    return new QuitCommandProcessor(facebook, messenger);
                 case GroupCommand.QUERY:
-                    return new ns.cpu.QueryCommandProcessor(facebook, messenger);
+                    return new QueryCommandProcessor(facebook, messenger);
                 case GroupCommand.RESET:
-                    return new ns.cpu.ResetCommandProcessor(facebook, messenger);
+                    return new ResetCommandProcessor(facebook, messenger);
             }
 
             // others
-            return ContentProcessorCreator.prototype.createCommandProcessor.call(this, type, cmd);
+            return BaseContentProcessorCreator.prototype.createCommandProcessor.call(this, type, cmd);
         }
     });
-
-    //-------- namespace --------
-    ns.cpu.ClientContentProcessorCreator = ClientContentProcessorCreator;
-
-})(DIMP);

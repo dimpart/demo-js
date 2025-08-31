@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIMPLES: DIMP Library for Easy Startup
@@ -32,12 +32,8 @@
 
 //! require <dimsdk.js>
 
-(function (ns) {
-    'use strict';
-
-    var Interface = ns.type.Interface;
-
-    var Transmitter = Interface(null, null);
+    app.network.Transmitter = Interface(null, null);
+    var Transmitter = app.network.Transmitter
 
     /**
      *  Send content from sender to receiver with priority
@@ -68,7 +64,9 @@
      */
     Transmitter.prototype.sendReliableMessage = function (rMsg, priority) {};
 
-    var Session = Interface(null, [Transmitter]);
+
+    app.network.Session = Interface(null, [Transmitter]);
+    var Session = app.network.Session
 
     Session.prototype.getDatabase = function () {};  // SessionDBI
 
@@ -104,9 +102,3 @@
      * @return {boolean} false on error
      */
     Session.prototype.queueMessagePackage = function (rMsg, data, priority) {};
-
-    //-------- namespace --------
-    ns.network.Transmitter = Transmitter;
-    ns.network.Session     = Session;
-
-})(DIMP);

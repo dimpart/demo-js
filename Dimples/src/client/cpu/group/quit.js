@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 //
 //  DIM-SDK : Decentralized Instant Messaging Software Development Kit
@@ -32,27 +32,20 @@
 
 //! require '../group.js'
 
-(function (ns) {
-    'use strict';
-
-    var Class  = ns.type.Class;
-    var Arrays = ns.type.Arrays;
-    var Log    = ns.lnc.Log;
-
-    var GroupCommandProcessor = ns.cpu.GroupCommandProcessor;
-
     ///  Quit Group Command Processor
     ///  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ///
     ///      1. remove the sender from members of the group
     ///      2. owner and administrator cannot quit
-    var QuitCommandProcessor = function (facebook, messenger) {
+    app.cpu.QuitCommandProcessor = function (facebook, messenger) {
         GroupCommandProcessor.call(this, facebook, messenger);
     };
+    var QuitCommandProcessor = app.cpu.QuitCommandProcessor;
+
     Class(QuitCommandProcessor, GroupCommandProcessor, null, {
 
         // Override
-        process: function (content, rMsg) {
+        processContent: function (content, rMsg) {
             var errors;  // List<Content>
 
             // 0. check command
@@ -124,8 +117,3 @@
             return [];
         }
     });
-
-    //-------- namespace --------
-    ns.cpu.QuitCommandProcessor = QuitCommandProcessor;
-
-})(DIMP);
