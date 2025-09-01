@@ -122,7 +122,7 @@
                 return user;
             }
             // check group type
-            if (EntityType.GROUP.equals(group.getType())) {
+            if (EntityType.GROUP === group.getType()) {
                 // Polylogue owner is its founder
                 user = db.getFounder(group);
                 if (!user) {

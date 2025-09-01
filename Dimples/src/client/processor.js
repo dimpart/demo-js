@@ -120,18 +120,18 @@
                     // should not happen
                     continue;
                 } else if (Interface.conforms(res, ReceiptCommand)) {
-                    if (EntityType.STATION.equals(network)) {
+                    if (EntityType.STATION === network) {
                         // no need to respond receipt to station
                         continue;
-                    } else if (EntityType.BOT.equals(network)) {
+                    } else if (EntityType.BOT === network) {
                         // no need to respond receipt to a bot
                         continue;
                     }
                 } else if (Interface.conforms(res, TextContent)) {
-                    if (EntityType.STATION.equals(network)) {
+                    if (EntityType.STATION === network) {
                         // no need to respond text message to station
                         continue;
-                    } else if (EntityType.BOT.equals(network)) {
+                    } else if (EntityType.BOT === network) {
                         // no need to respond text message to a bot
                         continue;
                     }

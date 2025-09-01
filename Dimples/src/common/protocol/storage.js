@@ -136,12 +136,12 @@
 
         // Override
         setIdentifier: function (identifier) {
-            this.setString('ID', identifier);
+            this.setString('did', identifier);
         },
 
         // Override
         getIdentifier: function () {
-            return ID.parse(this.getValue('ID'));
+            return ID.parse(this.getValue('did'));
         },
 
         // Override

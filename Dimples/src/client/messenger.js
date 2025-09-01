@@ -101,8 +101,8 @@
             }
             var sender = rMsg.getSender();
             // var receiver = rMsg.getReceiver();
-            // if (EntityType.STATION.equals(receiver.getType()) || EntityType.BOT.equals(receiver.getType())) {
-            //     if (EntityType.STATION.equals(sender.getType()) || EntityType.BOT.equals(sender.getType())) {
+            // if (EntityType.STATION === receiver.getType() || EntityType.BOT === receiver.getType()) {
+            //     if (EntityType.STATION == sender.getType() || EntityType.BOT === sender.getType()) {
             //         // message between bots
             //         return false;
             //     }

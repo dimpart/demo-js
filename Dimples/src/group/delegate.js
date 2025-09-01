@@ -173,7 +173,7 @@
             if (owner) {
                 return owner.equals(user);
             }
-            if (EntityType.GROUP.equals(group.getType())) {
+            if (EntityType.GROUP === group.getType()) {
                 // this is a polylogue
                 return this.isFounder(user, group);
             }
@@ -311,7 +311,7 @@
         // }
         // 1. check sender
         var sender = envelope.getSender();
-        if (!EntityType.BOT.equals(sender.getType())) {
+        if (!EntityType.BOT === sender.getType()) {
             return false;
         }
         var origin = content.getOriginalEnvelope();

@@ -204,7 +204,7 @@
         var user = facebook.getCurrentUser();
         if (!user) {
             Log.error('failed to get current user');
-        } else if (EntityType.STATION.equals(user.getType())) {
+        } else if (EntityType.STATION === user.getType()) {
             // a station won't login to another station, if here is a station,
             // it must be a station bridge for roaming messages, we just send
             // report command to the target station to keep session online.

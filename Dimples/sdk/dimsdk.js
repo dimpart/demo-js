@@ -6513,7 +6513,7 @@ if (typeof DIMP !== 'object') {
         if (!factory) {
             throw new ReferenceError('ID factory not ready');
         }
-        return factory.createIdentifier(meta, network, terminal)
+        return factory.generateIdentifier(meta, network, terminal)
     };
     AccountGeneralFactory.prototype.setMetaFactory = function (type, factory) {
         this.__metaFactories[type] = factory

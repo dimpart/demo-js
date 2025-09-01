@@ -851,9 +851,9 @@
         }, getTitle: function () {
             return this.getString('title', null)
         }, setIdentifier: function (identifier) {
-            this.setString('ID', identifier)
+            this.setString('did', identifier)
         }, getIdentifier: function () {
-            return ID.parse(this.getValue('ID'))
+            return ID.parse(this.getValue('did'))
         }, setData: function (data) {
             var base64 = null;
             if (data) {
@@ -1587,7 +1587,7 @@
         var item;
         for (var i = 0; i < array.length; ++i) {
             item = array[i];
-            identifier = ID.parse(item['ID']);
+            identifier = ID.parse(item['did']);
             chosen = Converter.getInt(item['chosen'], 0);
             if (!identifier) {
                 continue
@@ -1601,7 +1601,7 @@
         var info;
         for (var i = 0; i < providers.length; ++i) {
             info = providers[i];
-            array.push({'ID': info.getIdentifier().toString(), 'chosen': info.getChosen()})
+            array.push({'did': info.getIdentifier().toString(), 'chosen': info.getChosen()})
         }
         return array
     };
@@ -1652,7 +1652,7 @@
         var item;
         for (var i = 0; i < array.length; ++i) {
             item = array[i];
-            sid = ID.parse(item['ID']);
+            sid = ID.parse(item['did']);
             chosen = Converter.getInt(item['chosen'], 0);
             host = Converter.getString(item['host'], null);
             port = Converter.getInt(item['port'], 0);
@@ -1670,7 +1670,7 @@
         for (var i = 0; i < stations.length; ++i) {
             info = stations[i];
             array.push({
-                'ID': info.getIdentifier().toString(),
+                'did': info.getIdentifier().toString(),
                 'chosen': info.getChosen(),
                 'host': info.getHost(),
                 'port': info.getPort(),
@@ -2652,7 +2652,10 @@
         return -1
     };
     DocumentStorage.parse_document = function (dict, identifier, type) {
-        var entity = ID.parse(dict['ID']);
+        var entity = ID.parse(dict['did']);
+        if (!entity) {
+            entity = ID.parse(dict['ID']);
+        }
         if (!identifier) {
             identifier = entity
         } else if (!identifier.equals(entity)) {
@@ -2835,7 +2838,7 @@
             if (owner) {
                 return owner.equals(user)
             }
-            if (EntityType.GROUP.equals(group.getType())) {
+            if (EntityType.GROUP === group.getType()) {
                 return this.isFounder(user, group)
             }
             Log.error('only polylogue so far', group);
@@ -2924,7 +2927,7 @@
     };
     GroupBotsManager.prototype.updateRespondTime = function (content, envelope) {
         var sender = envelope.getSender();
-        if (!EntityType.BOT.equals(sender.getType())) {
+        if (!EntityType.BOT === sender.getType()) {
             return false
         }
         var origin = content.getOriginalEnvelope();
@@ -4589,7 +4592,7 @@
     app.network.SessionStateTransitionBuilder = function () {
         BaseObject.call(this)
     };
-    var TransitionBuilder = app.net.SessionStateTransitionBuilder;
+    var TransitionBuilder = app.network.SessionStateTransitionBuilder;
     Class(TransitionBuilder, BaseObject, null, {
         getDefaultConnectingTransition: function () {
             return new StateTransition(StateOrder.CONNECTING, function (ctx, now) {
@@ -5071,8 +5074,8 @@
             if (expired) {
                 var text = 'Command expired.';
                 errors = this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Group command expired: ${cmd}, group: ${ID}',
-                    'replacements': {'cmd': content.getCmd(), 'ID': group.toString()}
+                    'template': 'Group command expired: ${cmd}, group: ${gid}',
+                    'replacements': {'cmd': content.getCmd(), 'gid': group.toString()}
                 });
                 group = null
             } else {
@@ -5090,8 +5093,8 @@
             if (members.length === 0) {
                 var text = 'Command error.';
                 errors = this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Group members empty: ${ID}',
-                    'replacements': {'ID': group.toString()}
+                    'template': 'Group members empty: ${gid}',
+                    'replacements': {'gid': group.toString()}
                 })
             } else {
                 errors = null
@@ -5109,8 +5112,8 @@
             if (!owner || members.length === 0) {
                 var text = 'Group empty.';
                 errors = this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Group empty: ${ID}',
-                    'replacements': {'ID': group.toString()}
+                    'template': 'Group empty: ${gid}',
+                    'replacements': {'gid': group.toString()}
                 })
             } else {
                 errors = null
@@ -5163,8 +5166,8 @@
             if (!isMember) {
                 text = 'Permission denied.';
                 return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Not allowed to invite member into group: ${ID}',
-                    'replacements': {'ID': group.toString()}
+                    'template': 'Not allowed to invite member into group: ${gid}',
+                    'replacements': {'gid': group.toString()}
                 })
             }
             var canReset = isOwner || isAdmin;
@@ -5244,15 +5247,15 @@
             if (isOwner) {
                 text = 'Permission denied.';
                 return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Owner cannot quit from group: ${ID}',
-                    'replacements': {'ID': group.toString()}
+                    'template': 'Owner cannot quit from group: ${gid}',
+                    'replacements': {'gid': group.toString()}
                 })
             }
             if (isAdmin) {
                 text = 'Permission denied.';
                 return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Administrator cannot quit from group: ${ID}',
-                    'replacements': {'ID': group.toString()}
+                    'template': 'Administrator cannot quit from group: ${gid}',
+                    'replacements': {'gid': group.toString()}
                 })
             }
             if (!isMember) {
@@ -5299,8 +5302,8 @@
             if (!canQuery) {
                 text = 'Permission denied.';
                 return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Not allowed to query members of group: ${ID}',
-                    'replacements': {'ID': group.toString()}
+                    'template': 'Not allowed to query members of group: ${gid}',
+                    'replacements': {'gid': group.toString()}
                 })
             }
             var facebook = this.getFacebook();
@@ -5313,8 +5316,8 @@
                 } else if (lastTime.getTime() <= queryTime.getTime()) {
                     text = 'Group history not updated.';
                     return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                        'template': 'Group history not updated: ${ID}, last time: ${time}',
-                        'replacements': {'ID': group.toString(), 'time': lastTime.getTime() / 1000.0}
+                        'template': 'Group history not updated: ${gid}, last time: ${time}',
+                        'replacements': {'gid': group.toString(), 'time': lastTime.getTime() / 1000.0}
                     })
                 }
             }
@@ -5360,15 +5363,15 @@
             if (!canReset) {
                 text = 'Permission denied.';
                 return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Not allowed to reset members of group: ${ID}',
-                    'replacements': {'ID': group.toString()}
+                    'template': 'Not allowed to reset members of group: ${gid}',
+                    'replacements': {'gid': group.toString()}
                 })
             }
             if (!newMembers[0].equals(owner)) {
                 text = 'Permission denied.';
                 return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Owner must be the first member of group: ${ID}',
-                    'replacements': {'ID': group.toString()}
+                    'template': 'Owner must be the first member of group: ${gid}',
+                    'replacements': {'gid': group.toString()}
                 })
             }
             var expelAdmin = false;
@@ -5381,8 +5384,8 @@
             if (expelAdmin) {
                 text = 'Permission denied.';
                 return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Not allowed to expel administrator of group: ${ID}',
-                    'replacements': {'ID': group.toString()}
+                    'template': 'Not allowed to expel administrator of group: ${gid}',
+                    'replacements': {'gid': group.toString()}
                 })
             }
             var memPair = ResetCommandProcessor.calculateReset(members, newMembers);
@@ -5698,7 +5701,7 @@
         if (user) {
             return user
         }
-        if (EntityType.GROUP.equals(group.getType())) {
+        if (EntityType.GROUP === group.getType()) {
             user = db.getFounder(group);
             if (!user) {
                 user = doc.getFounder()
@@ -6112,15 +6115,15 @@
             if (!res) {
                 continue
             } else if (Interface.conforms(res, ReceiptCommand)) {
-                if (EntityType.STATION.equals(network)) {
+                if (EntityType.STATION === network) {
                     continue
-                } else if (EntityType.BOT.equals(network)) {
+                } else if (EntityType.BOT === network) {
                     continue
                 }
             } else if (Interface.conforms(res, TextContent)) {
-                if (EntityType.STATION.equals(network)) {
+                if (EntityType.STATION === network) {
                     continue
-                } else if (EntityType.BOT.equals(network)) {
+                } else if (EntityType.BOT === network) {
                     continue
                 }
             }
@@ -6250,7 +6253,7 @@
         var user = facebook.getCurrentUser();
         if (!user) {
             Log.error('failed to get current user')
-        } else if (EntityType.STATION.equals(user.getType())) {
+        } else if (EntityType.STATION === user.getType()) {
             messenger.reportOnline(user.getIdentifier())
         } else {
             messenger.broadcastLogin(user.getIdentifier(), this.getUserAgent())

@@ -68,7 +68,7 @@
     app.network.SessionStateTransitionBuilder = function () {
         BaseObject.call(this);
     };
-    var TransitionBuilder = app.net.SessionStateTransitionBuilder;
+    var TransitionBuilder = app.network.SessionStateTransitionBuilder;
 
     Class(TransitionBuilder, BaseObject, null, {
         ///  Default -> Connecting

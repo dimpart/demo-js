@@ -77,18 +77,18 @@
             if (isOwner) {
                 text = 'Permission denied.';
                 return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Owner cannot quit from group: ${ID}',
+                    'template': 'Owner cannot quit from group: ${gid}',
                     'replacements': {
-                        'ID': group.toString()
+                        'gid': group.toString()
                     }
                 });
             }
             if (isAdmin) {
                 text = 'Permission denied.';
                 return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Administrator cannot quit from group: ${ID}',
+                    'template': 'Administrator cannot quit from group: ${gid}',
                     'replacements': {
-                        'ID': group.toString()
+                        'gid': group.toString()
                     }
                 });
             }

@@ -84,9 +84,9 @@
             if (!canReset) {
                 text = 'Permission denied.';
                 return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Not allowed to reset members of group: ${ID}',
+                    'template': 'Not allowed to reset members of group: ${gid}',
                     'replacements': {
-                        'ID': group.toString()
+                        'gid': group.toString()
                     }
                 });
             }
@@ -94,9 +94,9 @@
             if (!newMembers[0].equals(owner)) {
                 text = 'Permission denied.';
                 return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Owner must be the first member of group: ${ID}',
+                    'template': 'Owner must be the first member of group: ${gid}',
                     'replacements': {
-                        'ID': group.toString()
+                        'gid': group.toString()
                     }
                 });
             }
@@ -111,9 +111,9 @@
             if (expelAdmin) {
                 text = 'Permission denied.';
                 return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Not allowed to expel administrator of group: ${ID}',
+                    'template': 'Not allowed to expel administrator of group: ${gid}',
                     'replacements': {
-                        'ID': group.toString()
+                        'gid': group.toString()
                     }
                 });
             }

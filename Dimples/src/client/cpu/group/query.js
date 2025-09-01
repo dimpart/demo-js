@@ -77,9 +77,9 @@
             if (!canQuery) {
                 text = 'Permission denied.';
                 return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Not allowed to query members of group: ${ID}',
+                    'template': 'Not allowed to query members of group: ${gid}',
                     'replacements': {
-                        'ID': group.toString()
+                        'gid': group.toString()
                     }
                 });
             }
@@ -97,9 +97,9 @@
                     // group history not updated
                     text = 'Group history not updated.';
                     return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                        'template': 'Group history not updated: ${ID}, last time: ${time}',
+                        'template': 'Group history not updated: ${gid}, last time: ${time}',
                         'replacements': {
-                            'ID': group.toString(),
+                            'gid': group.toString(),
                             'time': lastTime.getTime() / 1000.0
                         }
                     });

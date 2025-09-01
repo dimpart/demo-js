@@ -2924,6 +2924,8 @@
                 } else {
                     this.center.postNotification(notification, sender, userInfo)
                 }
+            }, getInstance: function () {
+                return this
             }, center: new BaseCenter()
         };
         var NotificationCenter = sg.lnc.NotificationCenter;

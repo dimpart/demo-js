@@ -65,7 +65,7 @@
         var item;
         for (var i = 0; i < array.length; ++i) {
             item = array[i];
-            identifier = ID.parse(item['ID']);
+            identifier = ID.parse(item['did']);
             chosen = Converter.getInt(item['chosen'], 0);
             if (!identifier) {
                 // SP ID error
@@ -82,7 +82,7 @@
         for (var i = 0; i < providers.length; ++i) {
             info = providers[i];
             array.push({
-                'ID': info.getIdentifier().toString(),
+                'did': info.getIdentifier().toString(),
                 'chosen': info.getChosen()
             });
         }
@@ -178,7 +178,7 @@
         var item;
         for (var i = 0; i < array.length; ++i) {
             item = array[i];
-            sid = ID.parse(item['ID']);
+            sid = ID.parse(item['did']);
             chosen = Converter.getInt(item['chosen'], 0);
             host = Converter.getString(item['host'], null);
             port = Converter.getInt(item['port'], 0);
@@ -198,7 +198,7 @@
         for (var i = 0; i < stations.length; ++i) {
             info = stations[i];
             array.push({
-                'ID': info.getIdentifier().toString(),
+                'did': info.getIdentifier().toString(),
                 'chosen': info.getChosen(),
                 'host': info.getHost(),
                 'port': info.getPort(),

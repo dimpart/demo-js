@@ -112,7 +112,10 @@
 
     DocumentStorage.parse_document = function (dict, identifier, type) {
         // check document ID
-        var entity = ID.parse(dict['ID']);
+        var entity = ID.parse(dict['did']);
+        if (!entity) {
+            entity = ID.parse(dict['ID']);
+        }
         if (!identifier) {
             identifier = entity;
         } else if (!identifier.equals(entity)) {

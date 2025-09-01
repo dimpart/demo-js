@@ -180,10 +180,10 @@
             if (expired) {
                 var text = 'Command expired.';
                 errors = this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Group command expired: ${cmd}, group: ${ID}',
+                    'template': 'Group command expired: ${cmd}, group: ${gid}',
                     'replacements': {
                         'cmd': content.getCmd(),
-                        'ID': group.toString()
+                        'gid': group.toString()
                     }
                 });
                 group = null;
@@ -213,9 +213,9 @@
             if (members.length === 0) {
                 var text = 'Command error.';
                 errors = this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Group members empty: ${ID}',
+                    'template': 'Group members empty: ${gid}',
                     'replacements': {
-                        'ID': group.toString()
+                        'gid': group.toString()
                     }
                 });
             } else {
@@ -246,9 +246,9 @@
                 // TODO: query group members?
                 var text = 'Group empty.';
                 errors = this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Group empty: ${ID}',
+                    'template': 'Group empty: ${gid}',
                     'replacements': {
-                        'ID': group.toString()
+                        'gid': group.toString()
                     }
                 });
             } else {

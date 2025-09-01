@@ -85,9 +85,9 @@
             if (!isMember) {
                 text = 'Permission denied.';
                 return this.respondReceipt(text, rMsg.getEnvelope(), content, {
-                    'template': 'Not allowed to invite member into group: ${ID}',
+                    'template': 'Not allowed to invite member into group: ${gid}',
                     'replacements': {
-                        'ID': group.toString()
+                        'gid': group.toString()
                     }
                 });
             }
