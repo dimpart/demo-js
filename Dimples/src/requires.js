@@ -168,7 +168,7 @@ var CommandHelper           = dkd.ext.CommandHelper;
 var ExtensionLoader   = dimp.ext.ExtensionLoader;
 var PluginLoader      = dimp.ext.PluginLoader;
 
-var MessageUtils = sdk.msg.MessageUtils
+var MessageUtils = sdk.msg.MessageUtils;
 var CipherKeyDelegate = sdk.core.CipherKeyDelegate;
 var MessageCompressor = sdk.core.MessageCompressor;
 var MessageShortener  = sdk.core.MessageShortener;
@@ -177,7 +177,7 @@ var Barrack           = sdk.core.Barrack;
 var TwinsHelper      = sdk.TwinsHelper;
 var Facebook         = sdk.Facebook;
 var Messenger        = sdk.Messenger;
-var MessagePacker    = sdk.MessagePacker
+var MessagePacker    = sdk.MessagePacker;
 var MessageProcessor = sdk.MessageProcessor;
 var GeneralContentProcessorFactory = sdk.cpu.GeneralContentProcessorFactory;
 var BaseContentProcessor           = sdk.cpu.BaseContentProcessor;
@@ -194,18 +194,16 @@ var BaseState      = fsm.BaseState;
 var BaseTransition = fsm.BaseTransition;
 
 var InetSocketAddress = st.type.InetSocketAddress;
-var Departure      = st.port.Departure;
-var PorterDelegate = st.port.PorterDelegate;
-var PorterStatus   = st.port.PorterStatus;
+var Departure         = st.port.Departure;
+var PorterDelegate    = st.port.PorterDelegate;
+var PorterStatus      = st.port.PorterStatus;
 var BaseConnection    = st.socket.BaseConnection;
 var StarPorter    = st.StarPorter;
-var StarGate      = st.StarGate;
 
+var Storage   = sg.dos.LocalStorage;
+var Log       = sg.lnc.Log;
 var ClientHub = sg.ws.ClientHub;
 var CommonGate     = sg.WSClientGate;
 var PlainPorter    = sg.PlainPorter;
 var PlainArrival   = sg.PlainArrival;
 var PlainDeparture = sg.PlainDeparture;
-
-var Log     = lnc.Log;
-var Storage = dos.LocalStorage;

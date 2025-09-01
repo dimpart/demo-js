@@ -60,42 +60,60 @@
             font-weight: bold;
         }
     </style>
-    <script src="includes.js"></script>
+
+    <script src="src/sources.js"></script>
+    <script>
+        !function (ns) {
+            var sources = [
+                'src/requires.js'
+            ].concat(dim_common)
+                .concat(dim_database)
+                .concat(dim_group)
+                .concat(dim_network)
+                .concat(dim_client);
+            var dist = 'dist/client.js';
+
+            ns.sources = sources;
+            ns.dist = dist;
+        }(window);
+    </script>
 </head>
 <body>
     <h2>Makefile</h2>
     <p class="console">
         <script>
-            //
-            //  Makefile
-            //
-            var text = 'cat';
-            for (var k = 0; k < dim_common.length; ++k) {
-                if (dim_common[k]) {
-                    text += ' ' + dim_common[k];
+            !(function () {
+                var targets = [
+                    'src/ns_begin.closure'
+                ];
+                for (var i = 0; i < sources.length; ++i) {
+                    var file = sources[i];
+                    if (file) {
+                        targets.push(file);
+                    }
                 }
-            }
-            text += ' >> dist/common.js';
-            document.writeln(text);
+                targets.push('src/ns_end.closure');
+
+                var text = targets.join(' ');
+                text = 'cat ' + text + ' > ' + dist;
+                document.writeln(text);
+            }());
         </script>
     </p>
     <p class="console">
         <script>
-            //
-            //  Makefile
-            //
-            var text = 'cat';
-            for (var k = 0; k < dim_client.length; ++k) {
-                if (dim_client[k]) {
-                    text += ' ' + dim_client[k];
-                }
-            }
-            text += ' >> dist/client.js';
-            document.writeln(text);
+            !(function () {
+                var targets = [
+                    'src/dimsdk.js',
+                    'src/network.js',
+                    dist
+                ];
+
+                var text = targets.join(' ');
+                text = 'cat ' + text + ' >> dist/dimples.js';
+                document.writeln(text);
+            }());
         </script>
-    </p>
-    <p class="console">
-        cat ../../sdk-js/SDK/dist/dimall.js dist/common.js dist/client.js >> dist/dimples.js
     </p>
 </body>
 </html>

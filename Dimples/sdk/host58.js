@@ -1,4 +1,4 @@
-;
+'use strict';
 // license: https://mit-license.org
 // =============================================================================
 // The MIT License (MIT)
@@ -29,15 +29,18 @@
  *  Convert host string (IP:port) to/from Base58 string
  */
 
-(function (ns, sys) {
-    'use strict';
+(function (app, sys) {
 
-    var Class = sys.type.Class;
-    var Host = ns.network.Host;
-    var IPv4 = ns.network.IPv4;
-    var IPv6 = ns.network.IPv6;
+    var sg = app.network;
 
-    var Host58 = function (host) {
+    var Class  = sys.type.Class;
+    var Base58 = sys.type.Base58;
+
+    var Host = sg.ip.Host;
+    var IPv4 = sg.ip.IPv4;
+    var IPv6 = sg.ip.IPv6;
+
+    sg.ip.Host58 = function (host) {
         var ipv;
         if (/[.:]+/.test(host)) {
             // try IPv4
@@ -51,7 +54,7 @@
             }
         } else {
             // base58
-            var data = sys.format.Base58.decode(host);
+            var data = Base58.decode(host);
             var count = data.length;
             if (count === 4 || count === 6) {
                 // IPv4
@@ -66,6 +69,8 @@
         Host.call(this, host, ipv.ip, ipv.port, ipv.data);
         this.ipv = ipv;
     };
+    var Host58 = sg.ip.Host58;
+
     Class(Host58, Host, null, null);
 
     Host58.prototype.valueOf = function () {
@@ -73,10 +78,7 @@
     };
 
     Host58.prototype.encode = function (default_port) {
-        return sys.format.Base58.encode(this.ipv.toArray(default_port));
+        return Base58.encode(this.ipv.toArray(default_port));
     };
 
-    //-------- namespace --------
-    ns.network.Host58 = Host58;
-
-})(StarGate, MONKEY);
+})(DIMP, DIMP);

@@ -1,0 +1,19 @@
+/**
+ *  DIM-Client (v2.0.0)
+ *  (DIMP: Decentralized Instant Messaging Protocol)
+ *
+ * @author    moKy <albert.moky at gmail.com>
+ * @date      Sep. 1, 2025
+ * @copyright (c) 2020-2025 Albert Moky
+ * @license   {@link https://mit-license.org | MIT License}
+ */;
+
+(function (app, sdk, dimp, dkd, mkm, mk) {
+
+    var fsm = sdk.fsm;     // FiniteStateMachine
+    var st = sdk.network;  // StarTrek
+    var sg = sdk.network;
+
+    // ...
+
+// })(DIMP, DIMP, DIMP, DIMP, DIMP, DIMP);
