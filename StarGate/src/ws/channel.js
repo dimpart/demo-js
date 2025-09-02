@@ -30,7 +30,7 @@
 // =============================================================================
 //
 
-//! require 'namespace.js'
+//! require 'requires.js'
 
     /**
      *  Stream Channel Reader
@@ -64,7 +64,7 @@
             } else {
                 remote = null;
             }
-            return new Pair(data, remote);
+            return [data, remote];
         }
     });
 

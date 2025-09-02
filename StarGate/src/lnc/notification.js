@@ -211,6 +211,10 @@
             }
         },
 
+        getInstance: function () {
+            return this;
+        },
+
         center: new BaseCenter()
     };
     var NotificationCenter = sg.lnc.NotificationCenter;

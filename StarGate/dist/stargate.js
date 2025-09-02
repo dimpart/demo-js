@@ -34,7 +34,6 @@
     var Runnable = fsm.skywalker.Runnable;
     var Runner = fsm.skywalker.Runner;
     var Thread = fsm.threading.Thread;
-    var Pair = st.type.Pair;
     var AddressPairMap = st.type.AddressPairMap;
     var SocketHelper = st.net.SocketHelper;
     var Departure = st.port.Departure;
@@ -134,7 +133,7 @@
         DEBUG: DEBUG_FLAG | INFO_FLAG | WARNING_FLAG | ERROR_FLAG,
         DEVELOP: INFO_FLAG | WARNING_FLAG | ERROR_FLAG,
         RELEASE: WARNING_FLAG | ERROR_FLAG,
-        level: this.RELEASE,
+        level: WARNING_FLAG | ERROR_FLAG,
         showTime: false,
         showCaller: false,
         logger: null,
@@ -307,6 +306,8 @@
             } else {
                 this.center.postNotification(notification, sender, userInfo)
             }
+        }, getInstance: function () {
+            return this
         }, center: new BaseCenter()
     };
     var NotificationCenter = sg.lnc.NotificationCenter;
@@ -818,7 +819,7 @@
         } else {
             remote = null
         }
-        return new Pair(data, remote)
+        return [data, remote]
     };
     Socket.prototype.send = function (data, remote) {
         return this.write(data)
@@ -843,7 +844,7 @@
             } else {
                 remote = null
             }
-            return new Pair(data, remote)
+            return [data, remote]
         }
     });
     sg.ws.StreamChannelWriter = function (channel) {

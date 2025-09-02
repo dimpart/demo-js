@@ -31,7 +31,6 @@ var Runnable = fsm.skywalker.Runnable;
 var Runner   = fsm.skywalker.Runner;
 var Thread   = fsm.threading.Thread;
 
-var Pair           = st.type.Pair;
 var AddressPairMap = st.type.AddressPairMap;
 var SocketHelper   = st.net.SocketHelper;
 var Departure      = st.port.Departure;

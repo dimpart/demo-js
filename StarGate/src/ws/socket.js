@@ -35,7 +35,7 @@
  *  ~~~~~~~~~~~~~~~~~
  */
 
-//! require 'namespace.js'
+//! require 'requires.js'
 
     var ws_connect = function (url, proxy) {
         var ws = new WebSocket(url);
@@ -237,7 +237,7 @@
         } else {
             remote = null;
         }
-        return new Pair(data, remote);
+        return [data, remote];
     };
 
     // Override

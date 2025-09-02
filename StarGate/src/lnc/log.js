@@ -50,7 +50,7 @@
         DEVELOP:              INFO_FLAG | WARNING_FLAG | ERROR_FLAG,
         RELEASE:                          WARNING_FLAG | ERROR_FLAG,
 
-        level: this.RELEASE,           // WARNING_FLAG | ERROR_FLAG
+        level: WARNING_FLAG | ERROR_FLAG,
 
         showTime: false,
         showCaller: false,  // (Reserved)
