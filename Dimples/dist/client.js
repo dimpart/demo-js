@@ -2022,7 +2022,7 @@
         var gid = group.toString();
         return this.__lastHistoryTimes.setLastTime(gid, current)
     };
-    EntityChecker.prototype.checkMeta = function (identifier, meta) {
+    EntityChecker.prototype.checkMeta = function (meta, identifier) {
         if (this.needsQueryMeta(identifier, meta)) {
             return this.queryMeta(identifier)
         } else {
@@ -2237,7 +2237,7 @@
         var meta = db.getMeta(identifier);
         var checker = this.getEntityChecker();
         if (checker) {
-            checker.checkMeta(identifier, meta)
+            checker.checkMeta(meta, identifier)
         }
         return meta
     };
@@ -2474,7 +2474,7 @@
             Log.error(error);
             return false
         }
-        iMsg.setValue('sn', content.getSN());
+        iMsg.setValue('sn', content.getSerialNumber());
         if (this.checkReceiver(iMsg)) {
         } else {
             Log.warning('receiver not ready', iMsg.getReceiver());
@@ -2654,7 +2654,7 @@
     DocumentStorage.parse_document = function (dict, identifier, type) {
         var entity = ID.parse(dict['did']);
         if (!entity) {
-            entity = ID.parse(dict['ID']);
+            entity = ID.parse(dict['ID'])
         }
         if (!identifier) {
             identifier = entity

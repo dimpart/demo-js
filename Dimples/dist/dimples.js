@@ -8090,7 +8090,7 @@ if (typeof DIMP !== 'object') {
         return compressor.compressSymmetricKey(pwd.toMap())
     };
     Transceiver.prototype.encryptKey = function (keyData, receiver, iMsg) {
-        var facebook = this.getEntityDelegate();
+        var facebook = this.getFacebook();
         var contact = facebook.getUser(receiver);
         if (!contact) {
             return null
@@ -8098,7 +8098,7 @@ if (typeof DIMP !== 'object') {
         return contact.encrypt(keyData)
     };
     Transceiver.prototype.decryptKey = function (keyData, receiver, sMsg) {
-        var facebook = this.getEntityDelegate();
+        var facebook = this.getFacebook();
         var user = facebook.getUser(receiver);
         if (!user) {
             return null
@@ -8122,13 +8122,13 @@ if (typeof DIMP !== 'object') {
         return Content.parse(info)
     };
     Transceiver.prototype.signData = function (data, sMsg) {
-        var facebook = this.getEntityDelegate();
+        var facebook = this.getFacebook();
         var sender = sMsg.getSender();
         var user = facebook.getUser(sender);
         return user.sign(data)
     };
     Transceiver.prototype.verifyDataSignature = function (data, signature, rMsg) {
-        var facebook = this.getEntityDelegate();
+        var facebook = this.getFacebook();
         var sender = rMsg.getSender();
         var contact = facebook.getUser(sender);
         if (!contact) {
@@ -9529,19 +9529,6 @@ if (typeof DIMP !== 'object') {
         };
         st.type.AnyAddress = new InetSocketAddress('0.0.0.0', 0);
         var AnyAddress = st.type.AnyAddress;
-        st.type.Pair = function (a, b) {
-            BaseObject.call(this);
-            this.a = a;
-            this.b = b
-        };
-        var Pair = st.type.Pair;
-        Class(Pair, BaseObject, null, null);
-        Pair.prototype.equals = function (other) {
-            if (other instanceof Pair) {
-                return object_equals(this.a, other.a) && object_equals(this.b, other.b)
-            }
-            return false
-        };
         st.type.PairMap = Interface(null, null);
         var PairMap = st.type.PairMap;
         PairMap.prototype.items = function () {
@@ -10742,9 +10729,9 @@ if (typeof DIMP !== 'object') {
         };
         BaseHub.prototype.driveChannel = function (channel) {
             var cs = channel.getState();
-            if (StateOrder.INIT.equals(cs)) {
+            if (ChannelStateOrder.INIT.equals(cs)) {
                 return false
-            } else if (StateOrder.CLOSED.equals(cs)) {
+            } else if (ChannelStateOrder.CLOSED.equals(cs)) {
                 return false
             }
             var conn;
@@ -10753,8 +10740,8 @@ if (typeof DIMP !== 'object') {
             var data;
             try {
                 var pair = channel.receive(BaseHub.MSS);
-                data = pair.a;
-                remote = pair.b
+                data = pair[0];
+                remote = pair[1]
             } catch (e) {
                 remote = channel.getRemoteAddress();
                 local = channel.getLocalAddress();
@@ -10847,13 +10834,13 @@ if (typeof DIMP !== 'object') {
             if (!now) {
                 now = new Date()
             }
-            this.__expired = ArrivalShip.EXPIRED.addTo(now)
+            this.__expired = ArrivalShip.EXPIRES.addTo(now)
         };
         var ArrivalShip = st.ArrivalShip;
         Class(ArrivalShip, BaseObject, [Arrival], null);
         ArrivalShip.EXPIRES = Duration.ofMinutes(5);
         ArrivalShip.prototype.touch = function (now) {
-            this.__expired = ArrivalShip.EXPIRED.addTo(now)
+            this.__expired = ArrivalShip.EXPIRES.addTo(now)
         };
         ArrivalShip.prototype.getStatus = function (now) {
             if (now.getTime() > this.__expired.getTime()) {
@@ -11543,7 +11530,6 @@ if (typeof DIMP !== 'object') {
         var Runnable = fsm.skywalker.Runnable;
         var Runner = fsm.skywalker.Runner;
         var Thread = fsm.threading.Thread;
-        var Pair = st.type.Pair;
         var AddressPairMap = st.type.AddressPairMap;
         var SocketHelper = st.net.SocketHelper;
         var Departure = st.port.Departure;
@@ -11643,7 +11629,7 @@ if (typeof DIMP !== 'object') {
             DEBUG: DEBUG_FLAG | INFO_FLAG | WARNING_FLAG | ERROR_FLAG,
             DEVELOP: INFO_FLAG | WARNING_FLAG | ERROR_FLAG,
             RELEASE: WARNING_FLAG | ERROR_FLAG,
-            level: this.RELEASE,
+            level: WARNING_FLAG | ERROR_FLAG,
             showTime: false,
             showCaller: false,
             logger: null,
@@ -12329,7 +12315,7 @@ if (typeof DIMP !== 'object') {
             } else {
                 remote = null
             }
-            return new Pair(data, remote)
+            return [data, remote]
         };
         Socket.prototype.send = function (data, remote) {
             return this.write(data)
@@ -12354,7 +12340,7 @@ if (typeof DIMP !== 'object') {
                 } else {
                     remote = null
                 }
-                return new Pair(data, remote)
+                return [data, remote]
             }
         });
         sg.ws.StreamChannelWriter = function (channel) {
@@ -14698,7 +14684,7 @@ if (typeof DIMP !== 'object') {
         var gid = group.toString();
         return this.__lastHistoryTimes.setLastTime(gid, current)
     };
-    EntityChecker.prototype.checkMeta = function (identifier, meta) {
+    EntityChecker.prototype.checkMeta = function (meta, identifier) {
         if (this.needsQueryMeta(identifier, meta)) {
             return this.queryMeta(identifier)
         } else {
@@ -14913,7 +14899,7 @@ if (typeof DIMP !== 'object') {
         var meta = db.getMeta(identifier);
         var checker = this.getEntityChecker();
         if (checker) {
-            checker.checkMeta(identifier, meta)
+            checker.checkMeta(meta, identifier)
         }
         return meta
     };
@@ -15150,7 +15136,7 @@ if (typeof DIMP !== 'object') {
             Log.error(error);
             return false
         }
-        iMsg.setValue('sn', content.getSN());
+        iMsg.setValue('sn', content.getSerialNumber());
         if (this.checkReceiver(iMsg)) {
         } else {
             Log.warning('receiver not ready', iMsg.getReceiver());

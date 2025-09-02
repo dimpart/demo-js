@@ -138,7 +138,7 @@
      * @param {Meta} meta                  - exists meta
      * @return {boolean} true on querying
      */
-    EntityChecker.prototype.checkMeta = function (identifier, meta) {
+    EntityChecker.prototype.checkMeta = function (meta, identifier) {
         if (this.needsQueryMeta(identifier, meta)) {
             // if (this.isMetaQueryExpired(identifier)) {} else {
             //     // query not expired yet

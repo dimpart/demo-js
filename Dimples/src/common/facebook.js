@@ -199,7 +199,7 @@
         var meta = db.getMeta(identifier);
         var checker = this.getEntityChecker();
         if (checker) {
-            checker.checkMeta(identifier, meta);
+            checker.checkMeta(meta, identifier);
         }
         return meta;
     };

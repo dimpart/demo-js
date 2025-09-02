@@ -637,19 +637,6 @@
         };
         st.type.AnyAddress = new InetSocketAddress('0.0.0.0', 0);
         var AnyAddress = st.type.AnyAddress;
-        st.type.Pair = function (a, b) {
-            BaseObject.call(this);
-            this.a = a;
-            this.b = b
-        };
-        var Pair = st.type.Pair;
-        Class(Pair, BaseObject, null, null);
-        Pair.prototype.equals = function (other) {
-            if (other instanceof Pair) {
-                return object_equals(this.a, other.a) && object_equals(this.b, other.b)
-            }
-            return false
-        };
         st.type.PairMap = Interface(null, null);
         var PairMap = st.type.PairMap;
         PairMap.prototype.items = function () {
@@ -1850,9 +1837,9 @@
         };
         BaseHub.prototype.driveChannel = function (channel) {
             var cs = channel.getState();
-            if (StateOrder.INIT.equals(cs)) {
+            if (ChannelStateOrder.INIT.equals(cs)) {
                 return false
-            } else if (StateOrder.CLOSED.equals(cs)) {
+            } else if (ChannelStateOrder.CLOSED.equals(cs)) {
                 return false
             }
             var conn;
@@ -1861,8 +1848,8 @@
             var data;
             try {
                 var pair = channel.receive(BaseHub.MSS);
-                data = pair.a;
-                remote = pair.b
+                data = pair[0];
+                remote = pair[1]
             } catch (e) {
                 remote = channel.getRemoteAddress();
                 local = channel.getLocalAddress();
@@ -1955,13 +1942,13 @@
             if (!now) {
                 now = new Date()
             }
-            this.__expired = ArrivalShip.EXPIRED.addTo(now)
+            this.__expired = ArrivalShip.EXPIRES.addTo(now)
         };
         var ArrivalShip = st.ArrivalShip;
         Class(ArrivalShip, BaseObject, [Arrival], null);
         ArrivalShip.EXPIRES = Duration.ofMinutes(5);
         ArrivalShip.prototype.touch = function (now) {
-            this.__expired = ArrivalShip.EXPIRED.addTo(now)
+            this.__expired = ArrivalShip.EXPIRES.addTo(now)
         };
         ArrivalShip.prototype.getStatus = function (now) {
             if (now.getTime() > this.__expired.getTime()) {
@@ -2651,7 +2638,6 @@
         var Runnable = fsm.skywalker.Runnable;
         var Runner = fsm.skywalker.Runner;
         var Thread = fsm.threading.Thread;
-        var Pair = st.type.Pair;
         var AddressPairMap = st.type.AddressPairMap;
         var SocketHelper = st.net.SocketHelper;
         var Departure = st.port.Departure;
@@ -2751,7 +2737,7 @@
             DEBUG: DEBUG_FLAG | INFO_FLAG | WARNING_FLAG | ERROR_FLAG,
             DEVELOP: INFO_FLAG | WARNING_FLAG | ERROR_FLAG,
             RELEASE: WARNING_FLAG | ERROR_FLAG,
-            level: this.RELEASE,
+            level: WARNING_FLAG | ERROR_FLAG,
             showTime: false,
             showCaller: false,
             logger: null,
@@ -3437,7 +3423,7 @@
             } else {
                 remote = null
             }
-            return new Pair(data, remote)
+            return [data, remote]
         };
         Socket.prototype.send = function (data, remote) {
             return this.write(data)
@@ -3462,7 +3448,7 @@
                 } else {
                     remote = null
                 }
-                return new Pair(data, remote)
+                return [data, remote]
             }
         });
         sg.ws.StreamChannelWriter = function (channel) {

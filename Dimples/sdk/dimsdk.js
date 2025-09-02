@@ -8090,7 +8090,7 @@ if (typeof DIMP !== 'object') {
         return compressor.compressSymmetricKey(pwd.toMap())
     };
     Transceiver.prototype.encryptKey = function (keyData, receiver, iMsg) {
-        var facebook = this.getEntityDelegate();
+        var facebook = this.getFacebook();
         var contact = facebook.getUser(receiver);
         if (!contact) {
             return null
@@ -8098,7 +8098,7 @@ if (typeof DIMP !== 'object') {
         return contact.encrypt(keyData)
     };
     Transceiver.prototype.decryptKey = function (keyData, receiver, sMsg) {
-        var facebook = this.getEntityDelegate();
+        var facebook = this.getFacebook();
         var user = facebook.getUser(receiver);
         if (!user) {
             return null
@@ -8122,13 +8122,13 @@ if (typeof DIMP !== 'object') {
         return Content.parse(info)
     };
     Transceiver.prototype.signData = function (data, sMsg) {
-        var facebook = this.getEntityDelegate();
+        var facebook = this.getFacebook();
         var sender = sMsg.getSender();
         var user = facebook.getUser(sender);
         return user.sign(data)
     };
     Transceiver.prototype.verifyDataSignature = function (data, signature, rMsg) {
-        var facebook = this.getEntityDelegate();
+        var facebook = this.getFacebook();
         var sender = rMsg.getSender();
         var contact = facebook.getUser(sender);
         if (!contact) {

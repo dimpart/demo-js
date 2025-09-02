@@ -161,7 +161,7 @@
         // this is usually not a problem;
         // but sometimes we want to respond a receipt with original sn,
         // so I suggest to expose 'sn' here.
-        iMsg.setValue('sn', content.getSN());
+        iMsg.setValue('sn', content.getSerialNumber());
 
         // 1. check contact info
         // 2. check group members info
