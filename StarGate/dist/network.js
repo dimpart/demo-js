@@ -913,7 +913,7 @@
             EXPIRED: 4,
             ERROR: 5
         });
-        var StateOrder = st.net.ConnectionStateOrder;
+        var ConnectionStateOrder = st.net.ConnectionStateOrder;
         st.net.ConnectionState = function (order) {
             BaseState.call(this, Enum.getInt(order));
             this.__name = order.getName();
@@ -935,7 +935,7 @@
                         return true
                     }
                     other = other.getIndex()
-                } else if (other instanceof StateOrder) {
+                } else if (other instanceof ConnectionStateOrder) {
                     other = other.getValue()
                 }
                 return this.getIndex() === other
@@ -959,32 +959,32 @@
         var StateBuilder = st.net.ConnectionStateBuilder;
         Class(StateBuilder, BaseObject, null, {
             getDefaultState: function () {
-                var state = new ConnectionState(StateOrder.DEFAULT);
+                var state = new ConnectionState(ConnectionStateOrder.DEFAULT);
                 state.addTransition(this.builder.getDefaultPreparingTransition());
                 return state
             }, getPreparingState: function () {
-                var state = new ConnectionState(StateOrder.PREPARING);
+                var state = new ConnectionState(ConnectionStateOrder.PREPARING);
                 state.addTransition(this.builder.getPreparingReadyTransition());
                 state.addTransition(this.builder.getPreparingDefaultTransition());
                 return state
             }, getReadyState: function () {
-                var state = new ConnectionState(StateOrder.READY);
+                var state = new ConnectionState(ConnectionStateOrder.READY);
                 state.addTransition(this.builder.getReadyExpiredTransition());
                 state.addTransition(this.builder.getReadyErrorTransition());
                 return state
             }, getExpiredState: function () {
-                var state = new ConnectionState(StateOrder.EXPIRED);
+                var state = new ConnectionState(ConnectionStateOrder.EXPIRED);
                 state.addTransition(this.builder.getExpiredMaintainingTransition());
                 state.addTransition(this.builder.getExpiredErrorTransition());
                 return state
             }, getMaintainingState: function () {
-                var state = new ConnectionState(StateOrder.MAINTAINING);
+                var state = new ConnectionState(ConnectionStateOrder.MAINTAINING);
                 state.addTransition(this.builder.getMaintainingReadyTransition());
                 state.addTransition(this.builder.getMaintainingExpiredTransition());
                 state.addTransition(this.builder.getMaintainingErrorTransition());
                 return state
             }, getErrorState: function () {
-                var state = new ConnectionState(StateOrder.ERROR);
+                var state = new ConnectionState(ConnectionStateOrder.ERROR);
                 state.addTransition(this.builder.getErrorDefaultTransition());
                 return state
             }
@@ -1004,22 +1004,22 @@
         var TransitionBuilder = st.net.ConnectionStateTransitionBuilder;
         Class(TransitionBuilder, BaseObject, null, {
             getDefaultPreparingTransition: function () {
-                return new StateTransition(StateOrder.PREPARING, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.PREPARING, function (ctx, now) {
                     var conn = ctx.getConnection();
                     return conn && conn.isOpen()
                 })
             }, getPreparingReadyTransition: function () {
-                return new StateTransition(StateOrder.READY, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.READY, function (ctx, now) {
                     var conn = ctx.getConnection();
                     return conn && conn.isAlive()
                 })
             }, getPreparingDefaultTransition: function () {
-                return new StateTransition(StateOrder.DEFAULT, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.DEFAULT, function (ctx, now) {
                     var conn = ctx.getConnection();
                     return !(conn && conn.isOpen())
                 })
             }, getReadyExpiredTransition: function () {
-                return new StateTransition(StateOrder.EXPIRED, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.EXPIRED, function (ctx, now) {
                     var conn = ctx.getConnection();
                     if (!(conn && conn.isAlive())) {
                         return false
@@ -1027,12 +1027,12 @@
                     return !conn.isReceivedRecently(now)
                 })
             }, getReadyErrorTransition: function () {
-                return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.ERROR, function (ctx, now) {
                     var conn = ctx.getConnection();
                     return !(conn && conn.isAlive())
                 })
             }, getExpiredMaintainingTransition: function () {
-                return new StateTransition(StateOrder.MAINTAINING, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.MAINTAINING, function (ctx, now) {
                     var conn = ctx.getConnection();
                     if (!(conn && conn.isAlive())) {
                         return false
@@ -1040,7 +1040,7 @@
                     return conn.isSentRecently(now)
                 })
             }, getExpiredErrorTransition: function () {
-                return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.ERROR, function (ctx, now) {
                     var conn = ctx.getConnection();
                     if (!(conn && conn.isAlive())) {
                         return true
@@ -1048,7 +1048,7 @@
                     return conn.isNotReceivedLongTimeAgo(now)
                 })
             }, getMaintainingReadyTransition: function () {
-                return new StateTransition(StateOrder.READY, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.READY, function (ctx, now) {
                     var conn = ctx.getConnection();
                     if (!(conn && conn.isAlive())) {
                         return false
@@ -1056,7 +1056,7 @@
                     return conn.isReceivedRecently(now)
                 })
             }, getMaintainingExpiredTransition: function () {
-                return new StateTransition(StateOrder.EXPIRED, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.EXPIRED, function (ctx, now) {
                     var conn = ctx.getConnection();
                     if (!(conn && conn.isAlive())) {
                         return false
@@ -1064,7 +1064,7 @@
                     return !conn.isSentRecently(now)
                 })
             }, getMaintainingErrorTransition: function () {
-                return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.ERROR, function (ctx, now) {
                     var conn = ctx.getConnection();
                     if (!(conn && conn.isAlive())) {
                         return true
@@ -1072,7 +1072,7 @@
                     return conn.isNotReceivedLongTimeAgo(now)
                 })
             }, getErrorDefaultTransition: function () {
-                return new StateTransition(StateOrder.DEFAULT, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.DEFAULT, function (ctx, now) {
                     var conn = ctx.getConnection();
                     if (!(conn && conn.isAlive())) {
                         return false
@@ -1232,11 +1232,11 @@
                 return PorterStatus.ERROR
             }
             var index = state.getIndex();
-            if (StateOrder.READY.equals(index) || StateOrder.EXPIRED.equals(index) || StateOrder.MAINTAINING.equals(index)) {
+            if (ConnectionStateOrder.READY.equals(index) || ConnectionStateOrder.EXPIRED.equals(index) || ConnectionStateOrder.MAINTAINING.equals(index)) {
                 return PorterStatus.READY
-            } else if (StateOrder.PREPARING.equals(index)) {
+            } else if (ConnectionStateOrder.PREPARING.equals(index)) {
                 return PorterStatus.PREPARING
-            } else if (StateOrder.ERROR.equals(index)) {
+            } else if (ConnectionStateOrder.ERROR.equals(index)) {
                 return PorterStatus.ERROR
             } else {
                 return PorterStatus.INIT
@@ -1664,9 +1664,9 @@
         BaseConnection.prototype.exitState = function (previous, ctx, now) {
             var current = ctx.getCurrentState();
             var currentIndex = !current ? -1 : current.getIndex();
-            if (StateOrder.READY.equals(currentIndex)) {
+            if (ConnectionStateOrder.READY.equals(currentIndex)) {
                 var previousIndex = !previous ? -1 : previous.getIndex();
-                if (StateOrder.PREPARING.equals(previousIndex)) {
+                if (ConnectionStateOrder.PREPARING.equals(previousIndex)) {
                     var soon = TimedConnection.EXPIRES.divides(2).subtractFrom(now);
                     var st = this.__lastSentTime;
                     if (!st || st.getTime() < soon.getTime()) {
@@ -1682,7 +1682,7 @@
             if (delegate) {
                 delegate.onConnectionStateChanged(previous, current, this)
             }
-            if (StateOrder.ERROR.equals(currentIndex)) {
+            if (ConnectionStateOrder.ERROR.equals(currentIndex)) {
                 this.setChannel(null)
             }
         };
@@ -2594,7 +2594,7 @@
                 }
             }
             var index = !current ? -1 : current.getIndex();
-            if (StateOrder.EXPIRED.equals(index)) {
+            if (ConnectionStateOrder.EXPIRED.equals(index)) {
                 this.heartbeat(connection)
             }
         };
@@ -3505,13 +3505,13 @@
             return this.__channelPool.items()
         };
         StreamHub.prototype.removeChannel = function (remote, local, channel) {
-            this.__channelPool.remove(remote, null, channel)
+            return this.__channelPool.remove(remote, null, channel)
         };
         StreamHub.prototype.getChannel = function (remote, local) {
             return this.__channelPool.get(remote, null)
         };
         StreamHub.prototype.setChannel = function (remote, local, channel) {
-            this.__channelPool.set(remote, null, channel)
+            return this.__channelPool.set(remote, null, channel)
         };
         StreamHub.prototype.removeConnection = function (remote, local, connection) {
             return BaseHub.prototype.removeConnection.call(this, remote, null, connection)

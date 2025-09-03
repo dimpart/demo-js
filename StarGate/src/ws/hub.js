@@ -105,7 +105,7 @@
 
     // Override
     StreamHub.prototype.removeChannel = function (remote, local, channel) {
-        this.__channelPool.remove(remote, null, channel);
+        return this.__channelPool.remove(remote, null, channel);
     };
 
     // protected
@@ -115,7 +115,7 @@
 
     // protected
     StreamHub.prototype.setChannel = function (remote, local, channel) {
-        this.__channelPool.set(remote, null, channel);
+        return this.__channelPool.set(remote, null, channel);
     };
 
     //

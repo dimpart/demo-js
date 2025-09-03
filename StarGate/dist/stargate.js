@@ -901,13 +901,13 @@
         return this.__channelPool.items()
     };
     StreamHub.prototype.removeChannel = function (remote, local, channel) {
-        this.__channelPool.remove(remote, null, channel)
+        return this.__channelPool.remove(remote, null, channel)
     };
     StreamHub.prototype.getChannel = function (remote, local) {
         return this.__channelPool.get(remote, null)
     };
     StreamHub.prototype.setChannel = function (remote, local, channel) {
-        this.__channelPool.set(remote, null, channel)
+        return this.__channelPool.set(remote, null, channel)
     };
     StreamHub.prototype.removeConnection = function (remote, local, connection) {
         return BaseHub.prototype.removeConnection.call(this, remote, null, connection)
