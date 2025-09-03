@@ -1031,7 +1031,7 @@
             if (data.length === 4) {
                 init_bytes();
                 if (bytes_equal(data, PING)) {
-                    this.send(PONG, Departure.Priority.SLOWER.getValue());
+                    this.send(PONG, Departure.Priority.SLOWER);
                     return null
                 } else if (bytes_equal(data, PONG) || bytes_equal(data, NOOP)) {
                     return null
@@ -1042,11 +1042,11 @@
             var ship = this.createDeparture(payload, priority);
             return this.sendShip(ship)
         }, sendData: function (payload) {
-            var priority = Departure.Priority.NORMAL.getValue();
+            var priority = Departure.Priority.NORMAL;
             return this.send(payload, priority)
         }, heartbeat: function () {
             init_bytes();
-            var priority = Departure.Priority.SLOWER.getValue();
+            var priority = Departure.Priority.SLOWER;
             this.send(PING, priority)
         }
     });

@@ -491,7 +491,7 @@
             return true
         };
         BaseMachine.prototype.start = function () {
-            if (this.__status !== State.STOPPED) {
+            if (this.__status !== Status.STOPPED) {
                 return false
             }
             var now = new Date();
@@ -1189,7 +1189,6 @@
         var Arrival = st.port.Arrival;
         Arrival.prototype.assemble = function (income) {
         };
-        var DeparturePriority = {URGENT: -1, NORMAL: 0, SLOWER: 1};
         st.port.Departure = Interface(null, [Ship]);
         var Departure = st.port.Departure;
         Departure.prototype.getPriority = function () {
@@ -1200,7 +1199,8 @@
         };
         Departure.prototype.isImportant = function () {
         };
-        Departure.Priority = DeparturePriority;
+        Departure.Priority = {URGENT: -1, NORMAL: 0, SLOWER: 1};
+        var DeparturePriority = Departure.Priority;
         st.port.Porter = Interface(null, [Processor]);
         var Porter = st.port.Porter;
         Porter.prototype.isOpen = function () {
@@ -3635,7 +3635,7 @@
                 if (data.length === 4) {
                     init_bytes();
                     if (bytes_equal(data, PING)) {
-                        this.send(PONG, Departure.Priority.SLOWER.getValue());
+                        this.send(PONG, Departure.Priority.SLOWER);
                         return null
                     } else if (bytes_equal(data, PONG) || bytes_equal(data, NOOP)) {
                         return null
@@ -3646,11 +3646,11 @@
                 var ship = this.createDeparture(payload, priority);
                 return this.sendShip(ship)
             }, sendData: function (payload) {
-                var priority = Departure.Priority.NORMAL.getValue();
+                var priority = Departure.Priority.NORMAL;
                 return this.send(payload, priority)
             }, heartbeat: function () {
                 init_bytes();
-                var priority = Departure.Priority.SLOWER.getValue();
+                var priority = Departure.Priority.SLOWER;
                 this.send(PING, priority)
             }
         });
