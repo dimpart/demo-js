@@ -66,7 +66,7 @@
     };
     var IPv4 = sg.ip.IPv4;
 
-    Class(IPv4, Host, null, null);
+    Class(IPv4, Host, null);
 
     IPv4.patten = /^(\d{1,3}\.){3}\d{1,3}(:\d{1,5})?$/;  // 127.0.0.1:9527
 

@@ -38,7 +38,9 @@
     };
     var ChannelPool = sg.ws.ChannelPool;
 
-    Class(ChannelPool, AddressPairMap, null, {
+    Class(ChannelPool, AddressPairMap, null);
+
+    Implementation(ChannelPool, {
 
         // Override
         set: function (remote, local, value) {
@@ -75,7 +77,7 @@
     };
     var StreamHub = sg.ws.StreamHub;
 
-    Class(StreamHub, BaseHub, null, null);
+    Class(StreamHub, BaseHub, null);
 
     // protected
     StreamHub.prototype.createChannelPool = function () {
@@ -143,7 +145,9 @@
     };
     var ClientHub = sg.ws.ClientHub;
 
-    Class(ClientHub, StreamHub, null, {
+    Class(ClientHub, StreamHub, null);
+
+    Implementation(ClientHub, {
 
         // Override
         createConnection: function (remote, local) {

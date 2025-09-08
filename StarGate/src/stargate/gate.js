@@ -46,7 +46,9 @@
     };
     var BaseGate = sg.BaseGate;
 
-    Class(BaseGate, StarGate, null, {
+    Class(BaseGate, StarGate, null);
+
+    Implementation(BaseGate, {
 
         //
         //  Hub
@@ -132,7 +134,9 @@
     };
     var AutoGate = sg.AutoGate;
 
-    Class(AutoGate, BaseGate, [Runnable], {
+    Class(AutoGate, BaseGate, [Runnable]);
+
+    Implementation(AutoGate, {
 
         isRunning: function () {
             return this.__running;
@@ -186,7 +190,9 @@
     };
     var WSClientGate = sg.WSClientGate;
 
-    Class(WSClientGate, AutoGate, null, {
+    Class(WSClientGate, AutoGate, null);
+
+    Implementation(WSClientGate, {
 
         // Override
         createPorter: function (remote, local) {

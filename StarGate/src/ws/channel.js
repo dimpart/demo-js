@@ -43,7 +43,9 @@
     };
     var StreamChannelReader = sg.ws.StreamChannelReader;
 
-    Class(StreamChannelReader, ChannelController, [SocketReader], {
+    Class(StreamChannelReader, ChannelController, [SocketReader]);
+
+    Implementation(StreamChannelReader, {
 
         // Override
         read: function (maxLen) {
@@ -80,7 +82,9 @@
     };
     var StreamChannelWriter = sg.ws.StreamChannelWriter;
 
-    Class(StreamChannelWriter, ChannelController, [SocketWriter], {
+    Class(StreamChannelWriter, ChannelController, [SocketWriter]);
+
+    Implementation(StreamChannelWriter, {
 
         // Override
         write: function (data) {
@@ -112,7 +116,9 @@
     };
     var StreamChannel = sg.ws.StreamChannel;
 
-    Class(StreamChannel, BaseChannel, null, {
+    Class(StreamChannel, BaseChannel, null);
+
+    Implementation(StreamChannel, {
 
         // Override
         createReader: function () {

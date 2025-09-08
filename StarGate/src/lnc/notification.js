@@ -62,7 +62,9 @@
     };
     var Notification = sg.lnc.Notification;
 
-    Class(Notification, BaseObject, null, {
+    Class(Notification, BaseObject, null);
+
+    Implementation(Notification, {
 
         // Override
         toString: function () {
@@ -93,7 +95,7 @@
     };
     var BaseCenter = sg.lnc.BaseCenter;
 
-    Class(BaseCenter, BaseObject, null, null);
+    Class(BaseCenter, BaseObject, null);
 
     /**
      *  Add observer with notification name
@@ -234,7 +236,9 @@
     };
     var AsyncCenter = sg.lnc.AsyncCenter;
 
-    Class(AsyncCenter, BaseCenter, [Runnable], {
+    Class(AsyncCenter, BaseCenter, [Runnable]);
+
+    Implementation(AsyncCenter, {
 
         // Override
         postNotification: function (name, sender, userInfo) {

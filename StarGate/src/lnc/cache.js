@@ -235,7 +235,7 @@
         // background thread
         this.__thread = new Thread(this);
     };
-    Class(CacheRunner, Runner, null, null);
+    Class(CacheRunner, Runner, null);
 
     CacheRunner.prototype.start = function () {
         this.__thread.start();

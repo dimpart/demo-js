@@ -30,7 +30,7 @@
 // =============================================================================
 //
 
-//! require 'namespace.js'
+//! require 'requires.js'
 
     /**
      *  Plain Arrival Ship
@@ -45,7 +45,7 @@
     };
     var PlainArrival = sg.PlainArrival;
 
-    Class(PlainArrival, ArrivalShip, null, null);
+    Class(PlainArrival, ArrivalShip, null);
 
     PlainArrival.prototype.getPayload = function () {
         return this.__data;

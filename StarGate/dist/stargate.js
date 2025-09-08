@@ -22,6 +22,8 @@
     }
     var Interface = mk.type.Interface;
     var Class = mk.type.Class;
+    var Implementation = mk.type.Implementation;
+    var Mixin = mk.type.Mixin;
     var Converter = mk.type.Converter;
     var Mapper = mk.type.Mapper;
     var BaseObject = mk.type.BaseObject;
@@ -57,7 +59,7 @@
         }
     };
     var Storage = sg.dos.Storage;
-    Class(Storage, BaseObject, null, null);
+    Class(Storage, BaseObject, null);
     Storage.prototype.getItem = function (key) {
         return this.storage.getItem(key)
     };
@@ -136,33 +138,42 @@
         level: WARNING_FLAG | ERROR_FLAG,
         showTime: false,
         showCaller: false,
-        logger: null,
         debug: function (msg) {
-            var flag = this.level & DEBUG_FLAG;
-            if (flag > 0) {
-                this.logger.debug.apply(this.logger, arguments)
-            }
+            this.logger.debug.apply(this.logger, arguments)
         },
         info: function (msg) {
-            var flag = this.level & INFO_FLAG;
-            if (flag > 0) {
-                this.logger.info.apply(this.logger, arguments)
-            }
+            this.logger.info.apply(this.logger, arguments)
         },
         warning: function (msg) {
-            var flag = this.level & WARNING_FLAG;
-            if (flag > 0) {
-                this.logger.warning.apply(this.logger, arguments)
-            }
+            this.logger.warning.apply(this.logger, arguments)
         },
         error: function (msg) {
-            var flag = this.level & ERROR_FLAG;
-            if (flag > 0) {
-                this.logger.error.apply(this.logger, arguments)
-            }
-        }
+            this.logger.error.apply(this.logger, arguments)
+        },
+        logger: null
     };
     var Log = sg.lnc.Log;
+    sg.lnc.Logging = Mixin(null, {
+        logDebug: function (msg) {
+            Log.debug.apply(Log, logging_args(this, arguments))
+        }, logInfo: function (msg) {
+            Log.info.apply(Log, logging_args(this, arguments))
+        }, logWarning: function (msg) {
+            Log.warning.apply(Log, logging_args(this, arguments))
+        }, logError: function (msg) {
+            Log.error.apply(Log, logging_args(this, arguments))
+        }
+    });
+    var logging_args = function (obj, args) {
+        var getClassName = obj.getClassName;
+        if (typeof getClassName !== 'function') {
+            getClassName = BaseObject.prototype.getClassName
+        }
+        var clazz = getClassName.call(obj);
+        args = Array.prototype.slice.call(args);
+        args.unshift(clazz + ' > ');
+        return args
+    };
     sg.lnc.Logger = Interface(null, null);
     var Logger = sg.lnc.Logger;
     Logger.prototype.debug = function (msg) {
@@ -177,26 +188,36 @@
         BaseObject.call(this)
     };
     var DefaultLogger = sg.lnc.DefaultLogger;
-    Class(DefaultLogger, BaseObject, [Logger], {
-        debug: function () {
-            console.debug.apply(console, log_args(arguments))
-        }, info: function () {
-            console.info.apply(console, log_args(arguments))
-        }, warning: function () {
-            console.warn.apply(console, log_args(arguments))
-        }, error: function () {
-            console.error.apply(console, log_args(arguments))
+    Class(DefaultLogger, BaseObject, [Logger]);
+    Implementation(DefaultLogger, {
+        debug: function (msg) {
+            var flag = Log.level & DEBUG_FLAG;
+            if (flag > 0) {
+                console.debug.apply(console, log_args(arguments))
+            }
+        }, info: function (msg) {
+            var flag = Log.level & INFO_FLAG;
+            if (flag > 0) {
+                console.info.apply(console, log_args(arguments))
+            }
+        }, warning: function (msg) {
+            var flag = Log.level & WARNING_FLAG;
+            if (flag > 0) {
+                console.warn.apply(console, log_args(arguments))
+            }
+        }, error: function (msg) {
+            var flag = Log.level & ERROR_FLAG;
+            if (flag > 0) {
+                console.error.apply(console, log_args(arguments))
+            }
         }
     });
     var log_args = function (args) {
-        if (Log.showTime === false) {
-            return args
+        if (Log.showTime) {
+            args = Array.prototype.slice.call(args);
+            args.unshift('[' + current_time() + ']')
         }
-        var array = ['[' + current_time() + ']'];
-        for (var i = 0; i < args.length; ++i) {
-            array.push(args[i])
-        }
-        return array
+        return args
     };
     var current_time = function () {
         var now = new Date();
@@ -227,7 +248,8 @@
         this.__info = userInfo
     };
     var Notification = sg.lnc.Notification;
-    Class(Notification, BaseObject, null, {
+    Class(Notification, BaseObject, null);
+    Implementation(Notification, {
         toString: function () {
             var clazz = this.getClassName();
             return '<' + clazz + ' name="' + this.getName() + '>\n' + '\t<sender>' + this.getSender() + '</sender>\n' + '\t<info>' + this.getUserInfo() + '</info>\n' + '</' + clazz + '>'
@@ -247,7 +269,7 @@
         this.__observers = {}
     };
     var BaseCenter = sg.lnc.BaseCenter;
-    Class(BaseCenter, BaseObject, null, null);
+    Class(BaseCenter, BaseObject, null);
     BaseCenter.prototype.addObserver = function (observer, name) {
         var listeners = this.__observers[name];
         if (!listeners) {
@@ -318,7 +340,8 @@
         this.__thread = null
     };
     var AsyncCenter = sg.lnc.AsyncCenter;
-    Class(AsyncCenter, BaseCenter, [Runnable], {
+    Class(AsyncCenter, BaseCenter, [Runnable]);
+    Implementation(AsyncCenter, {
         postNotification: function (name, sender, userInfo) {
             var notification = new Notification(name, sender, userInfo);
             this.__notifications.push(notification)
@@ -468,7 +491,7 @@
         this.__pools = {};
         this.__thread = new Thread(this)
     };
-    Class(CacheRunner, Runner, null, null);
+    Class(CacheRunner, Runner, null);
     CacheRunner.prototype.start = function () {
         this.__thread.start()
     };
@@ -528,7 +551,7 @@
         this.data = data
     };
     var Host = sg.ip.Host;
-    Class(Host, ConstantString, null, null);
+    Class(Host, ConstantString, null);
     Host.prototype.toArray = function (default_port) {
         var data = this.data;
         var port = this.port;
@@ -575,7 +598,7 @@
         Host.call(this, string, ip, port, data)
     };
     var IPv4 = sg.ip.IPv4;
-    Class(IPv4, Host, null, null);
+    Class(IPv4, Host, null);
     IPv4.patten = /^(\d{1,3}\.){3}\d{1,3}(:\d{1,5})?$/;
     IPv4.parse = function (host) {
         if (!this.patten.test(host)) {
@@ -828,7 +851,8 @@
         ChannelController.call(this, channel)
     };
     var StreamChannelReader = sg.ws.StreamChannelReader;
-    Class(StreamChannelReader, ChannelController, [SocketReader], {
+    Class(StreamChannelReader, ChannelController, [SocketReader]);
+    Implementation(StreamChannelReader, {
         read: function (maxLen) {
             var sock = this.getSocket();
             if (sock && sock.isOpen()) {
@@ -851,7 +875,8 @@
         ChannelController.call(this, channel)
     };
     var StreamChannelWriter = sg.ws.StreamChannelWriter;
-    Class(StreamChannelWriter, ChannelController, [SocketWriter], {
+    Class(StreamChannelWriter, ChannelController, [SocketWriter]);
+    Implementation(StreamChannelWriter, {
         write: function (data) {
             var sock = this.getSocket();
             if (sock && sock.isOpen()) {
@@ -867,7 +892,8 @@
         BaseChannel.call(this, remote, local)
     };
     var StreamChannel = sg.ws.StreamChannel;
-    Class(StreamChannel, BaseChannel, null, {
+    Class(StreamChannel, BaseChannel, null);
+    Implementation(StreamChannel, {
         createReader: function () {
             return new StreamChannelReader(this)
         }, createWriter: function () {
@@ -878,7 +904,8 @@
         AddressPairMap.call(this)
     };
     var ChannelPool = sg.ws.ChannelPool;
-    Class(ChannelPool, AddressPairMap, null, {
+    Class(ChannelPool, AddressPairMap, null);
+    Implementation(ChannelPool, {
         set: function (remote, local, value) {
             var cached = AddressPairMap.prototype.remove.call(this, remote, local, value);
             AddressPairMap.prototype.set.call(this, remote, local, value);
@@ -890,7 +917,7 @@
         this.__channelPool = this.createChannelPool()
     };
     var StreamHub = sg.ws.StreamHub;
-    Class(StreamHub, BaseHub, null, null);
+    Class(StreamHub, BaseHub, null);
     StreamHub.prototype.createChannelPool = function () {
         return new ChannelPool()
     };
@@ -922,7 +949,8 @@
         StreamHub.call(this, delegate)
     };
     var ClientHub = sg.ws.ClientHub;
-    Class(ClientHub, StreamHub, null, {
+    Class(ClientHub, StreamHub, null);
+    Implementation(ClientHub, {
         createConnection: function (remote, local) {
             var conn = new ActiveConnection(remote, local);
             conn.setDelegate(this.getDelegate());
@@ -977,7 +1005,7 @@
         this.__data = data
     };
     var PlainArrival = sg.PlainArrival;
-    Class(PlainArrival, ArrivalShip, null, null);
+    Class(PlainArrival, ArrivalShip, null);
     PlainArrival.prototype.getPayload = function () {
         return this.__data
     };
@@ -996,7 +1024,7 @@
         this.__fragments = [data]
     };
     var PlainDeparture = sg.PlainDeparture;
-    Class(PlainDeparture, DepartureShip, null, null);
+    Class(PlainDeparture, DepartureShip, null);
     PlainDeparture.prototype.getPayload = function () {
         return this.__completed
     };
@@ -1016,7 +1044,8 @@
         StarPorter.call(this, remote, local)
     };
     var PlainPorter = sg.PlainPorter;
-    Class(PlainPorter, StarPorter, null, {
+    Class(PlainPorter, StarPorter, null);
+    Implementation(PlainPorter, {
         createArrival: function (data) {
             return new PlainArrival(data, null)
         }, createDeparture: function (data, priority) {
@@ -1076,7 +1105,8 @@
         this.__hub = null
     };
     var BaseGate = sg.BaseGate;
-    Class(BaseGate, StarGate, null, {
+    Class(BaseGate, StarGate, null);
+    Implementation(BaseGate, {
         setHub: function (hub) {
             this.__hub = hub
         }, getHub: function () {
@@ -1119,7 +1149,8 @@
         this.__thread = new Thread(this)
     };
     var AutoGate = sg.AutoGate;
-    Class(AutoGate, BaseGate, [Runnable], {
+    Class(AutoGate, BaseGate, [Runnable]);
+    Implementation(AutoGate, {
         isRunning: function () {
             return this.__running
         }, start: function () {
@@ -1154,7 +1185,8 @@
         AutoGate.call(this, delegate)
     };
     var WSClientGate = sg.WSClientGate;
-    Class(WSClientGate, AutoGate, null, {
+    Class(WSClientGate, AutoGate, null);
+    Implementation(WSClientGate, {
         createPorter: function (remote, local) {
             var docker = new PlainPorter(remote, local);
             docker.setDelegate(this.getDelegate());

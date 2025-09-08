@@ -7,6 +7,65 @@ sg_tests = [];
 
 var g_variables = {};
 
+
+(function (sg, mk) {
+    'use strict';
+
+    var Class          = mk.type.Class;
+    var Implementation = mk.type.Implementation;
+    var Mixin          = mk.type.Mixin;
+    var BaseObject     = mk.type.BaseObject;
+    var Log     = sg.lnc.Log;
+    var Logging = sg.lnc.Logging;
+
+    Log.level = Log.DEBUG;
+    Log.showTime = true;
+
+    var impl = {
+        run: function () {
+            this.runLog();
+            this.runLogging();
+        },
+        runLog: function () {
+            Log.debug('debug info:', this);
+            Log.info('log info:', this);
+            Log.warning('warning info:', this);
+            Log.error('error info:', this);
+        },
+        runLogging: function () {
+            this.logDebug('debug info:', this);
+            this.logInfo('log info:', this);
+            this.logWarning('warning info:', this);
+            this.logError('error info:', this);
+        }
+    };
+
+    var SimpleClass = function (name) {
+        this.__name = name;
+    };
+    Class(SimpleClass, null, null);
+    Mixin(SimpleClass, Logging);
+    Implementation(SimpleClass, impl);
+
+    var BaseClass = function (name) {
+        BaseObject.call(this);
+        this.__name = name;
+    };
+    Class(BaseClass, BaseObject, null);
+    Mixin(BaseClass, Logging);
+    Implementation(BaseClass, impl);
+
+
+    var test_log = function () {
+        var runner1 = new SimpleClass('simple log');
+        runner1.run();
+        var runner2 = new BaseClass('base log');
+        runner2.run();
+    };
+    sg_tests.push(test_log);
+
+})(StarTrek, MONKEY);
+
 (function (sg, st, sys) {
     'use strict';
 
@@ -92,8 +151,8 @@ var g_variables = {};
 
     var test_connection = function () {
 
-        var host = '127.0.0.1';
-        // var host = '106.52.25.169';
+        // var host = '127.0.0.1';
+        var host = '129.226.12.4';
         var port = 9394;
 
         var remote = new InetSocketAddress(host, port);

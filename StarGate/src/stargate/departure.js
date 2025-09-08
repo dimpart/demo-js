@@ -30,7 +30,7 @@
 // =============================================================================
 //
 
-//! require 'namespace.js'
+//! require 'requires.js'
 
     /**
      *  Plain Departure Ship
@@ -49,7 +49,7 @@
     };
     var PlainDeparture = sg.PlainDeparture;
 
-    Class(PlainDeparture, DepartureShip, null, null);
+    Class(PlainDeparture, DepartureShip, null);
 
     PlainDeparture.prototype.getPayload = function () {
         return this.__completed;

@@ -38,8 +38,8 @@
     var ERROR_FLAG   = 1 << 3;
 
     /**
-     *  Log Interface
-     *  ~~~~~~~~~~~~~
+     *  Simple Log
+     *  ~~~~~~~~~~
      */
     sg.lnc.Log = {
 
@@ -50,43 +50,66 @@
         DEVELOP:              INFO_FLAG | WARNING_FLAG | ERROR_FLAG,
         RELEASE:                          WARNING_FLAG | ERROR_FLAG,
 
-        level: WARNING_FLAG | ERROR_FLAG,
+        level: WARNING_FLAG | ERROR_FLAG,  // RELEASE
 
         showTime: false,
         showCaller: false,  // (Reserved)
 
-        logger: null,  // DefaultLogger
-
         //
-        //  Interfaces
+        //  Conveniences
         //
         debug: function (msg) {
-            var flag = this.level & DEBUG_FLAG;
-            if (flag > 0) {
-                this.logger.debug.apply(this.logger, arguments);
-            }
+            this.logger.debug.apply(this.logger, arguments);
         },
         info: function (msg) {
-            var flag = this.level & INFO_FLAG;
-            if (flag > 0) {
-                this.logger.info.apply(this.logger, arguments);
-            }
+            this.logger.info.apply(this.logger, arguments);
         },
         warning: function (msg) {
-            var flag = this.level & WARNING_FLAG;
-            if (flag > 0) {
-                this.logger.warning.apply(this.logger, arguments);
-            }
+            this.logger.warning.apply(this.logger, arguments);
         },
         error: function (msg) {
-            var flag = this.level & ERROR_FLAG;
-            if (flag > 0) {
-                this.logger.error.apply(this.logger, arguments);
-            }
-        }
+            this.logger.error.apply(this.logger, arguments);
+        },
 
+        logger: null  // DefaultLogger
     };
     var Log = sg.lnc.Log;
+
+    /**
+     *  Log with class name
+     *  ~~~~~~~~~~~~~~~~~~~
+     */
+    sg.lnc.Logging = Mixin(null, {
+
+        logDebug: function (msg) {
+            Log.debug.apply(Log, logging_args(this, arguments));
+        },
+
+        logInfo: function (msg) {
+            Log.info.apply(Log, logging_args(this, arguments));
+        },
+
+        logWarning: function (msg) {
+            Log.warning.apply(Log, logging_args(this, arguments));
+        },
+
+        logError: function (msg) {
+            Log.error.apply(Log, logging_args(this, arguments));
+        }
+    });
+
+    var logging_args = function (obj, args) {
+        // get class name
+        var getClassName = obj.getClassName;
+        if (typeof getClassName !== 'function') {
+            getClassName = BaseObject.prototype.getClassName;
+        }
+        var clazz = getClassName.call(obj);
+        // insert class name
+        args = Array.prototype.slice.call(args);
+        args.unshift(clazz + ' > ');
+        return args;
+    };
 
 
     sg.lnc.Logger = Interface(null, null);
@@ -103,38 +126,49 @@
     };
     var DefaultLogger = sg.lnc.DefaultLogger;
 
-    Class(DefaultLogger, BaseObject, [Logger], {
+    Class(DefaultLogger, BaseObject, [Logger]);
+
+    Implementation(DefaultLogger, {
 
         // Override
-        debug: function () {
-            console.debug.apply(console, log_args(arguments));
+        debug: function (msg) {
+            var flag = Log.level & DEBUG_FLAG;
+            if (flag > 0) {
+                console.debug.apply(console, log_args(arguments));
+            }
         },
 
         // Override
-        info: function () {
-            console.info.apply(console, log_args(arguments));
+        info: function (msg) {
+            var flag = Log.level & INFO_FLAG;
+            if (flag > 0) {
+                console.info.apply(console, log_args(arguments));
+            }
         },
 
         // Override
-        warning: function () {
-            console.warn.apply(console, log_args(arguments));
+        warning: function (msg) {
+            var flag = Log.level & WARNING_FLAG;
+            if (flag > 0) {
+                console.warn.apply(console, log_args(arguments));
+            }
         },
 
         // Override
-        error: function () {
-            console.error.apply(console, log_args(arguments));
+        error: function (msg) {
+            var flag = Log.level & ERROR_FLAG;
+            if (flag > 0) {
+                console.error.apply(console, log_args(arguments));
+            }
         }
     });
 
     var log_args = function (args) {
-        if (Log.showTime === false) {
-            return args;
+        if (Log.showTime) {
+            args = Array.prototype.slice.call(args);
+            args.unshift('[' + current_time() + ']');
         }
-        var array = ['[' + current_time() + ']'];
-        for (var i = 0; i < args.length; ++i) {
-            array.push(args[i]);
-        }
-        return array;
+        return args;
     };
 
     //

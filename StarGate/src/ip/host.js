@@ -69,7 +69,7 @@
     };
     var Host = sg.ip.Host;
 
-    Class(Host, ConstantString, null, null);
+    Class(Host, ConstantString, null);
 
     /**
      *  Convert host info to data array

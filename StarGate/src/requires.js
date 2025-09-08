@@ -17,6 +17,8 @@ if (typeof sg.ws !== 'object') {
 //-------- requires --------
 var Interface      = mk.type.Interface;
 var Class          = mk.type.Class;
+var Implementation = mk.type.Implementation;
+var Mixin          = mk.type.Mixin;
 var Converter      = mk.type.Converter;
 var Mapper         = mk.type.Mapper;
 var BaseObject     = mk.type.BaseObject;

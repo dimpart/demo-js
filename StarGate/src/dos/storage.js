@@ -30,7 +30,7 @@
 // =============================================================================
 //
 
-//! require 'namespace.js'
+//! require 'requires.js'
 
     sg.dos.Storage = function (storage, prefix) {
         BaseObject.call(this);
@@ -45,7 +45,7 @@
     };
     var Storage = sg.dos.Storage;
 
-    Class(Storage, BaseObject, null, null);
+    Class(Storage, BaseObject, null);
 
     Storage.prototype.getItem = function (key) {
         return this.storage.getItem(key);

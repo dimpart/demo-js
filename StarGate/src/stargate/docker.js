@@ -45,7 +45,9 @@
     };
     var PlainPorter = sg.PlainPorter;
 
-    Class(PlainPorter, StarPorter, null, {
+    Class(PlainPorter, StarPorter, null);
+
+    Implementation(PlainPorter, {
 
         // protected
         createArrival: function (data) {
