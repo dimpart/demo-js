@@ -44,7 +44,7 @@
     };
     var GroupManager = app.group.GroupManager;
 
-    Class(GroupManager, TripletsHelper, null, null);
+    Class(GroupManager, TripletsHelper, null);
 
     // protected
     GroupManager.prototype.getPacker = function () {

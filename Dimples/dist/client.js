@@ -34,6 +34,7 @@
     }
     var Interface = mk.type.Interface;
     var Class = mk.type.Class;
+    var Implementation = mk.type.Implementation;
     var Converter = mk.type.Converter;
     var Wrapper = mk.type.Wrapper;
     var Mapper = mk.type.Mapper;
@@ -178,6 +179,8 @@
     var GeneralContentProcessorFactory = sdk.cpu.GeneralContentProcessorFactory;
     var BaseContentProcessor = sdk.cpu.BaseContentProcessor;
     var BaseCommandProcessor = sdk.cpu.BaseCommandProcessor;
+    var BaseCustomizedHandler = sdk.cpu.BaseCustomizedHandler;
+    var CustomizedContentProcessor = sdk.cpu.CustomizedContentProcessor;
     var BaseContentProcessorCreator = sdk.cpu.BaseContentProcessorCreator;
     var Duration = fsm.type.Duration;
     var Processor = fsm.skywalker.Processor;
@@ -213,7 +216,7 @@
         this.__caches = {}
     };
     var ThanosCache = app.utils.ThanosCache;
-    Class(ThanosCache, BaseObject, [MemoryCache], null);
+    Class(ThanosCache, BaseObject, [MemoryCache]);
     ThanosCache.prototype.get = function (key) {
         return this.__caches[key]
     };
@@ -252,7 +255,7 @@
         this.__records = {}
     };
     var FrequencyChecker = app.utils.FrequencyChecker;
-    Class(FrequencyChecker, BaseObject, null, null);
+    Class(FrequencyChecker, BaseObject, null);
     FrequencyChecker.prototype.checkExpired = function (key, now) {
         var expired = this.__records[key];
         if (expired && expired.getTime() > now.getTime()) {
@@ -280,7 +283,7 @@
         this.__times = {}
     };
     var RecentTimeChecker = app.utils.RecentTimeChecker
-    Class(RecentTimeChecker, null, null, null);
+    Class(RecentTimeChecker, null, null);
     RecentTimeChecker.prototype.setLastTime = function (key, when) {
         if (!when) {
             return false
@@ -368,7 +371,8 @@
         this.__list = list
     };
     var BaseBlockCommand = dkd.dkd.BaseBlockCommand;
-    Class(BaseBlockCommand, BaseCommand, [BlockCommand], {
+    Class(BaseBlockCommand, BaseCommand, [BlockCommand]);
+    Implementation(BaseBlockCommand, {
         setBlockCList: function (list) {
             this.__list = list;
             if (list) {
@@ -411,7 +415,8 @@
         }
     };
     var QueryGroupCommand = dkd.dkd.QueryGroupCommand;
-    Class(QueryGroupCommand, BaseGroupCommand, [QueryCommand], {
+    Class(QueryGroupCommand, BaseGroupCommand, [QueryCommand]);
+    Implementation(QueryGroupCommand, {
         getLastTime: function () {
             return this.getDateTime('last_time', null)
         }
@@ -521,7 +526,8 @@
         }
     };
     var BaseHandshakeCommand = dkd.dkd.BaseHandshakeCommand;
-    Class(BaseHandshakeCommand, BaseCommand, [HandshakeCommand], {
+    Class(BaseHandshakeCommand, BaseCommand, [HandshakeCommand]);
+    Implementation(BaseHandshakeCommand, {
         getTitle: function () {
             return this.getString('title', null)
         }, getSessionKey: function () {
@@ -563,7 +569,8 @@
         }
     };
     var BaseLoginCommand = dkd.dkd.BaseLoginCommand;
-    Class(BaseLoginCommand, BaseCommand, [LoginCommand], {
+    Class(BaseLoginCommand, BaseCommand, [LoginCommand]);
+    Implementation(BaseLoginCommand, {
         getIdentifier: function () {
             return ID.parse(this.getValue('did'))
         }, getDevice: function () {
@@ -662,7 +669,8 @@
         this.__list = list
     };
     var BaseMuteCommand = dkd.dkd.BaseMuteCommand;
-    Class(BaseMuteCommand, BaseCommand, [MuteCommand], {
+    Class(BaseMuteCommand, BaseCommand, [MuteCommand]);
+    Implementation(BaseMuteCommand, {
         getMuteCList: function () {
             if (this.__list === null) {
                 var list = this.getValue('list');
@@ -685,7 +693,7 @@
         BaseObject.call(this)
     };
     var Password = mk.protocol.Password;
-    Class(Password, BaseObject, null, null);
+    Class(Password, BaseObject, null);
     Password.KEY_SIZE = 32;
     Password.BLOCK_SIZE = 16;
     Password.generate = function (password) {
@@ -731,7 +739,8 @@
         }
     };
     var BaseReportCommand = dkd.dkd.BaseReportCommand;
-    Class(BaseReportCommand, BaseCommand, [ReportCommand], {
+    Class(BaseReportCommand, BaseCommand, [ReportCommand]);
+    Implementation(BaseReportCommand, {
         setTitle: function (title) {
             this.setValue('title', title)
         }, getTitle: function () {
@@ -775,7 +784,8 @@
         }
     };
     var BaseSearchCommand = dkd.dkd.BaseSearchCommand;
-    Class(BaseSearchCommand, BaseCommand, [SearchCommand], {
+    Class(BaseSearchCommand, BaseCommand, [SearchCommand]);
+    Implementation(BaseSearchCommand, {
         setKeywords: function (keywords) {
             if (keywords instanceof Array) {
                 keywords = keywords.join(' ')
@@ -845,7 +855,8 @@
         this.__password = null
     };
     var BaseStorageCommand = dkd.dkd.BaseStorageCommand;
-    Class(BaseStorageCommand, BaseCommand, [StorageCommand], {
+    Class(BaseStorageCommand, BaseCommand, [StorageCommand]);
+    Implementation(BaseStorageCommand, {
         setTitle: function (title) {
             this.setValue('title', title)
         }, getTitle: function () {
@@ -993,7 +1004,8 @@
         ConstantString.call(this, string)
     };
     var UnknownAddress = app.compat.UnknownAddress;
-    Class(UnknownAddress, ConstantString, [Address], {
+    Class(UnknownAddress, ConstantString, [Address]);
+    Implementation(UnknownAddress, {
         getType: function () {
             return 0
         }
@@ -1002,7 +1014,7 @@
         BaseAddressFactory.call(this)
     };
     var CompatibleAddressFactory = app.compat.CompatibleAddressFactory;
-    Class(CompatibleAddressFactory, BaseAddressFactory, null, null);
+    Class(CompatibleAddressFactory, BaseAddressFactory, null);
     CompatibleAddressFactory.prototype.reduceMemory = function () {
         var finger = 0;
         finger = thanos(this._addresses, finger);
@@ -1243,7 +1255,8 @@
         MessageCompressor.call(this, new CompatibleShortener())
     };
     var CompatibleCompressor = app.compat.CompatibleCompressor;
-    Class(CompatibleCompressor, MessageCompressor, null, {
+    Class(CompatibleCompressor, MessageCompressor, null);
+    Implementation(CompatibleCompressor, {
         extractContent: function (data, key) {
             var content = MessageCompressor.prototype.extractContent.call(this, data, key);
             if (content) {
@@ -1256,7 +1269,8 @@
         MessageShortener.call(this)
     };
     var CompatibleShortener = app.compat.CompatibleShortener;
-    Class(CompatibleShortener, MessageShortener, null, {
+    Class(CompatibleShortener, MessageShortener, null);
+    Implementation(CompatibleShortener, {
         moveKey: function (from, to, info) {
             var value = info[from];
             if (value) {
@@ -1308,7 +1322,8 @@
         Identifier.call(this, identifier, name, address, terminal)
     };
     var EntityID = app.compat.EntityID;
-    Class(EntityID, Identifier, null, {
+    Class(EntityID, Identifier, null);
+    Implementation(EntityID, {
         getType: function () {
             var name = this.getName();
             if (!name || name.length === 0) {
@@ -1322,7 +1337,7 @@
         IdentifierFactory.call(this)
     };
     var EntityIDFactory = app.compat.EntityIDFactory;
-    Class(EntityIDFactory, IdentifierFactory, null, null);
+    Class(EntityIDFactory, IdentifierFactory, null);
     EntityIDFactory.prototype.newID = function (string, name, address, terminal) {
         return new EntityID(string, name, address, terminal)
     };
@@ -1357,7 +1372,8 @@
         BaseMetaFactory.call(this, type)
     };
     var CompatibleMetaFactory = app.compat.CompatibleMetaFactory;
-    Class(CompatibleMetaFactory, BaseMetaFactory, null, {
+    Class(CompatibleMetaFactory, BaseMetaFactory, null);
+    Implementation(CompatibleMetaFactory, {
         parseMeta: function (meta) {
             var out;
             var helper = SharedAccountExtensions.getHelper();
@@ -1388,7 +1404,8 @@
         ExtensionLoader.call(this)
     };
     var CommonExtensionLoader = app.compat.CommonExtensionLoader;
-    Class(CommonExtensionLoader, ExtensionLoader, null, {
+    Class(CommonExtensionLoader, ExtensionLoader, null);
+    Implementation(CommonExtensionLoader, {
         registerCustomizedFactories: function () {
             this.setContentFactory(ContentType.CUSTOMIZED, 'customized', null, AppCustomizedContent);
             this.setContentFactory(ContentType.APPLICATION, 'application', null, AppCustomizedContent)
@@ -1414,7 +1431,8 @@
         PluginLoader.call(this)
     };
     var CommonPluginLoader = app.compat.CommonPluginLoader;
-    Class(CommonPluginLoader, PluginLoader, null, {
+    Class(CommonPluginLoader, PluginLoader, null);
+    Implementation(CommonPluginLoader, {
         registerIDFactory: function () {
             ID.setFactory(new EntityIDFactory())
         }, registerAddressFactory: function () {
@@ -1795,7 +1813,7 @@
         this.__tables = {}
     };
     var AddressNameServer = app.AddressNameServer;
-    Class(AddressNameServer, BaseObject, [AddressNameService], null);
+    Class(AddressNameServer, BaseObject, [AddressNameService]);
     AddressNameServer.prototype.isReserved = function (name) {
         return this.__reserved[name] === true
     };
@@ -1840,7 +1858,7 @@
         this.__groupCache = this.createGroupCache()
     };
     var CommonArchivist = app.CommonArchivist;
-    Class(CommonArchivist, Barrack, [Archivist], null);
+    Class(CommonArchivist, Barrack, [Archivist]);
     CommonArchivist.prototype.getDatabase = function () {
         return this.__database
     };
@@ -1984,7 +2002,7 @@
         this.__lastActiveMembers = {}
     };
     var EntityChecker = app.EntityChecker;
-    Class(EntityChecker, BaseObject, null, null);
+    Class(EntityChecker, BaseObject, null);
     EntityChecker.QUERY_EXPIRES = Duration.ofMinutes(10);
     EntityChecker.RESPOND_EXPIRES = Duration.ofMinutes(10);
     EntityChecker.prototype.getDatabase = function () {
@@ -2123,7 +2141,7 @@
         this.__currentUser = null
     };
     var CommonFacebook = app.CommonFacebook;
-    Class(CommonFacebook, Facebook, null, null);
+    Class(CommonFacebook, Facebook, null);
     CommonFacebook.prototype.getDatabase = function () {
         return this.__database
     };
@@ -2149,7 +2167,7 @@
         }
         var db = this.getDatabase();
         var array = db.getLocalUsers();
-        if (!array || array.length) {
+        if (!array || array.length === 0) {
             return null
         }
         current = this.getUser(array[0]);
@@ -2282,7 +2300,7 @@
         this.__compressor = new CompatibleCompressor()
     };
     var CommonMessenger = app.CommonMessenger;
-    Class(CommonMessenger, Messenger, null, null);
+    Class(CommonMessenger, Messenger, null);
     CommonMessenger.prototype.getSession = function () {
         return this.__session
     };
@@ -2427,7 +2445,7 @@
         MessagePacker.call(this, facebook, messenger)
     };
     var CommonPacker = app.CommonPacker;
-    Class(CommonPacker, MessagePacker, null, null);
+    Class(CommonPacker, MessagePacker, null);
     CommonPacker.prototype.suspendReliableMessage = function (rMsg, info) {
     };
     CommonPacker.prototype.suspendInstantMessage = function (iMsg, info) {
@@ -2500,7 +2518,7 @@
         MessageProcessor.call(this, facebook, messenger)
     };
     var CommonProcessor = app.CommonProcessor;
-    Class(CommonProcessor, MessageProcessor, null, null);
+    Class(CommonProcessor, MessageProcessor, null);
     CommonProcessor.prototype.getEntityChecker = function () {
         var facebook = this.getFacebook();
         if (facebook instanceof CommonFacebook) {
@@ -2515,7 +2533,7 @@
     CommonProcessor.prototype.createCreator = function (facebook, messenger) {
     };
     CommonProcessor.prototype.processContent = function (content, rMsg) {
-        var responses = MessageProcessor.processContent.call(this, content, rMsg);
+        var responses = MessageProcessor.prototype.processContent.call(this, content, rMsg);
         this.checkVisaTime(content, rMsg);
         return responses
     };
@@ -2547,7 +2565,7 @@
         this.__database = database
     };
     var Register = app.Register;
-    Class(Register, BaseObject, null, null);
+    Class(Register, BaseObject, null);
     Register.prototype.getDatabase = function () {
         return this.__database
     };
@@ -2600,7 +2618,7 @@
         BaseObject.call(this)
     };
     var DocumentStorage = app.database.DocumentStorage;
-    Class(DocumentStorage, BaseObject, [DocumentDBI], null);
+    Class(DocumentStorage, BaseObject, [DocumentDBI]);
     DocumentStorage.prototype.saveDocument = function (doc) {
         var entity = doc.getIdentifier();
         var type = doc.getString('type', '');
@@ -2686,7 +2704,7 @@
         BaseObject.call(this)
     };
     var MetaStorage = app.database.MetaStorage;
-    Class(MetaStorage, BaseObject, [MetaDBI], null);
+    Class(MetaStorage, BaseObject, [MetaDBI]);
     MetaStorage.prototype.saveMeta = function (meta, entity) {
         var path = db_meta_path(entity);
         return Storage.saveJSON(meta.toMap(), path)
@@ -2706,7 +2724,8 @@
         BaseObject.call(this)
     };
     var PrivateKeyStorage = app.database.PrivateKeyStorage;
-    Class(PrivateKeyStorage, BaseObject, [PrivateKeyDBI], {
+    Class(PrivateKeyStorage, BaseObject, [PrivateKeyDBI]);
+    Implementation(PrivateKeyStorage, {
         savePrivateKey: function (key, type, user) {
             if (type === PrivateKeyDBI.META) {
                 return this.saveIdKey(key, user)
@@ -2767,7 +2786,8 @@
         groupBotsManager.setMessenger(messenger)
     };
     var GroupDelegate = app.group.GroupDelegate;
-    Class(GroupDelegate, TwinsHelper, [GroupDataSource], {
+    Class(GroupDelegate, TwinsHelper, [GroupDataSource]);
+    Implementation(GroupDelegate, {
         buildGroupName: function (members) {
             var barrack = this.getFacebook();
             var text = barrack.getName(members[0]);
@@ -2886,7 +2906,7 @@
         this.__delegate = delegate
     };
     var TripletsHelper = app.group.TripletsHelper;
-    Class(TripletsHelper, BaseObject, null, null);
+    Class(TripletsHelper, BaseObject, null);
     TripletsHelper.prototype.getDelegate = function () {
         return this.__delegate
     };
@@ -3051,7 +3071,7 @@
         TripletsHelper.call(this, delegate)
     };
     var AdminManager = app.group.AdminManager;
-    Class(AdminManager, TripletsHelper, null, null);
+    Class(AdminManager, TripletsHelper, null);
     AdminManager.prototype.updateAdministrators = function (newAdmins, group) {
         var delegate = this.getDelegate();
         var barrack = this.getFacebook();
@@ -3138,7 +3158,7 @@
         TripletsHelper.call(this, delegate)
     };
     var GroupCommandHelper = app.group.GroupCommandHelper;
-    Class(GroupCommandHelper, TripletsHelper, null, null);
+    Class(GroupCommandHelper, TripletsHelper, null);
     GroupCommandHelper.prototype.saveGroupHistory = function (content, rMsg, group) {
         if (this.isCommandExpired(content)) {
             Log.warning('drop expired command', content.getCmd(), rMsg.getSender(), group);
@@ -3214,7 +3234,7 @@
         TripletsHelper.call(this, delegate)
     };
     var GroupPacker = app.group.GroupPacker;
-    Class(GroupPacker, TripletsHelper, null, null);
+    Class(GroupPacker, TripletsHelper, null);
     GroupPacker.prototype.packMessage = function (content, sender) {
         var envelope = Envelope.create(sender, ID.ANYONE, null);
         var iMsg = InstantMessage.create(envelope, content);
@@ -3297,7 +3317,7 @@
         this.__helper = this.createHelper()
     };
     var GroupHistoryBuilder = app.group.GroupHistoryBuilder;
-    Class(GroupHistoryBuilder, TripletsHelper, null, null);
+    Class(GroupHistoryBuilder, TripletsHelper, null);
     GroupHistoryBuilder.prototype.getHelper = function () {
         return this.__helper
     };
@@ -3414,7 +3434,7 @@
         this.__packer = this.createPacker()
     };
     var GroupEmitter = app.group.GroupEmitter
-    Class(GroupEmitter, TripletsHelper, null, null);
+    Class(GroupEmitter, TripletsHelper, null);
     GroupEmitter.POLYLOGUE_LIMIT = 32;
     GroupEmitter.SECRET_GROUP_LIMIT = 16;
     GroupEmitter.prototype.getPacker = function () {
@@ -3565,7 +3585,7 @@
         this.__builder = this.createBuilder()
     };
     var GroupManager = app.group.GroupManager;
-    Class(GroupManager, TripletsHelper, null, null);
+    Class(GroupManager, TripletsHelper, null);
     GroupManager.prototype.getPacker = function () {
         return this.__packer
     };
@@ -3824,7 +3844,7 @@
         this.__emitter = null
     };
     var SharedGroupManager = app.group.SharedGroupManager;
-    Class(SharedGroupManager, BaseObject, [GroupDataSource], null);
+    Class(SharedGroupManager, BaseObject, [GroupDataSource]);
     SharedGroupManager.prototype.getFacebook = function () {
         return this.__barrack
     };
@@ -4000,7 +4020,7 @@
         this.__ship = departure
     };
     var MessageWrapper = app.network.MessageWrapper;
-    Class(MessageWrapper, BaseObject, [Departure], null);
+    Class(MessageWrapper, BaseObject, [Departure]);
     MessageWrapper.prototype.getMessage = function () {
         return this.__msg
     };
@@ -4031,7 +4051,7 @@
         this.__fleets = {}
     };
     var MessageQueue = app.network.MessageQueue
-    Class(MessageQueue, BaseObject, null, null);
+    Class(MessageQueue, BaseObject, null);
     MessageQueue.prototype.append = function (rMsg, departure) {
         var ok = true;
         var priority = departure.getPriority();
@@ -4114,7 +4134,8 @@
         CommonGate.call(this, keeper)
     };
     var AckEnableGate = app.network.AckEnableGate;
-    Class(AckEnableGate, CommonGate, null, {
+    Class(AckEnableGate, CommonGate, null);
+    Implementation(AckEnableGate, {
         createPorter: function (remote, local) {
             var docker = new AckEnablePorter(remote, local);
             docker.setDelegate(this.getDelegate());
@@ -4125,7 +4146,8 @@
         PlainPorter.call(this, remote, local)
     };
     var AckEnablePorter = app.network.AckEnablePorter;
-    Class(AckEnablePorter, PlainPorter, null, {
+    Class(AckEnablePorter, PlainPorter, null);
+    Implementation(AckEnablePorter, {
         checkArrival: function (income) {
             if (income instanceof PlainArrival) {
                 var payload = income.getPayload();
@@ -4247,7 +4269,7 @@
         this.__reconnect_time = 0
     };
     var GateKeeper = app.network.GateKeeper;
-    Class(GateKeeper, Runner, [PorterDelegate], null);
+    Class(GateKeeper, Runner, [PorterDelegate]);
     GateKeeper.prototype.createGate = function (remote) {
         var gate = new AckEnableGate(this);
         var hub = this.createHub(gate, remote);
@@ -4402,7 +4424,8 @@
         this.__messenger = null
     };
     var BaseSession = app.network.BaseSession;
-    Class(BaseSession, GateKeeper, [Session], {
+    Class(BaseSession, GateKeeper, [Session]);
+    Implementation(BaseSession, {
         queueMessagePackage: function (rMsg, data, priority) {
             var ship = new PlainDeparture(data, priority);
             return this.queueAppend(rMsg, ship)
@@ -4456,7 +4479,7 @@
         this.addState(builder.getErrorState())
     };
     var StateMachine = app.network.SessionStateMachine;
-    Class(StateMachine, AutoMachine, null, null);
+    Class(StateMachine, AutoMachine, null);
     StateMachine.prototype.createStateBuilder = function () {
         var stb = new TransitionBuilder();
         return new StateBuilder(stb)
@@ -4496,14 +4519,15 @@
         RUNNING: 4,
         ERROR: 5
     });
-    var StateOrder = app.network.SessionStateOrder;
+    var SessionStateOrder = app.network.SessionStateOrder;
     app.network.SessionState = function (order) {
         BaseState.call(this, Enum.getInt(order));
         this.__name = order.getName();
         this.__enterTime = null
     };
     var SessionState = app.network.SessionState;
-    Class(SessionState, BaseState, null, {
+    Class(SessionState, BaseState, null);
+    Implementation(SessionState, {
         getName: function () {
             return this.__name
         }, getEnterTime: function () {
@@ -4518,7 +4542,7 @@
                     return true
                 }
                 other = other.getIndex()
-            } else if (other instanceof StateOrder) {
+            } else if (other instanceof SessionStateOrder) {
                 other = other.getValue()
             }
             return this.getIndex() === other
@@ -4540,34 +4564,35 @@
         this.builder = transitionBuilder
     };
     var StateBuilder = app.network.SessionStateBuilder;
-    Class(StateBuilder, BaseObject, null, {
+    Class(StateBuilder, BaseObject, null);
+    Implementation(StateBuilder, {
         getDefaultState: function () {
-            var state = new SessionState(StateOrder.DEFAULT);
+            var state = new SessionState(SessionStateOrder.DEFAULT);
             state.addTransition(this.builder.getDefaultConnectingTransition());
             return state
         }, getConnectingState: function () {
-            var state = new SessionState(StateOrder.CONNECTING);
+            var state = new SessionState(SessionStateOrder.CONNECTING);
             state.addTransition(this.builder.getConnectingConnectedTransition());
             state.addTransition(this.builder.getConnectingErrorTransition());
             return state
         }, getConnectedState: function () {
-            var state = new SessionState(StateOrder.CONNECTED);
+            var state = new SessionState(SessionStateOrder.CONNECTED);
             state.addTransition(this.builder.getConnectedHandshakingTransition());
             state.addTransition(this.builder.getConnectedErrorTransition());
             return state
         }, getHandshakingState: function () {
-            var state = new SessionState(StateOrder.HANDSHAKING);
+            var state = new SessionState(SessionStateOrder.HANDSHAKING);
             state.addTransition(this.builder.getHandshakingRunningTransition());
             state.addTransition(this.builder.getHandshakingConnectedTransition());
             state.addTransition(this.builder.getHandshakingErrorTransition());
             return state
         }, getRunningState: function () {
-            var state = new SessionState(StateOrder.RUNNING);
+            var state = new SessionState(SessionStateOrder.RUNNING);
             state.addTransition(this.builder.getRunningDefaultTransition());
             state.addTransition(this.builder.getRunningErrorTransition());
             return state
         }, getErrorState: function () {
-            var state = new SessionState(StateOrder.ERROR);
+            var state = new SessionState(SessionStateOrder.ERROR);
             state.addTransition(this.builder.getErrorDefaultTransition());
             return state
         }
@@ -4577,7 +4602,7 @@
         this.__evaluate = evaluate
     };
     var StateTransition = app.network.SessionStateTransition;
-    Class(StateTransition, BaseTransition, null, null);
+    Class(StateTransition, BaseTransition, null);
     StateTransition.prototype.evaluate = function (ctx, now) {
         return this.__evaluate.call(this, ctx, now)
     };
@@ -4593,9 +4618,10 @@
         BaseObject.call(this)
     };
     var TransitionBuilder = app.network.SessionStateTransitionBuilder;
-    Class(TransitionBuilder, BaseObject, null, {
+    Class(TransitionBuilder, BaseObject, null);
+    Implementation(TransitionBuilder, {
         getDefaultConnectingTransition: function () {
-            return new StateTransition(StateOrder.CONNECTING, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.CONNECTING, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     return false
                 }
@@ -4603,12 +4629,12 @@
                 return PorterStatus.PREPARING.equals(status) || PorterStatus.READY.equals(status)
             })
         }, getConnectingConnectedTransition: function () {
-            return new StateTransition(StateOrder.CONNECTED, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.CONNECTED, function (ctx, now) {
                 var status = ctx.getStatus();
                 return PorterStatus.READY.equals(status)
             })
         }, getConnectingErrorTransition: function () {
-            return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.ERROR, function (ctx, now) {
                 if (is_state_expired(ctx.getCurrentState(), now)) {
                     return true
                 }
@@ -4616,7 +4642,7 @@
                 return !(PorterStatus.PREPARING.equals(status) || PorterStatus.READY.equals(status))
             })
         }, getConnectedHandshakingTransition: function () {
-            return new StateTransition(StateOrder.HANDSHAKING, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.HANDSHAKING, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     return false
                 }
@@ -4624,7 +4650,7 @@
                 return PorterStatus.READY.equals(status)
             })
         }, getConnectedErrorTransition: function () {
-            return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.ERROR, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     return true
                 }
@@ -4632,7 +4658,7 @@
                 return !PorterStatus.READY.equals(status)
             })
         }, getHandshakingRunningTransition: function () {
-            return new StateTransition(StateOrder.RUNNING, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.RUNNING, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     return false
                 }
@@ -4643,7 +4669,7 @@
                 return !!ctx.getSessionKey()
             })
         }, getHandshakingConnectedTransition: function () {
-            return new StateTransition(StateOrder.CONNECTED, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.CONNECTED, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     return false
                 }
@@ -4657,7 +4683,7 @@
                 return is_state_expired(ctx.getCurrentState(), now)
             })
         }, getHandshakingErrorTransition: function () {
-            return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.ERROR, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     return true
                 }
@@ -4665,7 +4691,7 @@
                 return !PorterStatus.READY.equals(status)
             })
         }, getRunningDefaultTransition: function () {
-            return new StateTransition(StateOrder.DEFAULT, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.DEFAULT, function (ctx, now) {
                 var status = ctx.getStatus();
                 if (!PorterStatus.READY.equals(status)) {
                     return false
@@ -4674,12 +4700,12 @@
                 return !(session && session.isReady())
             })
         }, getRunningErrorTransition: function () {
-            return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.ERROR, function (ctx, now) {
                 var status = ctx.getStatus();
                 return !PorterStatus.READY.equals(status)
             })
         }, getErrorDefaultTransition: function () {
-            return new StateTransition(StateOrder.DEFAULT, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.DEFAULT, function (ctx, now) {
                 var status = ctx.getStatus();
                 return !PorterStatus.ERROR.equals(status)
             })
@@ -4770,7 +4796,8 @@
         this.__thread = null
     };
     var ClientSession = app.network.ClientSession;
-    Class(ClientSession, BaseSession, null, {
+    Class(ClientSession, BaseSession, null);
+    Implementation(ClientSession, {
         getStation: function () {
             return this.__station
         }, getState: function () {
@@ -4919,7 +4946,8 @@
         BaseCommandProcessor.call(this, facebook, messenger)
     };
     var LoginCommandProcessor = app.cpu.LoginCommandProcessor;
-    Class(LoginCommandProcessor, BaseCommandProcessor, null, {
+    Class(LoginCommandProcessor, BaseCommandProcessor, null);
+    Implementation(LoginCommandProcessor, {
         getDatabase: function () {
             var manager = this.getMessenger();
             var session = manager.getSession();
@@ -4939,7 +4967,7 @@
         BaseCommandProcessor.call(this, facebook, messenger)
     };
     var ReceiptCommandProcessor = app.cpu.ReceiptCommandProcessor;
-    Class(ReceiptCommandProcessor, BaseCommandProcessor, null, null);
+    Class(ReceiptCommandProcessor, BaseCommandProcessor, null);
     ReceiptCommandProcessor.prototype.processContent = function (content, rMsg) {
         if (Interface.conforms(content, ReceiptCommand)) {
             var envelope = rMsg.getEnvelope();
@@ -4953,7 +4981,8 @@
         BaseCommandProcessor.call(this, facebook, messenger)
     };
     var HandshakeCommandProcessor = app.cpu.HandshakeCommandProcessor
-    Class(HandshakeCommandProcessor, BaseCommandProcessor, null, {
+    Class(HandshakeCommandProcessor, BaseCommandProcessor, null);
+    Implementation(HandshakeCommandProcessor, {
         processContent: function (content, rMsg) {
             var messenger = this.getMessenger();
             var session = messenger.getSession();
@@ -5001,7 +5030,7 @@
         this.__builder = this.createGroupBuilder()
     };
     var HistoryCommandProcessor = app.cpu.HistoryCommandProcessor
-    Class(HistoryCommandProcessor, BaseCommandProcessor, null, null);
+    Class(HistoryCommandProcessor, BaseCommandProcessor, null);
     HistoryCommandProcessor.prototype.createGroupDelegate = function () {
         var facebook = this.getFacebook();
         var messenger = this.getMessenger();
@@ -5035,7 +5064,8 @@
         HistoryCommandProcessor.call(this, facebook, messenger)
     };
     var GroupCommandProcessor = app.cpu.GroupCommandProcessor;
-    Class(GroupCommandProcessor, HistoryCommandProcessor, null, {
+    Class(GroupCommandProcessor, HistoryCommandProcessor, null);
+    Implementation(GroupCommandProcessor, {
         getOwner: function (group) {
             var delegate = this.getGroupDelegate();
             return delegate.getOwner(group)
@@ -5135,7 +5165,8 @@
         GroupCommandProcessor.call(this, facebook, messenger)
     };
     var InviteCommandProcessor = app.cpu.InviteCommandProcessor
-    Class(InviteCommandProcessor, GroupCommandProcessor, null, {
+    Class(InviteCommandProcessor, GroupCommandProcessor, null);
+    Implementation(InviteCommandProcessor, {
         processContent: function (content, rMsg) {
             var errors;
             var pair = this.checkCommandExpired(content, rMsg);
@@ -5213,7 +5244,8 @@
         GroupCommandProcessor.call(this, facebook, messenger)
     };
     var ExpelCommandProcessor = app.cpu.ExpelCommandProcessor;
-    Class(ExpelCommandProcessor, GroupCommandProcessor, null, {
+    Class(ExpelCommandProcessor, GroupCommandProcessor, null);
+    Implementation(ExpelCommandProcessor, {
         processContent: function (content, rMsg) {
             return []
         }
@@ -5222,7 +5254,8 @@
         GroupCommandProcessor.call(this, facebook, messenger)
     };
     var QuitCommandProcessor = app.cpu.QuitCommandProcessor;
-    Class(QuitCommandProcessor, GroupCommandProcessor, null, {
+    Class(QuitCommandProcessor, GroupCommandProcessor, null);
+    Implementation(QuitCommandProcessor, {
         processContent: function (content, rMsg) {
             var errors;
             var pair = this.checkCommandExpired(content, rMsg);
@@ -5277,7 +5310,8 @@
         GroupCommandProcessor.call(this, facebook, messenger)
     };
     var QueryCommandProcessor = app.cpu.QueryCommandProcessor
-    Class(QueryCommandProcessor, GroupCommandProcessor, null, {
+    Class(QueryCommandProcessor, GroupCommandProcessor, null);
+    Implementation(QueryCommandProcessor, {
         processContent: function (content, rMsg) {
             var errors;
             var pair = this.checkCommandExpired(content, rMsg);
@@ -5332,7 +5366,8 @@
         GroupCommandProcessor.call(this, facebook, messenger)
     };
     var ResetCommandProcessor = app.cpu.ResetCommandProcessor;
-    Class(ResetCommandProcessor, GroupCommandProcessor, null, {
+    Class(ResetCommandProcessor, GroupCommandProcessor, null);
+    Implementation(ResetCommandProcessor, {
         processContent: function (content, rMsg) {
             var errors;
             var pair = this.checkCommandExpired(content, rMsg);
@@ -5430,15 +5465,24 @@
         BaseContentProcessorCreator.call(this, facebook, messenger)
     };
     var ClientContentProcessorCreator = app.cpu.ClientContentProcessorCreator;
-    Class(ClientContentProcessorCreator, BaseContentProcessorCreator, null, {
-        createContentProcessor: function (type) {
+    Class(ClientContentProcessorCreator, BaseContentProcessorCreator, null);
+    Implementation(ClientContentProcessorCreator, {
+        createCustomizedContentProcessor: function (facebook, messenger) {
+            var cpu = new AppCustomizedProcessor(facebook, messenger);
+            cpu.setHandler(GroupHistory.APP, GroupHistory.MOD, new GroupHistoryHandler(facebook, messenger));
+            return cpu
+        }, createContentProcessor: function (type) {
             var facebook = this.getFacebook();
             var messenger = this.getMessenger();
-            if (ContentType.HISTORY.equals(type)) {
-                return new HistoryCommandProcessor(facebook, messenger)
-            }
-            if (type === 0) {
-                return new BaseContentProcessor(facebook, messenger)
+            switch (type) {
+                case ContentType.APPLICATION:
+                case'application':
+                case ContentType.CUSTOMIZED:
+                case'customized':
+                    return this.createCustomizedContentProcessor(facebook, messenger);
+                case ContentType.HISTORY:
+                case'history':
+                    return new HistoryCommandProcessor(facebook, messenger)
             }
             return BaseContentProcessorCreator.prototype.createContentProcessor.call(this, type)
         }, createCommandProcessor: function (type, cmd) {
@@ -5473,7 +5517,7 @@
         this.__messenger = null
     };
     var ClientChecker = app.ClientChecker;
-    Class(ClientChecker, EntityChecker, null, null);
+    Class(ClientChecker, EntityChecker, null);
     ClientChecker.prototype.getFacebook = function () {
         return this.__facebook
     };
@@ -5649,7 +5693,7 @@
         CommonArchivist.call(this, facebook, database)
     };
     var ClientArchivist = app.ClientArchivist;
-    Class(ClientArchivist, CommonArchivist, null, null);
+    Class(ClientArchivist, CommonArchivist, null);
     ClientArchivist.prototype.cacheGroup = function (group) {
         var man = SharedGroupManager.getInstance();
         group.setDataSource(man);
@@ -5672,7 +5716,7 @@
         CommonFacebook.call(this, database)
     };
     var ClientFacebook = app.ClientFacebook;
-    Class(ClientFacebook, CommonFacebook, null, null);
+    Class(ClientFacebook, CommonFacebook, null);
     ClientFacebook.prototype.getFounder = function (group) {
         if (group.isBroadcast()) {
             return BroadcastUtils.getBroadcastFounder(group)
@@ -5758,7 +5802,7 @@
         CommonMessenger.call(this, session, facebook, mdb)
     };
     var ClientMessenger = app.ClientMessenger;
-    Class(ClientMessenger, CommonMessenger, null, null);
+    Class(ClientMessenger, CommonMessenger, null);
     ClientMessenger.prototype.deserializeMessage = function (data) {
         var msg = CommonMessenger.prototype.deserializeMessage.call(this, data);
         if (msg && this.checkMessageDuplicated(msg)) {
@@ -5912,7 +5956,7 @@
         CommonPacker.call(this, facebook, messenger)
     };
     var ClientMessagePacker = app.ClientMessagePacker;
-    Class(ClientMessagePacker, CommonPacker, null, null);
+    Class(ClientMessagePacker, CommonPacker, null);
     ClientMessagePacker.prototype.getMembers = function (group) {
         var facebook = this.getFacebook();
         return facebook.getMembers(group)
@@ -6048,10 +6092,10 @@
         return InstantMessage.parse(info)
     };
     app.ClientMessageProcessor = function (facebook, messenger) {
-        MessageProcessor.call(this, facebook, messenger)
+        CommonProcessor.call(this, facebook, messenger)
     };
     var ClientMessageProcessor = app.ClientMessageProcessor;
-    Class(ClientMessageProcessor, MessageProcessor, null, null);
+    Class(ClientMessageProcessor, CommonProcessor, null);
     ClientMessageProcessor.prototype.checkGroupTimes = function (content, rMsg) {
         var group = content.getGroup();
         if (!group) {
@@ -6091,7 +6135,7 @@
         return docUpdated || memUpdated
     };
     ClientMessageProcessor.prototype.processContent = function (content, rMsg) {
-        var responses = MessageProcessor.prototype.processContent.call(this, content, rMsg);
+        var responses = CommonProcessor.prototype.processContent.call(this, content, rMsg);
         this.checkGroupTimes(content, rMsg);
         if (!responses || responses.length === 0) {
             return responses
@@ -6102,12 +6146,11 @@
         var messenger = this.getMessenger();
         var sender = rMsg.getSender();
         var receiver = rMsg.getReceiver();
-        var user = facebook.selectLocalUser(receiver);
-        if (!user) {
+        var me = facebook.selectLocalUser(receiver);
+        if (!me) {
             Log.error('receiver error', receiver);
             return responses
         }
-        receiver = user.getIdentifier();
         var network = sender.getType();
         var res;
         for (var i = 0; i < responses.length; ++i) {
@@ -6127,7 +6170,7 @@
                     continue
                 }
             }
-            messenger.sendContent(res, receiver, sender, 1)
+            messenger.sendContent(res, me, sender, 1)
         }
         return []
     };
@@ -6142,9 +6185,15 @@
         this.__last_time = null
     };
     var Terminal = app.Terminal;
-    Class(Terminal, Runner, [SessionState.Delegate], null);
+    Class(Terminal, Runner, [SessionState.Delegate]);
     Terminal.prototype.getUserAgent = function () {
         return navigator.userAgent
+    };
+    Terminal.prototype.getDatabase = function () {
+        return this.__db
+    };
+    Terminal.prototype.getFacebook = function () {
+        return this.__facebook
     };
     Terminal.prototype.getMessenger = function () {
         return this.__messenger
@@ -6159,27 +6208,29 @@
     Terminal.prototype.connect = function (host, port) {
         var station;
         var session;
-        var facebook = this.__facebook;
+        var facebook = this.getFacebook();
         var messenger = this.__messenger;
         if (messenger) {
             session = messenger.getSession();
-            if (session.isRunning()) {
+            if (session.isActive()) {
                 station = session.getStation();
                 if (station.getPort() === port && station.getHost() === host) {
                     return messenger
                 }
             }
+            session.stop();
+            this.__messenger = null
         }
         Log.info('connecting to ' + host + ':' + port + ' ...');
         station = this.createStation(host, port);
         session = this.createSession(station);
         messenger = this.createMessenger(session, facebook);
         this.__messenger = messenger;
+        session.setMessenger(messenger);
         var packer = this.createPacker(facebook, messenger);
         var processor = this.createProcessor(facebook, messenger);
         messenger.setPacker(packer);
         messenger.setProcessor(processor);
-        session.setMessenger(messenger);
         var user = facebook.getCurrentUser();
         if (user) {
             session.setIdentifier(user.getIdentifier())
@@ -6187,12 +6238,14 @@
         return messenger
     };
     Terminal.prototype.createStation = function (host, port) {
+        var facebook = this.getFacebook();
         var station = new Station(host, port);
-        station.setDataSource(this.__facebook);
+        station.setDataSource(facebook);
         return station
     };
     Terminal.prototype.createSession = function (station) {
-        var session = new ClientSession(this.__db, station);
+        var db = this.getDatabase();
+        var session = new ClientSession(db, station);
         session.start(this);
         return session
     };
@@ -6211,7 +6264,7 @@
     Terminal.prototype.finish = function () {
         var messenger = this.__messenger;
         if (messenger) {
-            var session = this.getSession();
+            var session = messenger.getSession();
             if (session) {
                 session.stop()
             }
@@ -6223,7 +6276,7 @@
         var session = this.getSession();
         var state = !session ? null : session.getState();
         var ss_index = !state ? -1 : state.getIndex();
-        if (StateOrder.RUNNING.equals(ss_index)) {
+        if (!SessionStateOrder.RUNNING.equals(ss_index)) {
             return false
         } else if (!(session && session.isReady())) {
             return false
@@ -6264,13 +6317,13 @@
     Terminal.prototype.exitState = function (previous, ctx, now) {
         var current = ctx.getCurrentState();
         var index = !current ? -1 : current.getIndex();
-        if (index === -1 || StateOrder.ERROR.equals(index)) {
+        if (index === -1 || SessionStateOrder.ERROR.equals(index)) {
             this.__last_time = null;
             return
         }
         var messenger = this.getMessenger();
         var session = this.getSession();
-        if (StateOrder.DEFAULT.equals(index) || StateOrder.CONNECTING.equals(index)) {
+        if (SessionStateOrder.DEFAULT.equals(index) || SessionStateOrder.CONNECTING.equals(index)) {
             var user = ctx.getSessionID();
             if (!user) {
                 Log.warning('current user not set', current);
@@ -6289,9 +6342,9 @@
             } else {
                 Log.error('failed to connect: ' + remote.toString())
             }
-        } else if (StateOrder.HANDSHAKING.equals(index)) {
+        } else if (SessionStateOrder.HANDSHAKING.equals(index)) {
             messenger.handshake(null)
-        } else if (StateOrder.RUNNING.equals(index)) {
+        } else if (SessionStateOrder.RUNNING.equals(index)) {
             messenger.handshakeSuccess();
             this.__last_time = now
         }

@@ -50,7 +50,7 @@
     };
     var GateKeeper = app.network.GateKeeper;
 
-    Class(GateKeeper, Runner, [PorterDelegate], null);
+    Class(GateKeeper, Runner, [PorterDelegate]);
 
     // protected
     GateKeeper.prototype.createGate = function (remote) {

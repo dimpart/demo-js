@@ -26,6 +26,7 @@
 //
 
 //! require <dimsdk.js>
+//! require 'protocol/*.js'
 
     /**
      *  Extensions Loader
@@ -36,7 +37,9 @@
     };
     var CommonExtensionLoader = app.compat.CommonExtensionLoader;
 
-    Class(CommonExtensionLoader, ExtensionLoader, null, {
+    Class(CommonExtensionLoader, ExtensionLoader, null);
+
+    Implementation(CommonExtensionLoader, {
 
         /**
          *  Customized content factories
@@ -95,7 +98,9 @@
     };
     var CommonPluginLoader = app.compat.CommonPluginLoader;
 
-    Class(CommonPluginLoader, PluginLoader, null, {
+    Class(CommonPluginLoader, PluginLoader, null);
+
+    Implementation(CommonPluginLoader, {
 
         // Override
         registerIDFactory: function () {

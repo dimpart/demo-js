@@ -41,7 +41,7 @@
     };
     var AdminManager = app.group.AdminManager;
 
-    Class(AdminManager, TripletsHelper, null, null);
+    Class(AdminManager, TripletsHelper, null);
 
     /**
      *  Update 'administrators' in bulletin document

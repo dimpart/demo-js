@@ -43,7 +43,9 @@
     };
     var InviteCommandProcessor = app.cpu.InviteCommandProcessor
 
-    Class(InviteCommandProcessor, GroupCommandProcessor, null, {
+    Class(InviteCommandProcessor, GroupCommandProcessor, null);
+
+    Implementation(InviteCommandProcessor, {
 
         // Override
         processContent: function (content, rMsg) {

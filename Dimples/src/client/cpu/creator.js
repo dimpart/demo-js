@@ -34,26 +34,48 @@
 //! require 'handshake.js'
 //! require 'group.js'
 //! require 'group/*.js'
+//! require 'customized.js'
 
     app.cpu.ClientContentProcessorCreator = function (facebook, messenger) {
         BaseContentProcessorCreator.call(this, facebook, messenger);
     };
     var ClientContentProcessorCreator = app.cpu.ClientContentProcessorCreator;
 
-    Class(ClientContentProcessorCreator, BaseContentProcessorCreator, null, {
+    Class(ClientContentProcessorCreator, BaseContentProcessorCreator, null);
+
+    Implementation(ClientContentProcessorCreator, {
+
+        // protected
+        createCustomizedContentProcessor: function (facebook, messenger) {
+            var cpu = new AppCustomizedProcessor(facebook, messenger);
+
+            // 'chat.dim.group:history'
+            cpu.setHandler(
+                GroupHistory.APP,
+                GroupHistory.MOD,
+                new GroupHistoryHandler(facebook, messenger)
+            );
+
+            return cpu;
+        },
 
         // Override
         createContentProcessor: function (type) {
             var facebook = this.getFacebook();
             var messenger = this.getMessenger();
-            // history command
-            if (ContentType.HISTORY.equals(type)) {
-                return new HistoryCommandProcessor(facebook, messenger);
-            }
-            // default
-            if (type === 0) {
-                // unknown type?
-                return new BaseContentProcessor(facebook, messenger);
+            switch (type) {
+
+                // application customized
+                case ContentType.APPLICATION:
+                case 'application':
+                case ContentType.CUSTOMIZED:
+                case 'customized':
+                    return this.createCustomizedContentProcessor(facebook, messenger);
+
+                // history command
+                case ContentType.HISTORY:
+                case 'history':
+                    return new HistoryCommandProcessor(facebook, messenger);
             }
             // others
             return BaseContentProcessorCreator.prototype.createContentProcessor.call(this, type);

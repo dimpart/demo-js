@@ -39,7 +39,7 @@
     };
     var MessageQueue = app.network.MessageQueue
 
-    Class(MessageQueue, BaseObject, null, null);
+    Class(MessageQueue, BaseObject, null);
 
     /**
      *  Append message with departure ship

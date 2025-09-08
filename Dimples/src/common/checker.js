@@ -49,7 +49,7 @@
     };
     var EntityChecker = app.EntityChecker;
 
-    Class(EntityChecker, BaseObject, null, null);
+    Class(EntityChecker, BaseObject, null);
 
     /**
      *  each query will be expired after 10 minutes

@@ -47,7 +47,7 @@
     };
     var DocumentStorage = app.database.DocumentStorage;
 
-    Class(DocumentStorage, BaseObject, [DocumentDBI], null);
+    Class(DocumentStorage, BaseObject, [DocumentDBI]);
 
     // Override
     DocumentStorage.prototype.saveDocument = function (doc) {

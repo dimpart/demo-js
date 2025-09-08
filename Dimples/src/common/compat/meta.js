@@ -41,7 +41,9 @@
     };
     var CompatibleMetaFactory = app.compat.CompatibleMetaFactory;
 
-    Class(CompatibleMetaFactory, BaseMetaFactory, null, {
+    Class(CompatibleMetaFactory, BaseMetaFactory, null);
+
+    Implementation(CompatibleMetaFactory, {
 
         // Override
         parseMeta: function(meta) {

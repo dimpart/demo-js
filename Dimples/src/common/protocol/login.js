@@ -150,7 +150,9 @@
     };
     var BaseLoginCommand = dkd.dkd.BaseLoginCommand;
 
-    Class(BaseLoginCommand, BaseCommand, [LoginCommand], {
+    Class(BaseLoginCommand, BaseCommand, [LoginCommand]);
+
+    Implementation(BaseLoginCommand, {
 
         // Override
         getIdentifier: function () {

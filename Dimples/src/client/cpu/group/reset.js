@@ -42,7 +42,9 @@
     };
     var ResetCommandProcessor = app.cpu.ResetCommandProcessor;
 
-    Class(ResetCommandProcessor, GroupCommandProcessor, null, {
+    Class(ResetCommandProcessor, GroupCommandProcessor, null);
+
+    Implementation(ResetCommandProcessor, {
 
         // Override
         processContent: function (content, rMsg) {

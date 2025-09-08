@@ -119,7 +119,7 @@
     };
     var AddressNameServer = app.AddressNameServer;
 
-    Class(AddressNameServer, BaseObject, [AddressNameService], null);
+    Class(AddressNameServer, BaseObject, [AddressNameService]);
 
     // Override
     AddressNameServer.prototype.isReserved = function (name) {

@@ -52,7 +52,7 @@
     };
     var ThanosCache = app.utils.ThanosCache;
 
-    Class(ThanosCache, BaseObject, [MemoryCache], null);
+    Class(ThanosCache, BaseObject, [MemoryCache]);
 
     // Override
     ThanosCache.prototype.get = function (key) {

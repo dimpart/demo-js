@@ -33,45 +33,61 @@ if (typeof DIMP !== 'object') {
         if (typeof mk.ext !== 'object') {
             mk.ext = {}
         }
-        mk.type.Class = function (child, parent, interfaces, methods) {
+        mk.type.Class = function (child, parent, interfaces) {
             if (!child) {
                 child = function () {
                     Object.call(this)
                 }
+            } else if (typeof child === 'function') {
+            } else {
+                throw new TypeError('class params error: ' + child + ', ' + parent + ', ' + interfaces);
             }
-            if (parent) {
+            if (typeof parent === 'function') {
                 child._mk_super_class = parent
             } else {
                 parent = Object
             }
             child.prototype = Object.create(parent.prototype);
             child.prototype.constructor = child;
-            if (interfaces) {
+            if (interfaces instanceof Array) {
                 child._mk_interfaces = interfaces
-            }
-            if (methods) {
-                override_methods(child, methods)
             }
             return child
         };
         var Class = mk.type.Class;
-        var override_methods = function (clazz, methods) {
+        mk.type.Mixin = function (clazz, methods) {
+            if (!clazz) {
+                clazz = function () {
+                }
+            } else if (typeof clazz === 'function') {
+            } else {
+                throw new TypeError('mixin params error: ' + clazz + ', ' + methods);
+            }
+            if (typeof methods === 'function') {
+                methods = methods.prototype
+            }
+            return Implementation(clazz, methods)
+        };
+        var Mixin = mk.type.Mixin;
+        mk.type.Implementation = function (clazz, methods) {
             var names = Object.keys(methods);
-            var key, fn;
+            var key;
             for (var i = 0; i < names.length; ++i) {
                 key = names[i];
-                fn = methods[key];
-                if (typeof fn === 'function') {
-                    clazz.prototype[key] = fn
-                }
+                clazz.prototype[key] = methods[key]
             }
+            return clazz
         };
+        var Implementation = mk.type.Implementation;
         mk.type.Interface = function (child, parents) {
             if (!child) {
                 child = function () {
                 }
+            } else if (typeof child === 'function') {
+            } else {
+                throw new TypeError('interface params error: ' + child + ', ' + parents);
             }
-            if (parents) {
+            if (parents instanceof Array) {
                 child._mk_super_interfaces = parents
             }
             return child
@@ -86,6 +102,9 @@ if (typeof DIMP !== 'object') {
             return check_extends(object.constructor, protocol)
         };
         var check_extends = function (constructor, protocol) {
+            if (!constructor) {
+                return false
+            }
             var interfaces = constructor._mk_interfaces;
             if (interfaces && check_implements(interfaces, protocol)) {
                 return true
@@ -152,13 +171,104 @@ if (typeof DIMP !== 'object') {
             Object.call(this)
         };
         var BaseObject = mk.type.BaseObject;
-        Class(BaseObject, null, [IObject], {
-            getClassName: function () {
-                return Object.getPrototypeOf(this).constructor.name
-            }, equals: function (other) {
-                return this === other
+        Class(BaseObject, null, [IObject]);
+        BaseObject.prototype.getClassName = function () {
+            return Object.getPrototypeOf(this).constructor.name
+        };
+        BaseObject.prototype.equals = function (other) {
+            return this === other
+        };
+        mk.type.Mapper = Interface(null, [IObject]);
+        var Mapper = mk.type.Mapper;
+        Mapper.prototype = {
+            toMap: function () {
+            }, copyMap: function (deepCopy) {
+            }, isEmpty: function () {
+            }, getLength: function () {
+            }, allKeys: function () {
+            }, getValue: function (key) {
+            }, setValue: function (key, value) {
+            }, removeValue: function (key) {
+            }, getString: function (key, defaultValue) {
+            }, getBoolean: function (key, defaultValue) {
+            }, getInt: function (key, defaultValue) {
+            }, getFloat: function (key, defaultValue) {
+            }, getDateTime: function (key, defaultValue) {
+            }, setDateTime: function (key, time) {
+            }, setString: function (key, stringer) {
+            }, setMap: function (key, mapper) {
             }
-        });
+        };
+        Mapper.count = function (dict) {
+            if (!dict) {
+                return 0
+            } else if (Interface.conforms(dict, Mapper)) {
+                dict = dict.toMap()
+            } else if (typeof dict !== 'object') {
+                throw TypeError('not a map: ' + dict);
+            }
+            return Object.keys(dict).length
+        };
+        Mapper.isEmpty = function (dict) {
+            return Mapper.count(dict) === 0
+        };
+        Mapper.keys = function (dict) {
+            if (!dict) {
+                return null
+            } else if (Interface.conforms(dict, Mapper)) {
+                dict = dict.toMap()
+            } else if (typeof dict !== 'object') {
+                throw TypeError('not a map: ' + dict);
+            }
+            return Object.keys(dict)
+        };
+        Mapper.removeKey = function (dict, key) {
+            if (!dict) {
+                return null
+            } else if (Interface.conforms(dict, Mapper)) {
+                dict = dict.toMap()
+            } else if (typeof dict !== 'object') {
+                throw TypeError('not a map: ' + dict);
+            }
+            var value = dict[key];
+            delete dict[key];
+            return value
+        };
+        Mapper.forEach = function (dict, handleKeyValue) {
+            if (!dict) {
+                return -1
+            } else if (Interface.conforms(dict, Mapper)) {
+                dict = dict.toMap()
+            } else if (typeof dict !== 'object') {
+                throw TypeError('not a map: ' + dict);
+            }
+            var keys = Object.keys(dict);
+            var cnt = keys.length;
+            var stop;
+            var i = 0, k, v;
+            for (; i < cnt; ++i) {
+                k = keys[i];
+                v = dict[k];
+                stop = handleKeyValue(k, v);
+                if (stop) {
+                    break
+                }
+            }
+            return i
+        };
+        Mapper.addAll = function (dict, fromDict) {
+            if (!dict) {
+                return -1
+            } else if (Interface.conforms(dict, Mapper)) {
+                dict = dict.toMap()
+            } else if (typeof dict !== 'object') {
+                throw TypeError('not a map: ' + dict);
+            }
+            return Mapper.forEach(fromDict, function (key, value) {
+                dict[key] = value;
+                return false
+            })
+        };
         mk.type.DataConverter = Interface(null, null);
         var DataConverter = mk.type.DataConverter;
         DataConverter.prototype = {
@@ -173,75 +283,79 @@ if (typeof DIMP !== 'object') {
             BaseObject.call(this)
         };
         var BaseConverter = mk.type.BaseConverter;
-        Class(BaseConverter, BaseObject, [DataConverter], {
-            getDateTime: function (value, defaultValue) {
-                if (IObject.isNull(value)) {
-                    return defaultValue
-                } else if (value instanceof Date) {
-                    return value
-                }
-                var seconds = this.getFloat(value, 0);
-                var millis = seconds * 1000;
-                return new Date(millis)
-            }, getFloat: function (value, defaultValue) {
-                if (IObject.isNull(value)) {
-                    return defaultValue
-                } else if (IObject.isNumber(value)) {
-                    return value
-                } else if (IObject.isBoolean(value)) {
-                    return value ? 1.0 : 0.0
-                }
-                var text = this.getStr(value);
-                return parseFloat(text)
-            }, getInt: function (value, defaultValue) {
-                if (IObject.isNull(value)) {
-                    return defaultValue
-                } else if (IObject.isNumber(value)) {
-                    return value
-                } else if (IObject.isBoolean(value)) {
-                    return value ? 1 : 0
-                }
-                var text = this.getStr(value);
-                return parseInt(text)
-            }, getBoolean: function (value, defaultValue) {
-                if (IObject.isNull(value)) {
-                    return defaultValue
-                } else if (IObject.isBoolean(value)) {
-                    return value
-                } else if (IObject.isNumber(value)) {
-                    return value > 0 || value < 0
-                }
-                var text = this.getStr(value);
-                text = text.trim();
-                var size = text.length;
-                if (size === 0) {
-                    return false
-                } else if (size > Converter.MAX_BOOLEAN_LEN) {
-                    throw new TypeError('Boolean value error: "' + value + '"');
-                } else {
-                    text = text.toLowerCase()
-                }
-                var state = Converter.BOOLEAN_STATES[text];
-                if (IObject.isNull(state)) {
-                    throw new TypeError('Boolean value error: "' + value + '"');
-                }
-                return state
-            }, getString: function (value, defaultValue) {
-                if (IObject.isNull(value)) {
-                    return defaultValue
-                } else if (IObject.isString(value)) {
-                    return value
-                } else {
-                    return value.toString()
-                }
-            }, getStr: function (value) {
-                if (IObject.isString(value)) {
-                    return value
-                } else {
-                    return value.toString()
-                }
+        Class(BaseConverter, BaseObject, [DataConverter]);
+        BaseConverter.prototype.getDateTime = function (value, defaultValue) {
+            if (IObject.isNull(value)) {
+                return defaultValue
+            } else if (value instanceof Date) {
+                return value
             }
-        });
+            var seconds = this.getFloat(value, 0);
+            var millis = seconds * 1000;
+            return new Date(millis)
+        };
+        BaseConverter.prototype.getFloat = function (value, defaultValue) {
+            if (IObject.isNull(value)) {
+                return defaultValue
+            } else if (IObject.isNumber(value)) {
+                return value
+            } else if (IObject.isBoolean(value)) {
+                return value ? 1.0 : 0.0
+            }
+            var text = conv_str(value);
+            return parseFloat(text)
+        };
+        BaseConverter.prototype.getInt = function (value, defaultValue) {
+            if (IObject.isNull(value)) {
+                return defaultValue
+            } else if (IObject.isNumber(value)) {
+                return value
+            } else if (IObject.isBoolean(value)) {
+                return value ? 1 : 0
+            }
+            var text = conv_str(value);
+            return parseInt(text)
+        };
+        BaseConverter.prototype.getBoolean = function (value, defaultValue) {
+            if (IObject.isNull(value)) {
+                return defaultValue
+            } else if (IObject.isBoolean(value)) {
+                return value
+            } else if (IObject.isNumber(value)) {
+                return value > 0 || value < 0
+            }
+            var text = conv_str(value);
+            text = text.trim();
+            var size = text.length;
+            if (size === 0) {
+                return false
+            } else if (size > Converter.MAX_BOOLEAN_LEN) {
+                throw new TypeError('Boolean value error: "' + value + '"');
+            } else {
+                text = text.toLowerCase()
+            }
+            var state = Converter.BOOLEAN_STATES[text];
+            if (IObject.isNull(state)) {
+                throw new TypeError('Boolean value error: "' + value + '"');
+            }
+            return state
+        };
+        BaseConverter.prototype.getString = function (value, defaultValue) {
+            if (IObject.isNull(value)) {
+                return defaultValue
+            } else if (IObject.isString(value)) {
+                return value
+            } else {
+                return value.toString()
+            }
+        };
+        var conv_str = function (value) {
+            if (IObject.isString(value)) {
+                return value
+            } else {
+                return value.toString()
+            }
+        };
         mk.type.Converter = {
             getString: function (value, defaultValue) {
                 return this.converter.getString(value, defaultValue)
@@ -275,6 +389,118 @@ if (typeof DIMP !== 'object') {
             MAX_BOOLEAN_LEN: 'undefined'.length
         };
         var Converter = mk.type.Converter;
+        mk.type.Dictionary = function (dict) {
+            BaseObject.call(this);
+            if (!dict) {
+                dict = {}
+            } else if (Interface.conforms(dict, Mapper)) {
+                dict = dict.toMap()
+            }
+            this.__dictionary = dict
+        };
+        var Dictionary = mk.type.Dictionary;
+        Class(Dictionary, BaseObject, [Mapper]);
+        Dictionary.prototype.equals = function (other) {
+            if (Interface.conforms(other, Mapper)) {
+                if (this === other) {
+                    return true
+                }
+                other = other.valueOf()
+            }
+            return Arrays.equals(this.__dictionary, other)
+        };
+        Dictionary.prototype.valueOf = function () {
+            return this.__dictionary
+        };
+        Dictionary.prototype.toString = function () {
+            return mk.format.JSON.encode(this.__dictionary)
+        };
+        Dictionary.prototype.toMap = function () {
+            return this.__dictionary
+        };
+        Dictionary.prototype.copyMap = function (deepCopy) {
+            if (deepCopy) {
+                return Copier.deepCopyMap(this.__dictionary)
+            } else {
+                return Copier.copyMap(this.__dictionary)
+            }
+        };
+        Dictionary.prototype.isEmpty = function () {
+            var keys = Object.keys(this.__dictionary);
+            return keys.length === 0
+        };
+        Dictionary.prototype.getLength = function () {
+            var keys = Object.keys(this.__dictionary);
+            return keys.length
+        };
+        Dictionary.prototype.allKeys = function () {
+            return Object.keys(this.__dictionary)
+        };
+        Dictionary.prototype.getValue = function (key) {
+            return this.__dictionary[key]
+        };
+        Dictionary.prototype.setValue = function (key, value) {
+            if (value) {
+                this.__dictionary[key] = value
+            } else if (this.__dictionary.hasOwnProperty(key)) {
+                delete this.__dictionary[key]
+            }
+        };
+        Dictionary.prototype.removeValue = function (key) {
+            var value;
+            if (this.__dictionary.hasOwnProperty(key)) {
+                value = this.__dictionary[key];
+                delete this.__dictionary[key]
+            } else {
+                value = null
+            }
+            return value
+        };
+        Dictionary.prototype.getString = function (key, defaultValue) {
+            var value = this.__dictionary[key];
+            return Converter.getString(value, defaultValue)
+        };
+        Dictionary.prototype.getBoolean = function (key, defaultValue) {
+            var value = this.__dictionary[key];
+            return Converter.getBoolean(value, defaultValue)
+        };
+        Dictionary.prototype.getInt = function (key, defaultValue) {
+            var value = this.__dictionary[key];
+            return Converter.getInt(value, defaultValue)
+        };
+        Dictionary.prototype.getFloat = function (key, defaultValue) {
+            var value = this.__dictionary[key];
+            return Converter.getFloat(value, defaultValue)
+        };
+        Dictionary.prototype.getDateTime = function (key, defaultValue) {
+            var value = this.__dictionary[key];
+            return Converter.getDateTime(value, defaultValue)
+        };
+        Dictionary.prototype.setDateTime = function (key, time) {
+            if (!time) {
+                this.removeValue(key)
+            } else if (time instanceof Date) {
+                time = time.getTime() / 1000.0;
+                this.__dictionary[key] = time
+            } else {
+                time = Converter.getFloat(time, 0);
+                this.__dictionary[key] = time
+            }
+        };
+        Dictionary.prototype.setString = function (key, string) {
+            if (!string) {
+                this.removeValue(key)
+            } else {
+                this.__dictionary[key] = string.toString()
+            }
+        };
+        Dictionary.prototype.setMap = function (key, map) {
+            if (!map) {
+                this.removeValue(key)
+            } else {
+                this.__dictionary[key] = map.toMap()
+            }
+        };
         var is_array = function (obj) {
             return obj instanceof Array || is_number_array(obj)
         };
@@ -465,30 +691,34 @@ if (typeof DIMP !== 'object') {
             this.__alias = alias
         };
         var BaseEnum = mk.type.BaseEnum;
-        Class(BaseEnum, BaseObject, null, {
-            equals: function (other) {
-                if (other instanceof BaseEnum) {
-                    if (this === other) {
-                        return true
-                    }
-                    other = other.valueOf()
+        Class(BaseEnum, BaseObject, null);
+        BaseEnum.prototype.equals = function (other) {
+            if (other instanceof BaseEnum) {
+                if (this === other) {
+                    return true
                 }
-                return this.__value === other
-            }, toString: function () {
-                return '<' + this.getName() + ': ' + this.getValue() + '>'
-            }, valueOf: function () {
-                return this.__value
-            }, getValue: function () {
-                return this.__value
-            }, getName: function () {
-                return this.__alias
+                other = other.valueOf()
             }
-        });
+            return this.__value === other
+        };
+        BaseEnum.prototype.toString = function () {
+            return '<' + this.getName() + ': ' + this.getValue() + '>'
+        };
+        BaseEnum.prototype.valueOf = function () {
+            return this.__value
+        };
+        BaseEnum.prototype.getValue = function () {
+            return this.__value
+        };
+        BaseEnum.prototype.getName = function () {
+            return this.__alias
+        };
         var enum_class = function (type) {
             var NamedEnum = function (value, alias) {
                 BaseEnum.call(this, value, alias)
             };
-            Class(NamedEnum, BaseEnum, null, {
+            Class(NamedEnum, BaseEnum, null);
+            Implementation(NamedEnum, {
                 toString: function () {
                     var clazz = NamedEnum.__type;
                     if (!clazz) {
@@ -506,7 +736,7 @@ if (typeof DIMP !== 'object') {
             } else if (!enumeration) {
                 enumeration = enum_class(null)
             } else {
-                Class(enumeration, BaseEnum, null, null)
+                Class(enumeration, BaseEnum, null)
             }
             Mapper.forEach(elements, function (alias, value) {
                 if (value instanceof BaseEnum) {
@@ -538,7 +768,7 @@ if (typeof DIMP !== 'object') {
                 return value.getName()
             }
             return Converter.getString(value, defaultValue)
-        }
+        };
         mk.type.Set = Interface(null, [IObject]);
         var Set = mk.type.Set;
         Set.prototype = {
@@ -556,42 +786,50 @@ if (typeof DIMP !== 'object') {
             this.__array = []
         };
         var HashSet = mk.type.HashSet;
-        Class(HashSet, BaseObject, [Set], {
-            equals: function (other) {
-                if (Interface.conforms(other, Set)) {
-                    if (this === other) {
-                        return true
-                    }
-                    other = other.valueOf()
-                }
-                return Arrays.equals(this.__array, other)
-            }, valueOf: function () {
-                return this.__array
-            }, toString: function () {
-                return this.__array.toString()
-            }, isEmpty: function () {
-                return this.__array.length === 0
-            }, getLength: function () {
-                return this.__array.length
-            }, contains: function (item) {
-                var pos = Arrays.find(this.__array, item);
-                return pos >= 0
-            }, add: function (item) {
-                var pos = Arrays.find(this.__array, item);
-                if (pos < 0) {
-                    this.__array.push(item);
+        Class(HashSet, BaseObject, [Set]);
+        HashSet.prototype.equals = function (other) {
+            if (Interface.conforms(other, Set)) {
+                if (this === other) {
                     return true
-                } else {
-                    return false
                 }
-            }, remove: function (item) {
-                return Arrays.remove(this.__array, item)
-            }, clear: function () {
-                this.__array = []
-            }, toArray: function () {
-                return this.__array.slice()
+                other = other.valueOf()
             }
-        });
+            return Arrays.equals(this.__array, other)
+        };
+        HashSet.prototype.valueOf = function () {
+            return this.__array
+        };
+        HashSet.prototype.toString = function () {
+            return this.__array.toString()
+        };
+        HashSet.prototype.isEmpty = function () {
+            return this.__array.length === 0
+        };
+        HashSet.prototype.getLength = function () {
+            return this.__array.length
+        };
+        HashSet.prototype.contains = function (item) {
+            var pos = Arrays.find(this.__array, item);
+            return pos >= 0
+        };
+        HashSet.prototype.add = function (item) {
+            var pos = Arrays.find(this.__array, item);
+            if (pos < 0) {
+                this.__array.push(item);
+                return true
+            } else {
+                return false
+            }
+        };
+        HashSet.prototype.remove = function (item) {
+            return Arrays.remove(this.__array, item)
+        };
+        HashSet.prototype.clear = function () {
+            this.__array = []
+        };
+        HashSet.prototype.toArray = function () {
+            return this.__array.slice()
+        };
         mk.type.Stringer = Interface(null, [IObject]);
         var Stringer = mk.type.Stringer;
         Stringer.prototype = {
@@ -610,35 +848,39 @@ if (typeof DIMP !== 'object') {
             this.__string = str
         };
         var ConstantString = mk.type.ConstantString;
-        Class(ConstantString, BaseObject, [Stringer], {
-            equals: function (other) {
-                if (Interface.conforms(other, Stringer)) {
-                    if (this === other) {
-                        return true
-                    }
-                    other = other.valueOf()
-                }
-                return this.__string === other
-            }, valueOf: function () {
-                return this.__string
-            }, toString: function () {
-                return this.__string
-            }, isEmpty: function () {
-                return this.__string.length === 0
-            }, getLength: function () {
-                return this.__string.length
-            }, equalsIgnoreCase: function (other) {
+        Class(ConstantString, BaseObject, [Stringer]);
+        ConstantString.prototype.equals = function (other) {
+            if (Interface.conforms(other, Stringer)) {
                 if (this === other) {
                     return true
-                } else if (!other) {
-                    return !this.__string
-                } else if (Interface.conforms(other, Stringer)) {
-                    return equalsIgnoreCase(this.__string, other.toString())
-                } else {
-                    return equalsIgnoreCase(this.__string, other)
                 }
+                other = other.valueOf()
             }
-        });
+            return this.__string === other
+        };
+        ConstantString.prototype.valueOf = function () {
+            return this.__string
+        };
+        ConstantString.prototype.toString = function () {
+            return this.__string
+        };
+        ConstantString.prototype.isEmpty = function () {
+            return this.__string.length === 0
+        };
+        ConstantString.prototype.getLength = function () {
+            return this.__string.length
+        };
+        ConstantString.prototype.equalsIgnoreCase = function (other) {
+            if (this === other) {
+                return true
+            } else if (!other) {
+                return !this.__string
+            } else if (Interface.conforms(other, Stringer)) {
+                return equalsIgnoreCase(this.__string, other.toString())
+            } else {
+                return equalsIgnoreCase(this.__string, other)
+            }
+        };
         var equalsIgnoreCase = function (str1, str2) {
             if (str1.length !== str2.length) {
                 return false
@@ -647,192 +889,6 @@ if (typeof DIMP !== 'object') {
             var low2 = str2.toLowerCase();
             return low1 === low2
         };
-        mk.type.Mapper = Interface(null, [IObject]);
-        var Mapper = mk.type.Mapper;
-        Mapper.prototype = {
-            toMap: function () {
-            }, copyMap: function (deepCopy) {
-            }, isEmpty: function () {
-            }, getLength: function () {
-            }, allKeys: function () {
-            }, getValue: function (key) {
-            }, setValue: function (key, value) {
-            }, removeValue: function (key) {
-            }, getString: function (key, defaultValue) {
-            }, getBoolean: function (key, defaultValue) {
-            }, getInt: function (key, defaultValue) {
-            }, getFloat: function (key, defaultValue) {
-            }, getDateTime: function (key, defaultValue) {
-            }, setDateTime: function (key, time) {
-            }, setString: function (key, stringer) {
-            }, setMap: function (key, mapper) {
-            }
-        };
-        Mapper.count = function (dict) {
-            if (!dict) {
-                return 0
-            } else if (Interface.conforms(dict, Mapper)) {
-                dict = dict.toMap()
-            } else if (typeof dict !== 'object') {
-                throw TypeError('not a map: ' + dict);
-            }
-            return Object.keys(dict).length
-        };
-        Mapper.isEmpty = function (dict) {
-            return Mapper.count(dict) === 0
-        };
-        Mapper.keys = function (dict) {
-            if (!dict) {
-                return null
-            } else if (Interface.conforms(dict, Mapper)) {
-                dict = dict.toMap()
-            } else if (typeof dict !== 'object') {
-                throw TypeError('not a map: ' + dict);
-            }
-            return Object.keys(dict)
-        };
-        Mapper.removeKey = function (dict, key) {
-            if (!dict) {
-                return null
-            } else if (Interface.conforms(dict, Mapper)) {
-                dict = dict.toMap()
-            } else if (typeof dict !== 'object') {
-                throw TypeError('not a map: ' + dict);
-            }
-            var value = dict[key];
-            delete dict[key];
-            return value
-        };
-        Mapper.forEach = function (dict, handleKeyValue) {
-            if (!dict) {
-                return -1
-            } else if (Interface.conforms(dict, Mapper)) {
-                dict = dict.toMap()
-            } else if (typeof dict !== 'object') {
-                throw TypeError('not a map: ' + dict);
-            }
-            var keys = Object.keys(dict);
-            var cnt = keys.length;
-            var stop;
-            var i = 0, k, v;
-            for (; i < cnt; ++i) {
-                k = keys[i];
-                v = dict[k];
-                stop = handleKeyValue(k, v);
-                if (stop) {
-                    break
-                }
-            }
-            return i
-        };
-        Mapper.addAll = function (dict, fromDict) {
-            if (!dict) {
-                return -1
-            } else if (Interface.conforms(dict, Mapper)) {
-                dict = dict.toMap()
-            } else if (typeof dict !== 'object') {
-                throw TypeError('not a map: ' + dict);
-            }
-            return Mapper.forEach(fromDict, function (key, value) {
-                dict[key] = value;
-                return false
-            })
-        };
-        mk.type.Dictionary = function (dict) {
-            BaseObject.call(this);
-            if (!dict) {
-                dict = {}
-            } else if (Interface.conforms(dict, Mapper)) {
-                dict = dict.toMap()
-            }
-            this.__dictionary = dict
-        };
-        var Dictionary = mk.type.Dictionary;
-        Class(Dictionary, BaseObject, [Mapper], {
-            equals: function (other) {
-                if (Interface.conforms(other, Mapper)) {
-                    if (this === other) {
-                        return true
-                    }
-                    other = other.valueOf()
-                }
-                return Arrays.equals(this.__dictionary, other)
-            }, valueOf: function () {
-                return this.__dictionary
-            }, toString: function () {
-                return mk.format.JSON.encode(this.__dictionary)
-            }, toMap: function () {
-                return this.__dictionary
-            }, copyMap: function (deepCopy) {
-                if (deepCopy) {
-                    return Copier.deepCopyMap(this.__dictionary)
-                } else {
-                    return Copier.copyMap(this.__dictionary)
-                }
-            }, isEmpty: function () {
-                var keys = Object.keys(this.__dictionary);
-                return keys.length === 0
-            }, getLength: function () {
-                var keys = Object.keys(this.__dictionary);
-                return keys.length
-            }, allKeys: function () {
-                return Object.keys(this.__dictionary)
-            }, getValue: function (key) {
-                return this.__dictionary[key]
-            }, setValue: function (key, value) {
-                if (value) {
-                    this.__dictionary[key] = value
-                } else if (this.__dictionary.hasOwnProperty(key)) {
-                    delete this.__dictionary[key]
-                }
-            }, removeValue: function (key) {
-                var value;
-                if (this.__dictionary.hasOwnProperty(key)) {
-                    value = this.__dictionary[key];
-                    delete this.__dictionary[key]
-                } else {
-                    value = null
-                }
-                return value
-            }, getString: function (key, defaultValue) {
-                var value = this.__dictionary[key];
-                return Converter.getString(value, defaultValue)
-            }, getBoolean: function (key, defaultValue) {
-                var value = this.__dictionary[key];
-                return Converter.getBoolean(value, defaultValue)
-            }, getInt: function (key, defaultValue) {
-                var value = this.__dictionary[key];
-                return Converter.getInt(value, defaultValue)
-            }, getFloat: function (key, defaultValue) {
-                var value = this.__dictionary[key];
-                return Converter.getFloat(value, defaultValue)
-            }, getDateTime: function (key, defaultValue) {
-                var value = this.__dictionary[key];
-                return Converter.getDateTime(value, defaultValue)
-            }, setDateTime: function (key, time) {
-                if (!time) {
-                    this.removeValue(key)
-                } else if (time instanceof Date) {
-                    time = time.getTime() / 1000.0;
-                    this.__dictionary[key] = time
-                } else {
-                    time = Converter.getFloat(time, 0);
-                    this.__dictionary[key] = time
-                }
-            }, setString: function (key, string) {
-                if (!string) {
-                    this.removeValue(key)
-                } else {
-                    this.__dictionary[key] = string.toString()
-                }
-            }, setMap: function (key, map) {
-                if (!map) {
-                    this.removeValue(key)
-                } else {
-                    this.__dictionary[key] = map.toMap()
-                }
-            }
-        });
         mk.type.Wrapper = {
             fetchString: function (str) {
                 if (Interface.conforms(str, Stringer)) {
@@ -1698,11 +1754,10 @@ if (typeof DIMP !== 'object') {
             this.__network = Enum.getInt(network)
         };
         var BroadcastAddress = mkm.mkm.BroadcastAddress;
-        Class(BroadcastAddress, ConstantString, [Address], {
-            getType: function () {
-                return this.__network
-            }
-        });
+        Class(BroadcastAddress, ConstantString, [Address]);
+        BroadcastAddress.prototype.getType = function () {
+            return this.__network
+        };
         Address.ANYWHERE = new BroadcastAddress('anywhere', EntityType.ANY);
         Address.EVERYWHERE = new BroadcastAddress('everywhere', EntityType.EVERY);
         mkm.mkm.Identifier = function (identifier, name, address, terminal) {
@@ -1712,27 +1767,32 @@ if (typeof DIMP !== 'object') {
             this.__terminal = terminal
         };
         var Identifier = mkm.mkm.Identifier;
-        Class(Identifier, ConstantString, [ID], {
-            getName: function () {
-                return this.__name
-            }, getAddress: function () {
-                return this.__address
-            }, getTerminal: function () {
-                return this.__terminal
-            }, getType: function () {
-                var address = this.__address;
-                return address.getType()
-            }, isBroadcast: function () {
-                var network = this.getType();
-                return EntityType.isBroadcast(network)
-            }, isUser: function () {
-                var network = this.getType();
-                return EntityType.isUser(network)
-            }, isGroup: function () {
-                var network = this.getType();
-                return EntityType.isGroup(network)
-            }
-        });
+        Class(Identifier, ConstantString, [ID]);
+        Identifier.prototype.getName = function () {
+            return this.__name
+        };
+        Identifier.prototype.getAddress = function () {
+            return this.__address
+        };
+        Identifier.prototype.getTerminal = function () {
+            return this.__terminal
+        };
+        Identifier.prototype.getType = function () {
+            var address = this.__address;
+            return address.getType()
+        };
+        Identifier.prototype.isBroadcast = function () {
+            var network = this.getType();
+            return EntityType.isBroadcast(network)
+        };
+        Identifier.prototype.isUser = function () {
+            var network = this.getType();
+            return EntityType.isUser(network)
+        };
+        Identifier.prototype.isGroup = function () {
+            var network = this.getType();
+            return EntityType.isGroup(network)
+        };
         Identifier.create = function (name, address, terminal) {
             var string = Identifier.concat(name, address, terminal);
             return new Identifier(string, name, address, terminal)
@@ -2205,6 +2265,7 @@ if (typeof DIMP !== 'object') {
         }
         var Interface = mk.type.Interface;
         var Class = mk.type.Class;
+        var Implementation = mk.type.Implementation;
         var IObject = mk.type.Object;
         var Dictionary = mk.type.Dictionary;
         var Converter = mk.type.Converter;
@@ -2758,11 +2819,10 @@ if (typeof DIMP !== 'object') {
             Dictionary.call(this, dict)
         };
         var BaseKey = mk.crypto.BaseKey;
-        Class(BaseKey, Dictionary, [CryptographyKey], {
-            getAlgorithm: function () {
-                return BaseKey.getKeyAlgorithm(this.toMap())
-            }
-        });
+        Class(BaseKey, Dictionary, [CryptographyKey]);
+        BaseKey.prototype.getAlgorithm = function () {
+            return BaseKey.getKeyAlgorithm(this.toMap())
+        };
         BaseKey.getKeyAlgorithm = function (key) {
             var helper = SharedCryptoExtensions.getHelper();
             var algorithm = helper.getKeyAlgorithm(key);
@@ -2790,52 +2850,53 @@ if (typeof DIMP !== 'object') {
             Dictionary.call(this, dict)
         };
         var BaseSymmetricKey = mk.crypto.BaseSymmetricKey;
-        Class(BaseSymmetricKey, Dictionary, [SymmetricKey], {
-            equals: function (other) {
-                return Interface.conforms(other, SymmetricKey) && BaseKey.symmetricKeyEquals(other, this)
-            }, matchEncryptKey: function (pKey) {
-                return BaseKey.matchEncryptKey(pKey, this)
-            }, getAlgorithm: function () {
-                return BaseKey.getKeyAlgorithm(this.toMap())
-            }
-        });
+        Class(BaseSymmetricKey, Dictionary, [SymmetricKey]);
+        BaseSymmetricKey.prototype.equals = function (other) {
+            return Interface.conforms(other, SymmetricKey) && BaseKey.symmetricKeyEquals(other, this)
+        };
+        BaseSymmetricKey.prototype.matchEncryptKey = function (pKey) {
+            return BaseKey.matchEncryptKey(pKey, this)
+        };
+        BaseSymmetricKey.prototype.getAlgorithm = function () {
+            return BaseKey.getKeyAlgorithm(this.toMap())
+        };
         mk.crypto.BaseAsymmetricKey = function (dict) {
             Dictionary.call(this, dict)
         };
         var BaseAsymmetricKey = mk.crypto.BaseAsymmetricKey;
-        Class(BaseAsymmetricKey, Dictionary, [AsymmetricKey], {
-            getAlgorithm: function () {
-                return BaseKey.getKeyAlgorithm(this.toMap())
-            }
-        });
+        Class(BaseAsymmetricKey, Dictionary, [AsymmetricKey]);
+        BaseAsymmetricKey.prototype.getAlgorithm = function () {
+            return BaseKey.getKeyAlgorithm(this.toMap())
+        };
         mk.crypto.BasePrivateKey = function (dict) {
             Dictionary.call(this, dict)
         };
         var BasePrivateKey = mk.crypto.BasePrivateKey;
-        Class(BasePrivateKey, Dictionary, [PrivateKey], {
-            equals: function (other) {
-                return Interface.conforms(other, PrivateKey) && BaseKey.privateKeyEquals(other, this)
-            }, getAlgorithm: function () {
-                return BaseKey.getKeyAlgorithm(this.toMap())
-            }
-        });
+        Class(BasePrivateKey, Dictionary, [PrivateKey]);
+        BasePrivateKey.prototype.equals = function (other) {
+            return Interface.conforms(other, PrivateKey) && BaseKey.privateKeyEquals(other, this)
+        };
+        BasePrivateKey.prototype.getAlgorithm = function () {
+            return BaseKey.getKeyAlgorithm(this.toMap())
+        };
         mk.crypto.BasePublicKey = function (dict) {
             Dictionary.call(this, dict)
         };
         var BasePublicKey = mk.crypto.BasePublicKey;
-        Class(BasePublicKey, Dictionary, [PublicKey], {
-            matchSignKey: function (sKey) {
-                return BaseKey.matchSignKey(sKey, this)
-            }, getAlgorithm: function () {
-                return BaseKey.getKeyAlgorithm(this.toMap())
-            }
-        });
+        Class(BasePublicKey, Dictionary, [PublicKey]);
+        BasePublicKey.prototype.matchSignKey = function (sKey) {
+            return BaseKey.matchSignKey(sKey, this)
+        };
+        BasePublicKey.prototype.getAlgorithm = function () {
+            return BaseKey.getKeyAlgorithm(this.toMap())
+        };
         mk.format.BaseDataWrapper = function (dict) {
             Dictionary.call(this, dict);
             this.__data = null
         };
         var BaseDataWrapper = mk.format.BaseDataWrapper;
-        Class(BaseDataWrapper, Dictionary, null, {
+        Class(BaseDataWrapper, Dictionary, null);
+        Implementation(BaseDataWrapper, {
             toString: function () {
                 var encoded = this.getString('data', null);
                 if (!encoded) {
@@ -2916,7 +2977,8 @@ if (typeof DIMP !== 'object') {
             this.__password = null
         };
         var BaseFileWrapper = mk.format.BaseFileWrapper;
-        Class(BaseFileWrapper, Dictionary, null, {
+        Class(BaseFileWrapper, Dictionary, null);
+        Implementation(BaseFileWrapper, {
             getData: function () {
                 var ted = this.__attachment;
                 if (!ted) {
@@ -3011,7 +3073,8 @@ if (typeof DIMP !== 'object') {
             this.__status = status
         };
         var BaseMeta = mkm.mkm.BaseMeta;
-        Class(BaseMeta, Dictionary, [Meta], {
+        Class(BaseMeta, Dictionary, [Meta]);
+        Implementation(BaseMeta, {
             getType: function () {
                 var type = this.__type;
                 if (type === null) {
@@ -3113,7 +3176,8 @@ if (typeof DIMP !== 'object') {
             this.__status = status
         };
         var BaseDocument = mkm.mkm.BaseDocument;
-        Class(BaseDocument, Dictionary, [Document], {
+        Class(BaseDocument, Dictionary, [Document]);
+        Implementation(BaseDocument, {
             isValid: function () {
                 return this.__status > 0
             }, getIdentifier: function () {
@@ -3242,7 +3306,8 @@ if (typeof DIMP !== 'object') {
             this.__avatar = null
         };
         var BaseVisa = mkm.mkm.BaseVisa;
-        Class(BaseVisa, BaseDocument, [Visa], {
+        Class(BaseVisa, BaseDocument, [Visa]);
+        Implementation(BaseVisa, {
             getPublicKey: function () {
                 var key = this.__key;
                 if (!key) {
@@ -3295,7 +3360,8 @@ if (typeof DIMP !== 'object') {
             this.__assistants = null
         };
         var BaseBulletin = mkm.mkm.BaseBulletin;
-        Class(BaseBulletin, BaseDocument, [Bulletin], {
+        Class(BaseBulletin, BaseDocument, [Bulletin]);
+        Implementation(BaseBulletin, {
             getFounder: function () {
                 return ID.parse(this.getProperty('founder'))
             }, getAssistants: function () {
@@ -3340,7 +3406,8 @@ if (typeof DIMP !== 'object') {
             this.__time = time
         };
         var BaseContent = dkd.dkd.BaseContent;
-        Class(BaseContent, Dictionary, [Content], {
+        Class(BaseContent, Dictionary, [Content]);
+        Implementation(BaseContent, {
             getType: function () {
                 if (this.__type === null) {
                     var helper = SharedMessageExtensions.getHelper();
@@ -3376,7 +3443,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var BaseCommand = dkd.dkd.BaseCommand;
-        Class(BaseCommand, BaseContent, [Command], {
+        Class(BaseCommand, BaseContent, [Command]);
+        Implementation(BaseCommand, {
             getCmd: function () {
                 var helper = SharedCommandExtensions.getHelper();
                 return helper.getCmd(this.toMap(), '')
@@ -3391,7 +3459,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var BaseTextContent = dkd.dkd.BaseTextContent;
-        Class(BaseTextContent, BaseContent, [TextContent], {
+        Class(BaseTextContent, BaseContent, [TextContent]);
+        Implementation(BaseTextContent, {
             getText: function () {
                 return this.getString('text', '')
             }, setText: function (text) {
@@ -3407,7 +3476,8 @@ if (typeof DIMP !== 'object') {
             this.__icon = null
         };
         var WebPageContent = dkd.dkd.WebPageContent;
-        Class(WebPageContent, BaseContent, [PageContent], {
+        Class(WebPageContent, BaseContent, [PageContent]);
+        Implementation(WebPageContent, {
             getTitle: function () {
                 return this.getString('title', '')
             }, setTitle: function (title) {
@@ -3455,7 +3525,8 @@ if (typeof DIMP !== 'object') {
             this.__image = null
         };
         var NameCardContent = dkd.dkd.NameCardContent;
-        Class(NameCardContent, BaseContent, [NameCard], {
+        Class(NameCardContent, BaseContent, [NameCard]);
+        Implementation(NameCardContent, {
             getIdentifier: function () {
                 var id = this.getValue('did');
                 return ID.parse(id)
@@ -3492,7 +3563,8 @@ if (typeof DIMP !== 'object') {
             this.__wrapper = new BaseFileWrapper(this.toMap())
         };
         var BaseFileContent = dkd.dkd.BaseFileContent;
-        Class(BaseFileContent, BaseContent, [FileContent], {
+        Class(BaseFileContent, BaseContent, [FileContent]);
+        Implementation(BaseFileContent, {
             getData: function () {
                 var ted = this.__wrapper.getData();
                 return !ted ? null : ted.getData()
@@ -3523,7 +3595,8 @@ if (typeof DIMP !== 'object') {
             this.__thumbnail = null
         };
         var ImageFileContent = dkd.dkd.ImageFileContent;
-        Class(ImageFileContent, BaseFileContent, [ImageContent], {
+        Class(ImageFileContent, BaseFileContent, [ImageContent]);
+        Implementation(ImageFileContent, {
             getThumbnail: function () {
                 var pnf = this.__thumbnail;
                 if (!pnf) {
@@ -3554,7 +3627,8 @@ if (typeof DIMP !== 'object') {
             this.__snapshot = null
         };
         var VideoFileContent = dkd.dkd.VideoFileContent;
-        Class(VideoFileContent, BaseFileContent, [VideoContent], {
+        Class(VideoFileContent, BaseFileContent, [VideoContent]);
+        Implementation(VideoFileContent, {
             getSnapshot: function () {
                 var pnf = this.__snapshot;
                 if (!pnf) {
@@ -3584,7 +3658,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var AudioFileContent = dkd.dkd.AudioFileContent;
-        Class(AudioFileContent, BaseFileContent, [AudioContent], {
+        Class(AudioFileContent, BaseFileContent, [AudioContent]);
+        Implementation(AudioFileContent, {
             getText: function () {
                 return this.getString('text', null)
             }, setText: function (asr) {
@@ -3613,7 +3688,8 @@ if (typeof DIMP !== 'object') {
             this.__secrets = secrets
         };
         var SecretContent = dkd.dkd.SecretContent;
-        Class(SecretContent, BaseContent, [ForwardContent], {
+        Class(SecretContent, BaseContent, [ForwardContent]);
+        Implementation(SecretContent, {
             getForward: function () {
                 if (this.__forward === null) {
                     var forward = this.getValue('forward');
@@ -3657,7 +3733,8 @@ if (typeof DIMP !== 'object') {
             this.__history = messages
         };
         var CombineForwardContent = dkd.dkd.CombineForwardContent;
-        Class(CombineForwardContent, BaseContent, [CombineContent], {
+        Class(CombineForwardContent, BaseContent, [CombineContent]);
+        Implementation(CombineForwardContent, {
             getTitle: function () {
                 return this.getString('title', '')
             }, getMessages: function () {
@@ -3687,7 +3764,8 @@ if (typeof DIMP !== 'object') {
             this.__list = list
         };
         var ListContent = dkd.dkd.ListContent;
-        Class(ListContent, BaseContent, [ArrayContent], {
+        Class(ListContent, BaseContent, [ArrayContent]);
+        Implementation(ListContent, {
             getContents: function () {
                 var contents = this.__list;
                 if (!contents) {
@@ -3716,7 +3794,8 @@ if (typeof DIMP !== 'object') {
             this.__env = null
         };
         var BaseQuoteContent = dkd.dkd.BaseQuoteContent;
-        Class(BaseQuoteContent, BaseContent, [QuoteContent], {
+        Class(BaseQuoteContent, BaseContent, [QuoteContent]);
+        Implementation(BaseQuoteContent, {
             getText: function () {
                 return this.getString('text', '')
             }, getOrigin: function () {
@@ -3752,7 +3831,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var BaseMoneyContent = dkd.dkd.BaseMoneyContent;
-        Class(BaseMoneyContent, BaseContent, [MoneyContent], {
+        Class(BaseMoneyContent, BaseContent, [MoneyContent]);
+        Implementation(BaseMoneyContent, {
             setCurrency: function (currency) {
                 this.setValue('currency', currency)
             }, getCurrency: function () {
@@ -3773,7 +3853,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var TransferMoneyContent = dkd.dkd.TransferMoneyContent;
-        Class(TransferMoneyContent, BaseMoneyContent, [TransferContent], {
+        Class(TransferMoneyContent, BaseMoneyContent, [TransferContent]);
+        Implementation(TransferMoneyContent, {
             getRemitter: function () {
                 var sender = this.getValue('remitter');
                 return ID.parse(sender)
@@ -3814,7 +3895,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var AppCustomizedContent = dkd.dkd.AppCustomizedContent;
-        Class(AppCustomizedContent, BaseContent, [CustomizedContent], {
+        Class(AppCustomizedContent, BaseContent, [CustomizedContent]);
+        Implementation(AppCustomizedContent, {
             getApplication: function () {
                 return this.getString('app', '')
             }, getModule: function () {
@@ -3841,7 +3923,8 @@ if (typeof DIMP !== 'object') {
             this.__meta = null
         };
         var BaseMetaCommand = dkd.dkd.BaseMetaCommand;
-        Class(BaseMetaCommand, BaseCommand, [MetaCommand], {
+        Class(BaseMetaCommand, BaseCommand, [MetaCommand]);
+        Implementation(BaseMetaCommand, {
             getIdentifier: function () {
                 if (this.__identifier == null) {
                     var identifier = this.getValue("did");
@@ -3868,7 +3951,8 @@ if (typeof DIMP !== 'object') {
             this.__docs = null
         };
         var BaseDocumentCommand = dkd.dkd.BaseDocumentCommand;
-        Class(BaseDocumentCommand, BaseMetaCommand, [DocumentCommand], {
+        Class(BaseDocumentCommand, BaseMetaCommand, [DocumentCommand]);
+        Implementation(BaseDocumentCommand, {
             getDocuments: function () {
                 if (this.__docs === null) {
                     var docs = this.getValue('documents');
@@ -3898,7 +3982,7 @@ if (typeof DIMP !== 'object') {
             }
         };
         var BaseHistoryCommand = dkd.dkd.BaseHistoryCommand;
-        Class(BaseHistoryCommand, BaseCommand, [HistoryCommand], null);
+        Class(BaseHistoryCommand, BaseCommand, [HistoryCommand]);
         dkd.dkd.BaseGroupCommand = function () {
             if (arguments.length === 1) {
                 BaseHistoryCommand.call(this, arguments[0])
@@ -3910,7 +3994,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var BaseGroupCommand = dkd.dkd.BaseGroupCommand;
-        Class(BaseGroupCommand, BaseHistoryCommand, [GroupCommand], {
+        Class(BaseGroupCommand, BaseHistoryCommand, [GroupCommand]);
+        Implementation(BaseGroupCommand, {
             setMember: function (identifier) {
                 this.setString('member', identifier);
                 this.removeValue('members')
@@ -3942,7 +4027,7 @@ if (typeof DIMP !== 'object') {
             }
         };
         var InviteGroupCommand = dkd.dkd.InviteGroupCommand;
-        Class(InviteGroupCommand, BaseGroupCommand, [InviteCommand], null);
+        Class(InviteGroupCommand, BaseGroupCommand, [InviteCommand]);
         dkd.dkd.ExpelGroupCommand = function (info) {
             if (Interface.conforms(info, ID)) {
                 BaseGroupCommand.call(this, GroupCommand.EXPEL, info)
@@ -3951,7 +4036,7 @@ if (typeof DIMP !== 'object') {
             }
         };
         var ExpelGroupCommand = dkd.dkd.ExpelGroupCommand;
-        Class(ExpelGroupCommand, BaseGroupCommand, [ExpelCommand], null);
+        Class(ExpelGroupCommand, BaseGroupCommand, [ExpelCommand]);
         dkd.dkd.JoinGroupCommand = function (info) {
             if (Interface.conforms(info, ID)) {
                 BaseGroupCommand.call(this, GroupCommand.JOIN, info)
@@ -3960,7 +4045,7 @@ if (typeof DIMP !== 'object') {
             }
         };
         var JoinGroupCommand = dkd.dkd.JoinGroupCommand;
-        Class(JoinGroupCommand, BaseGroupCommand, [JoinCommand], null);
+        Class(JoinGroupCommand, BaseGroupCommand, [JoinCommand]);
         dkd.dkd.QuitGroupCommand = function (info) {
             if (Interface.conforms(info, ID)) {
                 BaseGroupCommand.call(this, GroupCommand.QUIT, info)
@@ -3969,7 +4054,7 @@ if (typeof DIMP !== 'object') {
             }
         };
         var QuitGroupCommand = dkd.dkd.QuitGroupCommand;
-        Class(QuitGroupCommand, BaseGroupCommand, [QuitCommand], null);
+        Class(QuitGroupCommand, BaseGroupCommand, [QuitCommand]);
         dkd.dkd.ResetGroupCommand = function (info) {
             if (Interface.conforms(info, ID)) {
                 BaseGroupCommand.call(this, GroupCommand.RESET, info)
@@ -3978,7 +4063,7 @@ if (typeof DIMP !== 'object') {
             }
         };
         var ResetGroupCommand = dkd.dkd.ResetGroupCommand;
-        Class(ResetGroupCommand, BaseGroupCommand, [ResetCommand], null);
+        Class(ResetGroupCommand, BaseGroupCommand, [ResetCommand]);
         dkd.dkd.HireGroupCommand = function (info) {
             if (Interface.conforms(info, ID)) {
                 BaseGroupCommand.call(this, GroupCommand.HIRE, info)
@@ -3987,7 +4072,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var HireGroupCommand = dkd.dkd.HireGroupCommand;
-        Class(HireGroupCommand, BaseGroupCommand, [HireCommand], {
+        Class(HireGroupCommand, BaseGroupCommand, [HireCommand]);
+        Implementation(HireGroupCommand, {
             getAdministrators: function () {
                 var array = this.getValue('administrators');
                 return !array ? null : ID.convert(array)
@@ -4018,7 +4104,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var FireGroupCommand = dkd.dkd.FireGroupCommand;
-        Class(FireGroupCommand, BaseGroupCommand, [FireCommand], {
+        Class(FireGroupCommand, BaseGroupCommand, [FireCommand]);
+        Implementation(FireGroupCommand, {
             getAssistants: function () {
                 var array = this.getValue('assistants');
                 return !array ? null : ID.convert(array)
@@ -4049,7 +4136,7 @@ if (typeof DIMP !== 'object') {
             }
         };
         var ResignGroupCommand = dkd.dkd.ResignGroupCommand;
-        Class(ResignGroupCommand, BaseGroupCommand, [ResignCommand], null);
+        Class(ResignGroupCommand, BaseGroupCommand, [ResignCommand]);
         dkd.dkd.BaseReceiptCommand = function () {
             if (arguments.length === 1) {
                 BaseCommand.call(this, arguments[0])
@@ -4064,7 +4151,8 @@ if (typeof DIMP !== 'object') {
             this.__env = null
         };
         var BaseReceiptCommand = dkd.dkd.BaseReceiptCommand;
-        Class(BaseReceiptCommand, BaseCommand, [ReceiptCommand], {
+        Class(BaseReceiptCommand, BaseCommand, [ReceiptCommand]);
+        Implementation(BaseReceiptCommand, {
             getText: function () {
                 return this.getString('text', '')
             }, getOrigin: function () {
@@ -4121,7 +4209,8 @@ if (typeof DIMP !== 'object') {
             this.__time = when
         };
         var MessageEnvelope = dkd.msg.MessageEnvelope;
-        Class(MessageEnvelope, Dictionary, [Envelope], {
+        Class(MessageEnvelope, Dictionary, [Envelope]);
+        Implementation(MessageEnvelope, {
             getSender: function () {
                 var sender = this.__sender;
                 if (!sender) {
@@ -4166,7 +4255,8 @@ if (typeof DIMP !== 'object') {
             this.__envelope = env
         };
         var BaseMessage = dkd.msg.BaseMessage;
-        Class(BaseMessage, Dictionary, [Message], {
+        Class(BaseMessage, Dictionary, [Message]);
+        Implementation(BaseMessage, {
             getEnvelope: function () {
                 var env = this.__envelope;
                 if (!env) {
@@ -4220,7 +4310,8 @@ if (typeof DIMP !== 'object') {
             this.__content = body
         };
         var PlainMessage = dkd.msg.PlainMessage;
-        Class(PlainMessage, BaseMessage, [InstantMessage], {
+        Class(PlainMessage, BaseMessage, [InstantMessage]);
+        Implementation(PlainMessage, {
             getTime: function () {
                 var body = this.getContent();
                 var time = body.getTime();
@@ -4254,7 +4345,8 @@ if (typeof DIMP !== 'object') {
             this.__keys = null
         };
         var EncryptedMessage = dkd.msg.EncryptedMessage;
-        Class(EncryptedMessage, BaseMessage, [SecureMessage], {
+        Class(EncryptedMessage, BaseMessage, [SecureMessage]);
+        Implementation(EncryptedMessage, {
             getData: function () {
                 var binary = this.__data;
                 if (!binary) {
@@ -4300,7 +4392,8 @@ if (typeof DIMP !== 'object') {
             this.__signature = null
         };
         var NetworkMessage = dkd.msg.NetworkMessage;
-        Class(NetworkMessage, EncryptedMessage, [ReliableMessage], {
+        Class(NetworkMessage, EncryptedMessage, [ReliableMessage]);
+        Implementation(NetworkMessage, {
             getSignature: function () {
                 var ted = this.__signature;
                 if (!ted) {
@@ -4355,6 +4448,7 @@ if (typeof DIMP !== 'object') {
     }
     var Interface = mk.type.Interface;
     var Class = mk.type.Class;
+    var Implementation = mk.type.Implementation;
     var Converter = mk.type.Converter;
     var Wrapper = mk.type.Wrapper;
     var Mapper = mk.type.Mapper;
@@ -4622,7 +4716,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var Base58Coder = mk.format.Base58Coder;
-    Class(Base58Coder, BaseObject, [DataCoder], {
+    Class(Base58Coder, BaseObject, [DataCoder]);
+    Implementation(Base58Coder, {
         encode: function (data) {
             return bs58.encode(data)
         }, decode: function (string) {
@@ -4694,7 +4789,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var Base64Coder = mk.format.Base64Coder;
-    Class(Base64Coder, BaseObject, [DataCoder], {
+    Class(Base64Coder, BaseObject, [DataCoder]);
+    Implementation(Base64Coder, {
         encode: function (data) {
             return base64_encode(data)
         }, decode: function (string) {
@@ -4753,7 +4849,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var HexCoder = mk.format.HexCoder;
-    Class(HexCoder, BaseObject, [DataCoder], {
+    Class(HexCoder, BaseObject, [DataCoder]);
+    Implementation(HexCoder, {
         encode: function (data) {
             return hex_encode(data)
         }, decode: function (string) {
@@ -4764,7 +4861,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var JSONCoder = mk.format.JSONCoder;
-    Class(JSONCoder, BaseObject, [ObjectCoder], {
+    Class(JSONCoder, BaseObject, [ObjectCoder]);
+    Implementation(JSONCoder, {
         encode: function (object) {
             return JSON.stringify(object)
         }, decode: function (string) {
@@ -4800,7 +4898,8 @@ if (typeof DIMP !== 'object') {
         this.__wrapper = wrapper
     };
     var BaseNetworkFile = mk.format.BaseNetworkFile;
-    Class(BaseNetworkFile, Dictionary, [PortableNetworkFile], {
+    Class(BaseNetworkFile, Dictionary, [PortableNetworkFile]);
+    Implementation(BaseNetworkFile, {
         getData: function () {
             var ted = this.__wrapper.getData();
             return !ted ? null : ted.getData()
@@ -4852,7 +4951,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var BaseNetworkFileFactory = mk.format.BaseNetworkFileFactory;
-    Class(BaseNetworkFileFactory, BaseObject, [PortableNetworkFileFactory], {
+    Class(BaseNetworkFileFactory, BaseObject, [PortableNetworkFileFactory]);
+    Implementation(BaseNetworkFileFactory, {
         createPortableNetworkFile: function (ted, filename, url, password) {
             return new BaseNetworkFile(ted, filename, url, password)
         }, parsePortableNetworkFile: function (pnf) {
@@ -4880,7 +4980,8 @@ if (typeof DIMP !== 'object') {
         this.__wrapper = wrapper
     };
     var Base64Data = mk.format.Base64Data;
-    Class(Base64Data, Dictionary, [TransportableData], {
+    Class(Base64Data, Dictionary, [TransportableData]);
+    Implementation(Base64Data, {
         getAlgorithm: function () {
             return this.__wrapper.getAlgorithm()
         }, getData: function () {
@@ -4897,7 +4998,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var Base64DataFactory = mk.format.Base64DataFactory;
-    Class(Base64DataFactory, BaseObject, [TransportableDataFactory], {
+    Class(Base64DataFactory, BaseObject, [TransportableDataFactory]);
+    Implementation(Base64DataFactory, {
         createTransportableData: function (data) {
             return new Base64Data(data)
         }, parseTransportableData: function (ted) {
@@ -4976,7 +5078,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var UTF8Coder = mk.format.UTF8Coder;
-    Class(UTF8Coder, BaseObject, [StringCoder], {
+    Class(UTF8Coder, BaseObject, [StringCoder]);
+    Implementation(UTF8Coder, {
         encode: function (string) {
             return utf8_encode(string)
         }, decode: function (data) {
@@ -4987,7 +5090,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var SHA256Digester = mk.digest.SHA256Digester;
-    Class(SHA256Digester, BaseObject, [MessageDigester], {
+    Class(SHA256Digester, BaseObject, [MessageDigester]);
+    Implementation(SHA256Digester, {
         digest: function (data) {
             var hex = Hex.encode(data);
             var array = CryptoJS.enc.Hex.parse(hex);
@@ -4999,7 +5103,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var RIPEMD160Digester = mk.digest.RIPEMD160Digester;
-    Class(RIPEMD160Digester, BaseObject, [MessageDigester], {
+    Class(RIPEMD160Digester, BaseObject, [MessageDigester]);
+    Implementation(RIPEMD160Digester, {
         digest: function (data) {
             var hex = Hex.encode(data);
             var array = CryptoJS.enc.Hex.parse(hex);
@@ -5011,7 +5116,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var KECCAK256Digester = mk.digest.KECCAK256Digester;
-    Class(KECCAK256Digester, BaseObject, [MessageDigester], {
+    Class(KECCAK256Digester, BaseObject, [MessageDigester]);
+    Implementation(KECCAK256Digester, {
         digest: function (data) {
             var array = window.keccak256.update(data).digest();
             return new Uint8Array(array)
@@ -5046,7 +5152,8 @@ if (typeof DIMP !== 'object') {
     };
     var AESKey = mk.crypto.AESKey;
     AESKey.AES_CBC_PKCS7 = 'AES/CBC/PKCS7Padding';
-    Class(AESKey, BaseSymmetricKey, null, {
+    Class(AESKey, BaseSymmetricKey, null);
+    Implementation(AESKey, {
         generateKeyData: function () {
             var keySize = this.getKeySize();
             var pwd = random_data(keySize);
@@ -5125,7 +5232,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var AESKeyFactory = mk.crypto.AESKeyFactory;
-    Class(AESKeyFactory, BaseObject, [SymmetricKeyFactory], null);
+    Class(AESKeyFactory, BaseObject, [SymmetricKeyFactory]);
     AESKeyFactory.prototype.generateSymmetricKey = function () {
         return new AESKey({'algorithm': SymmetricAlgorithms.AES})
     };
@@ -5264,7 +5371,8 @@ if (typeof DIMP !== 'object') {
         BasePublicKey.call(this, key)
     };
     var ECCPublicKey = mk.crypto.ECCPublicKey;
-    Class(ECCPublicKey, BasePublicKey, null, {
+    Class(ECCPublicKey, BasePublicKey, null);
+    Implementation(ECCPublicKey, {
         getData: function () {
             var pem = this.getValue('data');
             if (!pem || pem.length === 0) {
@@ -5313,7 +5421,8 @@ if (typeof DIMP !== 'object') {
         this.__publicKey = keyPair.publicKey
     };
     var ECCPrivateKey = mk.crypto.ECCPrivateKey;
-    Class(ECCPrivateKey, BasePrivateKey, null, {
+    Class(ECCPrivateKey, BasePrivateKey, null);
+    Implementation(ECCPrivateKey, {
         getData: function () {
             var data = this.getValue('data');
             if (data && data.length > 0) {
@@ -5369,7 +5478,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var ECCPrivateKeyFactory = mk.crypto.ECCPrivateKeyFactory;
-    Class(ECCPrivateKeyFactory, BaseObject, [PrivateKeyFactory], null);
+    Class(ECCPrivateKeyFactory, BaseObject, [PrivateKeyFactory]);
     ECCPrivateKeyFactory.prototype.generatePrivateKey = function () {
         return new ECCPrivateKey({'algorithm': AsymmetricAlgorithms.ECC})
     };
@@ -5383,7 +5492,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var ECCPublicKeyFactory = mk.crypto.ECCPublicKeyFactory;
-    Class(ECCPublicKeyFactory, BaseObject, [PublicKeyFactory], null);
+    Class(ECCPublicKeyFactory, BaseObject, [PublicKeyFactory]);
     ECCPublicKeyFactory.prototype.parsePublicKey = function (key) {
         if (key['data'] === null) {
             return null
@@ -5470,7 +5579,8 @@ if (typeof DIMP !== 'object') {
         BaseSymmetricKey.call(this, key)
     };
     var PlainKey = mk.crypto.PlainKey;
-    Class(PlainKey, BaseSymmetricKey, null, {
+    Class(PlainKey, BaseSymmetricKey, null);
+    Implementation(PlainKey, {
         getData: function () {
             return null
         }, encrypt: function (data, extra) {
@@ -5491,7 +5601,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var PlainKeyFactory = mk.crypto.PlainKeyFactory;
-    Class(PlainKeyFactory, BaseObject, [SymmetricKeyFactory], null);
+    Class(PlainKeyFactory, BaseObject, [SymmetricKeyFactory]);
     PlainKeyFactory.prototype.generateSymmetricKey = function () {
         return PlainKey.getInstance()
     };
@@ -5527,7 +5637,8 @@ if (typeof DIMP !== 'object') {
         BasePublicKey.call(this, key)
     };
     var RSAPublicKey = mk.crypto.RSAPublicKey;
-    Class(RSAPublicKey, BasePublicKey, [EncryptKey], {
+    Class(RSAPublicKey, BasePublicKey, [EncryptKey]);
+    Implementation(RSAPublicKey, {
         getData: function () {
             var data = this.getValue('data');
             if (data) {
@@ -5567,7 +5678,8 @@ if (typeof DIMP !== 'object') {
         }
     };
     var RSAPrivateKey = mk.crypto.RSAPrivateKey;
-    Class(RSAPrivateKey, BasePrivateKey, [DecryptKey], {
+    Class(RSAPrivateKey, BasePrivateKey, [DecryptKey]);
+    Implementation(RSAPrivateKey, {
         getData: function () {
             var data = this.getValue('data');
             if (data) {
@@ -5620,7 +5732,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var RSAPrivateKeyFactory = mk.crypto.RSAPrivateKeyFactory;
-    Class(RSAPrivateKeyFactory, BaseObject, [PrivateKeyFactory], null);
+    Class(RSAPrivateKeyFactory, BaseObject, [PrivateKeyFactory]);
     RSAPrivateKeyFactory.prototype.generatePrivateKey = function () {
         return new RSAPrivateKey({'algorithm': AsymmetricAlgorithms.RSA})
     };
@@ -5634,7 +5746,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var RSAPublicKeyFactory = mk.crypto.RSAPublicKeyFactory;
-    Class(RSAPublicKeyFactory, BaseObject, [PublicKeyFactory], null);
+    Class(RSAPublicKeyFactory, BaseObject, [PublicKeyFactory]);
     RSAPublicKeyFactory.prototype.parsePublicKey = function (key) {
         if (key['data'] === null) {
             return null
@@ -5646,7 +5758,7 @@ if (typeof DIMP !== 'object') {
         this._addresses = {}
     };
     var BaseAddressFactory = mkm.mkm.BaseAddressFactory;
-    Class(BaseAddressFactory, BaseObject, [AddressFactory], null);
+    Class(BaseAddressFactory, BaseObject, [AddressFactory]);
     BaseAddressFactory.prototype.generateAddress = function (meta, network) {
         var address = meta.generateAddress(network);
         if (address) {
@@ -5693,7 +5805,8 @@ if (typeof DIMP !== 'object') {
         this.__type = network
     };
     var BTCAddress = mkm.mkm.BTCAddress;
-    Class(BTCAddress, ConstantString, [Address], {
+    Class(BTCAddress, ConstantString, [Address]);
+    Implementation(BTCAddress, {
         getType: function () {
             return this.__type
         }
@@ -5742,7 +5855,7 @@ if (typeof DIMP !== 'object') {
         this.__type = type
     };
     var GeneralDocumentFactory = mkm.mkm.GeneralDocumentFactory;
-    Class(GeneralDocumentFactory, BaseObject, [DocumentFactory], null);
+    Class(GeneralDocumentFactory, BaseObject, [DocumentFactory]);
     GeneralDocumentFactory.prototype.getType = function (docType, identifier) {
         if (!identifier) {
             return this.__type
@@ -5801,7 +5914,8 @@ if (typeof DIMP !== 'object') {
         ConstantString.call(this, string)
     };
     var ETHAddress = mkm.mkm.ETHAddress;
-    Class(ETHAddress, ConstantString, [Address], {
+    Class(ETHAddress, ConstantString, [Address]);
+    Implementation(ETHAddress, {
         getType: function () {
             return EntityType.USER
         }
@@ -5880,7 +5994,7 @@ if (typeof DIMP !== 'object') {
         this._identifiers = {}
     };
     var IdentifierFactory = mkm.mkm.IdentifierFactory;
-    Class(IdentifierFactory, BaseObject, [IDFactory], null);
+    Class(IdentifierFactory, BaseObject, [IDFactory]);
     IdentifierFactory.prototype.generateIdentifier = function (meta, network, terminal) {
         var address = Address.generate(meta, network);
         return ID.create(meta.getSeed(), address, terminal)
@@ -5939,7 +6053,8 @@ if (typeof DIMP !== 'object') {
         this.__addresses = {}
     };
     var DefaultMeta = mkm.mkm.DefaultMeta;
-    Class(DefaultMeta, BaseMeta, null, {
+    Class(DefaultMeta, BaseMeta, null);
+    Implementation(DefaultMeta, {
         hasSeed: function () {
             return true
         }, generateAddress: function (network) {
@@ -5965,7 +6080,8 @@ if (typeof DIMP !== 'object') {
         this.__addresses = {}
     };
     var BTCMeta = mkm.mkm.BTCMeta;
-    Class(BTCMeta, BaseMeta, null, {
+    Class(BTCMeta, BaseMeta, null);
+    Implementation(BTCMeta, {
         hasSeed: function () {
             return false
         }, generateAddress: function (network) {
@@ -5992,7 +6108,8 @@ if (typeof DIMP !== 'object') {
         this.__address = null
     };
     var ETHMeta = mkm.mkm.ETHMeta;
-    Class(ETHMeta, BaseMeta, null, {
+    Class(ETHMeta, BaseMeta, null);
+    Implementation(ETHMeta, {
         hasSeed: function () {
             return false
         }, generateAddress: function (network) {
@@ -6011,7 +6128,7 @@ if (typeof DIMP !== 'object') {
         this.__type = algorithm
     };
     var BaseMetaFactory = mkm.mkm.BaseMetaFactory;
-    Class(BaseMetaFactory, BaseObject, [MetaFactory], null);
+    Class(BaseMetaFactory, BaseObject, [MetaFactory]);
     BaseMetaFactory.prototype.getType = function () {
         return this.__type
     };
@@ -6072,7 +6189,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var GeneralCommandFactory = dkd.dkd.GeneralCommandFactory;
-    Class(GeneralCommandFactory, BaseObject, [ContentFactory, CommandFactory], null);
+    Class(GeneralCommandFactory, BaseObject, [ContentFactory, CommandFactory]);
     GeneralCommandFactory.prototype.parseContent = function (content) {
         var helper = SharedCommandExtensions.getHelper();
         var cmdHelper = SharedCommandExtensions.getCommandHelper();
@@ -6098,7 +6215,7 @@ if (typeof DIMP !== 'object') {
         GeneralCommandFactory.call(this)
     };
     var HistoryCommandFactory = dkd.dkd.HistoryCommandFactory;
-    Class(HistoryCommandFactory, GeneralCommandFactory, null, null);
+    Class(HistoryCommandFactory, GeneralCommandFactory, null);
     HistoryCommandFactory.prototype.parseCommand = function (content) {
         if (!content['sn'] || !content['command'] || !content['time']) {
             return null
@@ -6109,7 +6226,7 @@ if (typeof DIMP !== 'object') {
         HistoryCommandFactory.call(this)
     };
     var GroupCommandFactory = dkd.dkd.GroupCommandFactory;
-    Class(GroupCommandFactory, HistoryCommandFactory, null, null);
+    Class(GroupCommandFactory, HistoryCommandFactory, null);
     GroupCommandFactory.prototype.parseContent = function (content) {
         var helper = SharedCommandExtensions.getHelper();
         var cmdHelper = SharedCommandExtensions.getCommandHelper();
@@ -6134,7 +6251,7 @@ if (typeof DIMP !== 'object') {
         this.__sn = random_int(0x7fffffff)
     };
     var MessageFactory = dkd.msg.MessageFactory;
-    Class(MessageFactory, BaseObject, [EnvelopeFactory, InstantMessageFactory, SecureMessageFactory, ReliableMessageFactory], null);
+    Class(MessageFactory, BaseObject, [EnvelopeFactory, InstantMessageFactory, SecureMessageFactory, ReliableMessageFactory]);
     MessageFactory.prototype.next = function () {
         var sn = this.__sn;
         if (sn < 0x7fffffff) {
@@ -6188,7 +6305,7 @@ if (typeof DIMP !== 'object') {
         this.__publicKeyFactories = {}
     };
     var CryptoKeyGeneralFactory = mk.ext.CryptoKeyGeneralFactory;
-    Class(CryptoKeyGeneralFactory, BaseObject, [GeneralCryptoHelper, SymmetricKeyHelper, PrivateKeyHelper, PublicKeyHelper], null);
+    Class(CryptoKeyGeneralFactory, BaseObject, [GeneralCryptoHelper, SymmetricKeyHelper, PrivateKeyHelper, PublicKeyHelper]);
     CryptoKeyGeneralFactory.prototype.getKeyAlgorithm = function (key, defaultValue) {
         var algorithm = key['algorithm'];
         return Converter.getString(algorithm, defaultValue)
@@ -6291,7 +6408,7 @@ if (typeof DIMP !== 'object') {
         this.__pnfFactory = null
     };
     var FormatGeneralFactory = mk.ext.FormatGeneralFactory;
-    Class(FormatGeneralFactory, BaseObject, [GeneralFormatHelper, PortableNetworkFileHelper, TransportableDataHelper], null);
+    Class(FormatGeneralFactory, BaseObject, [GeneralFormatHelper, PortableNetworkFileHelper, TransportableDataHelper]);
     FormatGeneralFactory.prototype.split = function (text) {
         var pos1 = text.indexOf('://');
         if (pos1 > 0) {
@@ -6427,7 +6544,7 @@ if (typeof DIMP !== 'object') {
         this.__docsFactories = {}
     };
     var AccountGeneralFactory = mkm.ext.AccountGeneralFactory;
-    Class(AccountGeneralFactory, BaseObject, [GeneralAccountHelper, AddressHelper, IdentifierHelper, MetaHelper, DocumentHelper], null);
+    Class(AccountGeneralFactory, BaseObject, [GeneralAccountHelper, AddressHelper, IdentifierHelper, MetaHelper, DocumentHelper]);
     AccountGeneralFactory.prototype.getMetaType = function (meta, defaultValue) {
         var type = meta['type'];
         return Converter.getString(type, defaultValue)
@@ -6597,7 +6714,7 @@ if (typeof DIMP !== 'object') {
         this.__reliableMessageFactory = null
     };
     var MessageGeneralFactory = dkd.ext.MessageGeneralFactory
-    Class(MessageGeneralFactory, BaseObject, [GeneralMessageHelper, ContentHelper, EnvelopeHelper, InstantMessageHelper, SecureMessageHelper, ReliableMessageHelper], null);
+    Class(MessageGeneralFactory, BaseObject, [GeneralMessageHelper, ContentHelper, EnvelopeHelper, InstantMessageHelper, SecureMessageHelper, ReliableMessageHelper]);
     MessageGeneralFactory.prototype.getContentType = function (content, defaultValue) {
         var type = content['type'];
         return Converter.getString(type, defaultValue)
@@ -6742,7 +6859,7 @@ if (typeof DIMP !== 'object') {
         this.__commandFactories = {}
     };
     var CommandGeneralFactory = dkd.ext.CommandGeneralFactory
-    Class(CommandGeneralFactory, BaseObject, [GeneralCommandHelper, CommandHelper], null);
+    Class(CommandGeneralFactory, BaseObject, [GeneralCommandHelper, CommandHelper]);
     CommandGeneralFactory.prototype.getCmd = function (content, defaultValue) {
         var cmd = content['command'];
         return Converter.getString(cmd, defaultValue)
@@ -6793,7 +6910,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var ExtensionLoader = dimp.ext.ExtensionLoader;
-    Class(ExtensionLoader, BaseObject, null, {
+    Class(ExtensionLoader, BaseObject, null);
+    Implementation(ExtensionLoader, {
         load: function () {
             this.registerCoreHelpers();
             this.registerMessageFactories();
@@ -6904,7 +7022,7 @@ if (typeof DIMP !== 'object') {
         this.__class = clazz
     };
     var ContentParser = dkd.dkd.ContentParser;
-    Class(ContentParser, BaseObject, [ContentFactory], null);
+    Class(ContentParser, BaseObject, [ContentFactory]);
     ContentParser.prototype.parseContent = function (content) {
         return new this.__class(content)
     };
@@ -6913,7 +7031,7 @@ if (typeof DIMP !== 'object') {
         this.__class = clazz
     };
     var CommandParser = dkd.dkd.CommandParser;
-    Class(CommandParser, BaseObject, [CommandFactory], null);
+    Class(CommandParser, BaseObject, [CommandFactory]);
     CommandParser.prototype.parseCommand = function (content) {
         return new this.__class(content)
     };
@@ -6921,7 +7039,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var PluginLoader = dimp.ext.PluginLoader;
-    Class(PluginLoader, BaseObject, null, {
+    Class(PluginLoader, BaseObject, null);
+    Implementation(PluginLoader, {
         load: function () {
             this.registerCoders();
             this.registerDigesters();
@@ -7036,6 +7155,7 @@ if (typeof DIMP !== 'object') {
     }
     var Interface = mk.type.Interface;
     var Class = mk.type.Class;
+    var Implementation = mk.type.Implementation;
     var Converter = mk.type.Converter;
     var Mapper = mk.type.Mapper;
     var IObject = mk.type.Object;
@@ -7210,7 +7330,7 @@ if (typeof DIMP !== 'object') {
         this.__facebook = null
     };
     var BaseEntity = mkm.mkm.BaseEntity;
-    Class(BaseEntity, BaseObject, [Entity], null);
+    Class(BaseEntity, BaseObject, [Entity]);
     BaseEntity.prototype.equals = function (other) {
         if (this === other) {
             return true
@@ -7280,7 +7400,8 @@ if (typeof DIMP !== 'object') {
         this.__founder = null
     };
     var BaseGroup = mkm.mkm.BaseGroup;
-    Class(BaseGroup, BaseEntity, [Group], {
+    Class(BaseGroup, BaseEntity, [Group]);
+    Implementation(BaseGroup, {
         getBulletin: function () {
             var docs = this.getDocuments();
             return DocumentUtils.lastBulletin(docs)
@@ -7343,7 +7464,8 @@ if (typeof DIMP !== 'object') {
         BaseEntity.call(this, identifier)
     };
     var BaseUser = mkm.mkm.BaseUser;
-    Class(BaseUser, BaseEntity, [User], {
+    Class(BaseUser, BaseEntity, [User]);
+    Implementation(BaseUser, {
         getVisa: function () {
             var docs = this.getDocuments();
             return DocumentUtils.lastVisa(docs)
@@ -7406,7 +7528,8 @@ if (typeof DIMP !== 'object') {
         BaseUser.call(this, identifier)
     };
     var Bot = mkm.mkm.Bot;
-    Class(Bot, BaseUser, null, {
+    Class(Bot, BaseUser, null);
+    Implementation(Bot, {
         getProfile: function () {
             return this.getVisa()
         }, getProvider: function () {
@@ -7441,7 +7564,8 @@ if (typeof DIMP !== 'object') {
         this.__isp = null
     };
     var Station = mkm.mkm.Station;
-    Class(Station, BaseObject, [User], {
+    Class(Station, BaseObject, [User]);
+    Implementation(Station, {
         equals: function (other) {
             if (this === other) {
                 return true
@@ -7538,7 +7662,8 @@ if (typeof DIMP !== 'object') {
         BaseGroup.call(this, identifier)
     };
     var ServiceProvider = mkm.mkm.ServiceProvider;
-    Class(ServiceProvider, BaseGroup, null, {
+    Class(ServiceProvider, BaseGroup, null);
+    Implementation(ServiceProvider, {
         getProfile: function () {
             var docs = this.getDocuments();
             return DocumentUtils.lastDocument(docs, '*')
@@ -7628,7 +7753,7 @@ if (typeof DIMP !== 'object') {
         this.__messenger = messenger
     };
     var InstantMessagePacker = InstantMessage.Packer;
-    Class(InstantMessagePacker, BaseObject, null, null);
+    Class(InstantMessagePacker, BaseObject, null);
     InstantMessagePacker.prototype.getDelegate = function () {
         return this.__messenger
     };
@@ -7683,7 +7808,7 @@ if (typeof DIMP !== 'object') {
         this.__messenger = messenger
     };
     var SecureMessagePacker = SecureMessage.Packer;
-    Class(SecureMessagePacker, BaseObject, null, null);
+    Class(SecureMessagePacker, BaseObject, null);
     SecureMessagePacker.prototype.getDelegate = function () {
         return this.__messenger
     };
@@ -7734,7 +7859,7 @@ if (typeof DIMP !== 'object') {
         this.__messenger = messenger
     };
     var ReliableMessagePacker = ReliableMessage.Packer;
-    Class(ReliableMessagePacker, BaseObject, null, null);
+    Class(ReliableMessagePacker, BaseObject, null);
     ReliableMessagePacker.prototype.getDelegate = function () {
         return this.__messenger
     };
@@ -7779,7 +7904,7 @@ if (typeof DIMP !== 'object') {
         this.__command_processors = {}
     };
     var GeneralContentProcessorFactory = sdk.cpu.GeneralContentProcessorFactory;
-    Class(GeneralContentProcessorFactory, BaseObject, [ContentProcessorFactory], null);
+    Class(GeneralContentProcessorFactory, BaseObject, [ContentProcessorFactory]);
     GeneralContentProcessorFactory.prototype.getContentProcessor = function (content) {
         var cpu;
         var type = content.getType();
@@ -7821,7 +7946,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var Barrack = sdk.core.Barrack;
-    Class(Barrack, BaseObject, null, null);
+    Class(Barrack, BaseObject, null);
     Barrack.prototype.cacheUser = function (user) {
     };
     Barrack.prototype.cacheGroup = function (group) {
@@ -7876,7 +8001,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var MessageShortener = sdk.core.MessageShortener;
-    Class(MessageShortener, BaseObject, [Shortener], null);
+    Class(MessageShortener, BaseObject, [Shortener]);
     MessageShortener.prototype.moveKey = function (from, to, info) {
         var value = info[from];
         if (value) {
@@ -7950,7 +8075,7 @@ if (typeof DIMP !== 'object') {
         this.__shortener = shortener
     };
     var MessageCompressor = sdk.core.MessageCompressor;
-    Class(MessageCompressor, BaseObject, [Compressor], null);
+    Class(MessageCompressor, BaseObject, [Compressor]);
     MessageCompressor.prototype.getShortener = function () {
         return this.__shortener
     };
@@ -8060,7 +8185,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var Transceiver = sdk.core.Transceiver;
-    Class(Transceiver, BaseObject, [InstantMessageDelegate, SecureMessageDelegate, ReliableMessageDelegate], null);
+    Class(Transceiver, BaseObject, [InstantMessageDelegate, SecureMessageDelegate, ReliableMessageDelegate]);
     Transceiver.prototype.getFacebook = function () {
     };
     Transceiver.prototype.getCompressor = function () {
@@ -8142,7 +8267,7 @@ if (typeof DIMP !== 'object') {
         this.__messenger = messenger
     };
     var TwinsHelper = sdk.TwinsHelper;
-    Class(TwinsHelper, BaseObject, null, null);
+    Class(TwinsHelper, BaseObject, null);
     TwinsHelper.prototype.getFacebook = function () {
         return this.__facebook
     }
@@ -8153,7 +8278,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var Facebook = sdk.Facebook;
-    Class(Facebook, BaseObject, [EntityDelegate, UserDataSource, GroupDataSource], null);
+    Class(Facebook, BaseObject, [EntityDelegate, UserDataSource, GroupDataSource]);
     Facebook.prototype.getBarrack = function () {
     };
     Facebook.prototype.getArchivist = function () {
@@ -8263,7 +8388,7 @@ if (typeof DIMP !== 'object') {
         Transceiver.call(this)
     };
     var Messenger = sdk.Messenger;
-    Class(Messenger, Transceiver, [Packer, Processor], null);
+    Class(Messenger, Transceiver, [Packer, Processor]);
     Messenger.prototype.getCipherKeyDelegate = function () {
     };
     Messenger.prototype.getPacker = function () {
@@ -8341,7 +8466,7 @@ if (typeof DIMP !== 'object') {
         this.__reliablePacker = this.createReliableMessagePacker(messenger)
     };
     var MessagePacker = sdk.MessagePacker;
-    Class(MessagePacker, TwinsHelper, [Packer], null);
+    Class(MessagePacker, TwinsHelper, [Packer]);
     MessagePacker.prototype.createInstantMessagePacker = function (delegate) {
         return new InstantMessagePacker(delegate)
     };
@@ -8436,7 +8561,7 @@ if (typeof DIMP !== 'object') {
         this.__factory = this.createFactory(facebook, messenger)
     };
     var MessageProcessor = sdk.MessageProcessor;
-    Class(MessageProcessor, TwinsHelper, [Processor], null);
+    Class(MessageProcessor, TwinsHelper, [Processor]);
     MessageProcessor.prototype.createFactory = function (facebook, messenger) {
     };
     MessageProcessor.prototype.getFactory = function () {
@@ -8558,7 +8683,7 @@ if (typeof DIMP !== 'object') {
         TwinsHelper.call(this, facebook, messenger)
     };
     var BaseContentProcessor = sdk.cpu.BaseContentProcessor;
-    Class(BaseContentProcessor, TwinsHelper, [ContentProcessor], null);
+    Class(BaseContentProcessor, TwinsHelper, [ContentProcessor]);
     BaseContentProcessor.prototype.processContent = function (content, rMsg) {
         var text = 'Content not support.';
         return this.respondReceipt(text, rMsg.getEnvelope(), content, {
@@ -8580,7 +8705,8 @@ if (typeof DIMP !== 'object') {
         BaseContentProcessor.call(this, facebook, messenger)
     };
     var BaseCommandProcessor = sdk.cpu.BaseCommandProcessor;
-    Class(BaseCommandProcessor, BaseContentProcessor, null, {
+    Class(BaseCommandProcessor, BaseContentProcessor, null);
+    Implementation(BaseCommandProcessor, {
         processContent: function (content, rMsg) {
             var text = 'Command not support.';
             return this.respondReceipt(text, rMsg.getEnvelope(), content, {
@@ -8593,7 +8719,8 @@ if (typeof DIMP !== 'object') {
         BaseContentProcessor.call(this, facebook, messenger)
     };
     var ForwardContentProcessor = sdk.cpu.ForwardContentProcessor;
-    Class(ForwardContentProcessor, BaseContentProcessor, null, {
+    Class(ForwardContentProcessor, BaseContentProcessor, null);
+    Implementation(ForwardContentProcessor, {
         processContent: function (content, rMsg) {
             var secrets = content.getSecrets();
             if (!secrets) {
@@ -8621,7 +8748,8 @@ if (typeof DIMP !== 'object') {
         BaseContentProcessor.call(this, facebook, messenger)
     };
     var ArrayContentProcessor = sdk.cpu.ArrayContentProcessor;
-    Class(ArrayContentProcessor, BaseContentProcessor, null, {
+    Class(ArrayContentProcessor, BaseContentProcessor, null);
+    Implementation(ArrayContentProcessor, {
         processContent: function (content, rMsg) {
             var array = content.getContents();
             if (!array) {
@@ -8649,12 +8777,19 @@ if (typeof DIMP !== 'object') {
         BaseCommandProcessor.call(this, facebook, messenger)
     };
     var MetaCommandProcessor = sdk.cpu.MetaCommandProcessor;
-    Class(MetaCommandProcessor, BaseCommandProcessor, null, {
-        processContent: function (content, rMsg) {
+    Class(MetaCommandProcessor, BaseCommandProcessor, null);
+    Implementation(MetaCommandProcessor, {
+        getArchivist: function () {
+            var facebook = this.getFacebook();
+            if (!facebook) {
+                return null
+            }
+            return facebook.getArchivist()
+        }, processContent: function (content, rMsg) {
             var identifier = content.getIdentifier();
             if (!identifier) {
                 var text = 'Meta command error.';
-                return this.respondReceipt(text, rMsg.getEnvelope(), content)
+                return this.respondReceipt(text, rMsg.getEnvelope(), content, null)
             }
             var meta = content.getMeta();
             if (meta) {
@@ -8707,7 +8842,8 @@ if (typeof DIMP !== 'object') {
         MetaCommandProcessor.call(this, facebook, messenger)
     };
     var DocumentCommandProcessor = sdk.cpu.DocumentCommandProcessor;
-    Class(DocumentCommandProcessor, MetaCommandProcessor, null, {
+    Class(DocumentCommandProcessor, MetaCommandProcessor, null);
+    Implementation(DocumentCommandProcessor, {
         processContent: function (content, rMsg) {
             var text;
             var identifier = content.getIdentifier();
@@ -8788,7 +8924,7 @@ if (typeof DIMP !== 'object') {
                     }
                 }
             }
-            if (array.length > 0) {
+            if (errors.length > 0) {
                 return errors
             }
             text = 'Document received.';
@@ -8827,12 +8963,12 @@ if (typeof DIMP !== 'object') {
         TwinsHelper.call(this, facebook, messenger)
     };
     var BaseCustomizedHandler = sdk.cpu.BaseCustomizedHandler;
-    Class(BaseCustomizedHandler, TwinsHelper, [CustomizedContentHandler], null);
+    Class(BaseCustomizedHandler, TwinsHelper, [CustomizedContentHandler]);
     BaseCustomizedHandler.prototype.handleAction = function (act, sender, content, rMsg) {
         var app = content.getApplication();
         var mod = content.getModule();
         var text = 'Content not support.';
-        return this.respondReceipt(text, content, rMsg.getEnvelope(), {
+        return this.respondReceipt(text, rMsg.getEnvelope(), content, {
             'template': 'Customized content (app: ${app}, mod: ${mod}, act: ${act}) not support yet!',
             'replacements': {'app': app, 'mod': mod, 'act': act}
         })
@@ -8845,7 +8981,7 @@ if (typeof DIMP !== 'object') {
         this.__defaultHandler = this.createDefaultHandler(facebook, messenger)
     };
     var CustomizedContentProcessor = sdk.cpu.CustomizedContentProcessor;
-    Class(CustomizedContentProcessor, BaseContentProcessor, [CustomizedContentHandler], null);
+    Class(CustomizedContentProcessor, BaseContentProcessor, [CustomizedContentHandler]);
     CustomizedContentProcessor.prototype.createDefaultHandler = function (facebook, messenger) {
         return new BaseCustomizedHandler(facebook, messenger)
     };
@@ -8867,7 +9003,8 @@ if (typeof DIMP !== 'object') {
         TwinsHelper.call(this, facebook, messenger)
     };
     var BaseContentProcessorCreator = sdk.cpu.BaseContentProcessorCreator;
-    Class(BaseContentProcessorCreator, TwinsHelper, [ContentProcessorCreator], {
+    Class(BaseContentProcessorCreator, TwinsHelper, [ContentProcessorCreator]);
+    Implementation(BaseContentProcessorCreator, {
         createContentProcessor: function (type) {
             var facebook = this.getFacebook();
             var messenger = this.getMessenger();
@@ -8924,6 +9061,7 @@ if (typeof DIMP !== 'object') {
         }
         var Interface = mk.type.Interface;
         var Class = mk.type.Class;
+        var Implementation = mk.type.Implementation;
         var Converter = mk.type.Converter;
         var BaseObject = mk.type.BaseObject;
         var HashSet = mk.type.HashSet;
@@ -9049,7 +9187,8 @@ if (typeof DIMP !== 'object') {
             this.__stage = STAGE_INIT
         };
         var Runner = fsm.skywalker.Runner;
-        Class(Runner, BaseObject, [Runnable, Handler, Processor], {
+        Class(Runner, BaseObject, [Runnable, Handler, Processor]);
+        Implementation(Runner, {
             run: function () {
                 if (this.__stage === STAGE_INIT) {
                     if (this.setup()) {
@@ -9108,7 +9247,7 @@ if (typeof DIMP !== 'object') {
             this.__running = false
         };
         var Thread = fsm.threading.Thread;
-        Class(Thread, BaseObject, [Runnable], null);
+        Class(Thread, BaseObject, [Runnable]);
         Thread.INTERVAL = Duration.ofMilliseconds(256);
         Thread.prototype.start = function () {
             this.__running = true;
@@ -9152,7 +9291,7 @@ if (typeof DIMP !== 'object') {
             this.__tickers = new HashSet()
         };
         var Metronome = fsm.threading.Metronome;
-        Class(Metronome, Runner, null, null);
+        Class(Metronome, Runner, null);
         Metronome.MIN_INTERVAL = Duration.ofMilliseconds(100);
         Metronome.prototype.start = function () {
             this.__thread.start()
@@ -9257,7 +9396,7 @@ if (typeof DIMP !== 'object') {
             this.__target = target
         };
         var BaseTransition = fsm.BaseTransition;
-        Class(BaseTransition, BaseObject, [Transition], null);
+        Class(BaseTransition, BaseObject, [Transition]);
         BaseTransition.prototype.getTarget = function () {
             return this.__target
         };
@@ -9267,7 +9406,8 @@ if (typeof DIMP !== 'object') {
             this.__transitions = []
         };
         var BaseState = fsm.BaseState;
-        Class(BaseState, BaseObject, [State], {
+        Class(BaseState, BaseObject, [State]);
+        Implementation(BaseState, {
             equals: function (other) {
                 if (other instanceof BaseState) {
                     if (other === this) {
@@ -9313,7 +9453,7 @@ if (typeof DIMP !== 'object') {
             this.__delegate = null
         };
         var BaseMachine = fsm.BaseMachine;
-        Class(BaseMachine, BaseObject, [Machine], null);
+        Class(BaseMachine, BaseObject, [Machine]);
         BaseMachine.prototype.setDelegate = function (delegate) {
             this.__delegate = delegate
         };
@@ -9383,7 +9523,7 @@ if (typeof DIMP !== 'object') {
             return true
         };
         BaseMachine.prototype.start = function () {
-            if (this.__status !== State.STOPPED) {
+            if (this.__status !== Status.STOPPED) {
                 return false
             }
             var now = new Date();
@@ -9451,7 +9591,8 @@ if (typeof DIMP !== 'object') {
             BaseMachine.call(this)
         };
         var AutoMachine = fsm.AutoMachine;
-        Class(AutoMachine, BaseMachine, null, {
+        Class(AutoMachine, BaseMachine, null);
+        Implementation(AutoMachine, {
             start: function () {
                 var ok = BaseMachine.prototype.start.call(this);
                 var timer = PrimeMetronome.getInstance();
@@ -9491,6 +9632,7 @@ if (typeof DIMP !== 'object') {
         }
         var Interface = mk.type.Interface;
         var Class = mk.type.Class;
+        var Implementation = mk.type.Implementation;
         var IObject = mk.type.Object;
         var BaseObject = mk.type.BaseObject;
         var HashSet = mk.type.HashSet;
@@ -9520,7 +9662,7 @@ if (typeof DIMP !== 'object') {
             this.__port = port
         };
         var InetSocketAddress = st.type.InetSocketAddress
-        Class(InetSocketAddress, ConstantString, [SocketAddress], null);
+        Class(InetSocketAddress, ConstantString, [SocketAddress]);
         InetSocketAddress.prototype.getHost = function () {
             return this.__host
         };
@@ -9545,7 +9687,7 @@ if (typeof DIMP !== 'object') {
             this.__map = {}
         };
         var AbstractPairMap = st.type.AbstractPairMap;
-        Class(AbstractPairMap, BaseObject, [PairMap], null);
+        Class(AbstractPairMap, BaseObject, [PairMap]);
         AbstractPairMap.prototype.get = function (remote, local) {
             var key_pair = get_pair_keys(remote, local, null);
             var key1 = key_pair[0];
@@ -9627,7 +9769,7 @@ if (typeof DIMP !== 'object') {
             this.__items = new HashSet()
         };
         var HashPairMap = st.type.HashPairMap;
-        Class(HashPairMap, AbstractPairMap, null, null);
+        Class(HashPairMap, AbstractPairMap, null);
         HashPairMap.prototype.items = function () {
             return this.__items.toArray()
         };
@@ -9671,14 +9813,14 @@ if (typeof DIMP !== 'object') {
             HashPairMap.call(this, AnyAddress)
         };
         var AddressPairMap = st.type.AddressPairMap;
-        Class(AddressPairMap, HashPairMap, null, null);
+        Class(AddressPairMap, HashPairMap, null);
         st.type.AddressPairObject = function (remote, local) {
             BaseObject.call(this);
             this.remoteAddress = remote;
             this.localAddress = local
         };
         var AddressPairObject = st.type.AddressPairObject;
-        Class(AddressPairObject, BaseObject, null, null);
+        Class(AddressPairObject, BaseObject, null);
         AddressPairObject.prototype.getRemoteAddress = function () {
             return this.remoteAddress
         };
@@ -9805,14 +9947,15 @@ if (typeof DIMP !== 'object') {
             EXPIRED: 4,
             ERROR: 5
         });
-        var StateOrder = st.net.ConnectionStateOrder;
+        var ConnectionStateOrder = st.net.ConnectionStateOrder;
         st.net.ConnectionState = function (order) {
             BaseState.call(this, Enum.getInt(order));
             this.__name = order.getName();
             this.__enterTime = null
         };
         var ConnectionState = st.net.ConnectionState;
-        Class(ConnectionState, BaseState, null, {
+        Class(ConnectionState, BaseState, null);
+        Implementation(ConnectionState, {
             getName: function () {
                 return this.__name
             }, getEnterTime: function () {
@@ -9827,7 +9970,7 @@ if (typeof DIMP !== 'object') {
                         return true
                     }
                     other = other.getIndex()
-                } else if (other instanceof StateOrder) {
+                } else if (other instanceof ConnectionStateOrder) {
                     other = other.getValue()
                 }
                 return this.getIndex() === other
@@ -9849,34 +9992,35 @@ if (typeof DIMP !== 'object') {
             this.builder = transitionBuilder
         };
         var StateBuilder = st.net.ConnectionStateBuilder;
-        Class(StateBuilder, BaseObject, null, {
+        Class(StateBuilder, BaseObject, null);
+        Implementation(StateBuilder, {
             getDefaultState: function () {
-                var state = new ConnectionState(StateOrder.DEFAULT);
+                var state = new ConnectionState(ConnectionStateOrder.DEFAULT);
                 state.addTransition(this.builder.getDefaultPreparingTransition());
                 return state
             }, getPreparingState: function () {
-                var state = new ConnectionState(StateOrder.PREPARING);
+                var state = new ConnectionState(ConnectionStateOrder.PREPARING);
                 state.addTransition(this.builder.getPreparingReadyTransition());
                 state.addTransition(this.builder.getPreparingDefaultTransition());
                 return state
             }, getReadyState: function () {
-                var state = new ConnectionState(StateOrder.READY);
+                var state = new ConnectionState(ConnectionStateOrder.READY);
                 state.addTransition(this.builder.getReadyExpiredTransition());
                 state.addTransition(this.builder.getReadyErrorTransition());
                 return state
             }, getExpiredState: function () {
-                var state = new ConnectionState(StateOrder.EXPIRED);
+                var state = new ConnectionState(ConnectionStateOrder.EXPIRED);
                 state.addTransition(this.builder.getExpiredMaintainingTransition());
                 state.addTransition(this.builder.getExpiredErrorTransition());
                 return state
             }, getMaintainingState: function () {
-                var state = new ConnectionState(StateOrder.MAINTAINING);
+                var state = new ConnectionState(ConnectionStateOrder.MAINTAINING);
                 state.addTransition(this.builder.getMaintainingReadyTransition());
                 state.addTransition(this.builder.getMaintainingExpiredTransition());
                 state.addTransition(this.builder.getMaintainingErrorTransition());
                 return state
             }, getErrorState: function () {
-                var state = new ConnectionState(StateOrder.ERROR);
+                var state = new ConnectionState(ConnectionStateOrder.ERROR);
                 state.addTransition(this.builder.getErrorDefaultTransition());
                 return state
             }
@@ -9886,7 +10030,7 @@ if (typeof DIMP !== 'object') {
             this.__evaluate = evaluate
         };
         var StateTransition = st.net.ConnectionStateTransition;
-        Class(StateTransition, BaseTransition, null, null);
+        Class(StateTransition, BaseTransition, null);
         StateTransition.prototype.evaluate = function (ctx, now) {
             return this.__evaluate.call(this, ctx, now)
         };
@@ -9894,24 +10038,25 @@ if (typeof DIMP !== 'object') {
             BaseObject.call(this)
         };
         var TransitionBuilder = st.net.ConnectionStateTransitionBuilder;
-        Class(TransitionBuilder, BaseObject, null, {
+        Class(TransitionBuilder, BaseObject, null);
+        Implementation(TransitionBuilder, {
             getDefaultPreparingTransition: function () {
-                return new StateTransition(StateOrder.PREPARING, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.PREPARING, function (ctx, now) {
                     var conn = ctx.getConnection();
                     return conn && conn.isOpen()
                 })
             }, getPreparingReadyTransition: function () {
-                return new StateTransition(StateOrder.READY, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.READY, function (ctx, now) {
                     var conn = ctx.getConnection();
                     return conn && conn.isAlive()
                 })
             }, getPreparingDefaultTransition: function () {
-                return new StateTransition(StateOrder.DEFAULT, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.DEFAULT, function (ctx, now) {
                     var conn = ctx.getConnection();
                     return !(conn && conn.isOpen())
                 })
             }, getReadyExpiredTransition: function () {
-                return new StateTransition(StateOrder.EXPIRED, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.EXPIRED, function (ctx, now) {
                     var conn = ctx.getConnection();
                     if (!(conn && conn.isAlive())) {
                         return false
@@ -9919,12 +10064,12 @@ if (typeof DIMP !== 'object') {
                     return !conn.isReceivedRecently(now)
                 })
             }, getReadyErrorTransition: function () {
-                return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.ERROR, function (ctx, now) {
                     var conn = ctx.getConnection();
                     return !(conn && conn.isAlive())
                 })
             }, getExpiredMaintainingTransition: function () {
-                return new StateTransition(StateOrder.MAINTAINING, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.MAINTAINING, function (ctx, now) {
                     var conn = ctx.getConnection();
                     if (!(conn && conn.isAlive())) {
                         return false
@@ -9932,7 +10077,7 @@ if (typeof DIMP !== 'object') {
                     return conn.isSentRecently(now)
                 })
             }, getExpiredErrorTransition: function () {
-                return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.ERROR, function (ctx, now) {
                     var conn = ctx.getConnection();
                     if (!(conn && conn.isAlive())) {
                         return true
@@ -9940,7 +10085,7 @@ if (typeof DIMP !== 'object') {
                     return conn.isNotReceivedLongTimeAgo(now)
                 })
             }, getMaintainingReadyTransition: function () {
-                return new StateTransition(StateOrder.READY, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.READY, function (ctx, now) {
                     var conn = ctx.getConnection();
                     if (!(conn && conn.isAlive())) {
                         return false
@@ -9948,7 +10093,7 @@ if (typeof DIMP !== 'object') {
                     return conn.isReceivedRecently(now)
                 })
             }, getMaintainingExpiredTransition: function () {
-                return new StateTransition(StateOrder.EXPIRED, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.EXPIRED, function (ctx, now) {
                     var conn = ctx.getConnection();
                     if (!(conn && conn.isAlive())) {
                         return false
@@ -9956,7 +10101,7 @@ if (typeof DIMP !== 'object') {
                     return !conn.isSentRecently(now)
                 })
             }, getMaintainingErrorTransition: function () {
-                return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.ERROR, function (ctx, now) {
                     var conn = ctx.getConnection();
                     if (!(conn && conn.isAlive())) {
                         return true
@@ -9964,7 +10109,7 @@ if (typeof DIMP !== 'object') {
                     return conn.isNotReceivedLongTimeAgo(now)
                 })
             }, getErrorDefaultTransition: function () {
-                return new StateTransition(StateOrder.DEFAULT, function (ctx, now) {
+                return new StateTransition(ConnectionStateOrder.DEFAULT, function (ctx, now) {
                     var conn = ctx.getConnection();
                     if (!(conn && conn.isAlive())) {
                         return false
@@ -9991,7 +10136,7 @@ if (typeof DIMP !== 'object') {
             this.addState(builder.getErrorState())
         };
         var StateMachine = st.net.ConnectionStateMachine;
-        Class(StateMachine, BaseMachine, [Context], null);
+        Class(StateMachine, BaseMachine, [Context]);
         StateMachine.prototype.createStateBuilder = function () {
             var stb = new TransitionBuilder();
             return new StateBuilder(stb)
@@ -10081,7 +10226,6 @@ if (typeof DIMP !== 'object') {
         var Arrival = st.port.Arrival;
         Arrival.prototype.assemble = function (income) {
         };
-        var DeparturePriority = {URGENT: -1, NORMAL: 0, SLOWER: 1};
         st.port.Departure = Interface(null, [Ship]);
         var Departure = st.port.Departure;
         Departure.prototype.getPriority = function () {
@@ -10092,7 +10236,8 @@ if (typeof DIMP !== 'object') {
         };
         Departure.prototype.isImportant = function () {
         };
-        Departure.Priority = DeparturePriority;
+        Departure.Priority = {URGENT: -1, NORMAL: 0, SLOWER: 1};
+        var DeparturePriority = Departure.Priority;
         st.port.Porter = Interface(null, [Processor]);
         var Porter = st.port.Porter;
         Porter.prototype.isOpen = function () {
@@ -10124,11 +10269,11 @@ if (typeof DIMP !== 'object') {
                 return PorterStatus.ERROR
             }
             var index = state.getIndex();
-            if (StateOrder.READY.equals(index) || StateOrder.EXPIRED.equals(index) || StateOrder.MAINTAINING.equals(index)) {
+            if (ConnectionStateOrder.READY.equals(index) || ConnectionStateOrder.EXPIRED.equals(index) || ConnectionStateOrder.MAINTAINING.equals(index)) {
                 return PorterStatus.READY
-            } else if (StateOrder.PREPARING.equals(index)) {
+            } else if (ConnectionStateOrder.PREPARING.equals(index)) {
                 return PorterStatus.PREPARING
-            } else if (StateOrder.ERROR.equals(index)) {
+            } else if (ConnectionStateOrder.ERROR.equals(index)) {
                 return PorterStatus.ERROR
             } else {
                 return PorterStatus.INIT
@@ -10160,7 +10305,8 @@ if (typeof DIMP !== 'object') {
             this.__closed = -1
         };
         var BaseChannel = st.socket.BaseChannel;
-        Class(BaseChannel, AddressPairObject, [Channel], {
+        Class(BaseChannel, AddressPairObject, [Channel]);
+        Implementation(BaseChannel, {
             toString: function () {
                 var clazz = this.getClassName();
                 var remote = this.getRemoteAddress();
@@ -10348,7 +10494,7 @@ if (typeof DIMP !== 'object') {
             this.__channel = channel
         };
         var ChannelController = st.socket.ChannelController
-        Class(ChannelController, BaseObject, null, null);
+        Class(ChannelController, BaseObject, null);
         ChannelController.prototype.getChannel = function () {
             return this.__channel
         };
@@ -10373,7 +10519,8 @@ if (typeof DIMP !== 'object') {
             this.__fsm = null
         };
         var BaseConnection = st.socket.BaseConnection;
-        Class(BaseConnection, AddressPairObject, [Connection, TimedConnection, ConnectionState.Delegate], {
+        Class(BaseConnection, AddressPairObject, [Connection, TimedConnection, ConnectionState.Delegate]);
+        Implementation(BaseConnection, {
             toString: function () {
                 var clazz = this.getClassName();
                 var remote = this.getRemoteAddress();
@@ -10556,9 +10703,9 @@ if (typeof DIMP !== 'object') {
         BaseConnection.prototype.exitState = function (previous, ctx, now) {
             var current = ctx.getCurrentState();
             var currentIndex = !current ? -1 : current.getIndex();
-            if (StateOrder.READY.equals(currentIndex)) {
+            if (ConnectionStateOrder.READY.equals(currentIndex)) {
                 var previousIndex = !previous ? -1 : previous.getIndex();
-                if (StateOrder.PREPARING.equals(previousIndex)) {
+                if (ConnectionStateOrder.PREPARING.equals(previousIndex)) {
                     var soon = TimedConnection.EXPIRES.divides(2).subtractFrom(now);
                     var st = this.__lastSentTime;
                     if (!st || st.getTime() < soon.getTime()) {
@@ -10574,7 +10721,7 @@ if (typeof DIMP !== 'object') {
             if (delegate) {
                 delegate.onConnectionStateChanged(previous, current, this)
             }
-            if (StateOrder.ERROR.equals(currentIndex)) {
+            if (ConnectionStateOrder.ERROR.equals(currentIndex)) {
                 this.setChannel(null)
             }
         };
@@ -10592,7 +10739,8 @@ if (typeof DIMP !== 'object') {
             this.__bg_interval = 8000
         };
         var ActiveConnection = st.socket.ActiveConnection;
-        Class(ActiveConnection, BaseConnection, [Runnable], {
+        Class(ActiveConnection, BaseConnection, [Runnable]);
+        Implementation(ActiveConnection, {
             isOpen: function () {
                 return this.getStateMachine() !== null
             }, start: function (hub) {
@@ -10655,7 +10803,8 @@ if (typeof DIMP !== 'object') {
             AddressPairMap.call(this)
         };
         var ConnectionPool = st.socket.ConnectionPool;
-        Class(ConnectionPool, AddressPairMap, null, {
+        Class(ConnectionPool, AddressPairMap, null);
+        Implementation(ConnectionPool, {
             set: function (remote, local, value) {
                 var cached = AddressPairMap.prototype.remove.call(this, remote, local, value);
                 AddressPairMap.prototype.set.call(this, remote, local, value);
@@ -10669,7 +10818,7 @@ if (typeof DIMP !== 'object') {
             this.__last = new Date()
         };
         var BaseHub = st.socket.BaseHub;
-        Class(BaseHub, BaseObject, [Hub], null);
+        Class(BaseHub, BaseObject, [Hub]);
         BaseHub.prototype.createConnectionPool = function () {
             return new ConnectionPool()
         };
@@ -10837,7 +10986,7 @@ if (typeof DIMP !== 'object') {
             this.__expired = ArrivalShip.EXPIRES.addTo(now)
         };
         var ArrivalShip = st.ArrivalShip;
-        Class(ArrivalShip, BaseObject, [Arrival], null);
+        Class(ArrivalShip, BaseObject, [Arrival]);
         ArrivalShip.EXPIRES = Duration.ofMinutes(5);
         ArrivalShip.prototype.touch = function (now) {
             this.__expired = ArrivalShip.EXPIRES.addTo(now)
@@ -10856,7 +11005,7 @@ if (typeof DIMP !== 'object') {
             this.__finished_times = {}
         };
         var ArrivalHall = st.ArrivalHall;
-        Class(ArrivalHall, BaseObject, null, null);
+        Class(ArrivalHall, BaseObject, null);
         ArrivalHall.prototype.assembleArrival = function (income) {
             var sn = income.getSN();
             if (!sn) {
@@ -10929,7 +11078,7 @@ if (typeof DIMP !== 'object') {
             this.__expired = null
         };
         var DepartureShip = st.DepartureShip;
-        Class(DepartureShip, BaseObject, [Departure], null);
+        Class(DepartureShip, BaseObject, [Departure]);
         DepartureShip.EXPIRES = Duration.ofMinutes(2);
         DepartureShip.RETRIES = 2;
         DepartureShip.prototype.getPriority = function () {
@@ -10965,7 +11114,7 @@ if (typeof DIMP !== 'object') {
             this.__finished_times = {}
         };
         var DepartureHall = st.DepartureHall;
-        Class(DepartureHall, BaseObject, null, null);
+        Class(DepartureHall, BaseObject, null);
         DepartureHall.prototype.addDeparture = function (outgo) {
             if (this.__all_departures.contains(outgo)) {
                 return false
@@ -11148,7 +11297,7 @@ if (typeof DIMP !== 'object') {
             this.__departureHall = this.createDepartureHall()
         };
         var Dock = st.Dock;
-        Class(Dock, BaseObject, null, null);
+        Class(Dock, BaseObject, null);
         Dock.prototype.createArrivalHall = function () {
             return new ArrivalHall()
         };
@@ -11182,7 +11331,8 @@ if (typeof DIMP !== 'object') {
             this.__lastFragments = []
         };
         var StarPorter = st.StarPorter;
-        Class(StarPorter, AddressPairObject, [Porter], {
+        Class(StarPorter, AddressPairObject, [Porter]);
+        Implementation(StarPorter, {
             toString: function () {
                 var clazz = this.getClassName();
                 var remote = this.getRemoteAddress();
@@ -11355,7 +11505,8 @@ if (typeof DIMP !== 'object') {
             AddressPairMap.call(this)
         };
         var PorterPool = st.PorterPool;
-        Class(PorterPool, AddressPairMap, null, {
+        Class(PorterPool, AddressPairMap, null);
+        Implementation(PorterPool, {
             set: function (remote, local, value) {
                 var cached = AddressPairMap.prototype.remove.call(this, remote, local, value);
                 AddressPairMap.prototype.set.call(this, remote, local, value);
@@ -11368,7 +11519,7 @@ if (typeof DIMP !== 'object') {
             this.__porterPool = this.createPorterPool()
         };
         var StarGate = st.StarGate;
-        Class(StarGate, BaseObject, [Gate, ConnectionDelegate], null);
+        Class(StarGate, BaseObject, [Gate, ConnectionDelegate]);
         StarGate.prototype.createPorterPool = function () {
             return new PorterPool()
         };
@@ -11486,7 +11637,7 @@ if (typeof DIMP !== 'object') {
                 }
             }
             var index = !current ? -1 : current.getIndex();
-            if (StateOrder.EXPIRED.equals(index)) {
+            if (ConnectionStateOrder.EXPIRED.equals(index)) {
                 this.heartbeat(connection)
             }
         };
@@ -11518,6 +11669,8 @@ if (typeof DIMP !== 'object') {
         }
         var Interface = mk.type.Interface;
         var Class = mk.type.Class;
+        var Implementation = mk.type.Implementation;
+        var Mixin = mk.type.Mixin;
         var Converter = mk.type.Converter;
         var Mapper = mk.type.Mapper;
         var BaseObject = mk.type.BaseObject;
@@ -11553,7 +11706,7 @@ if (typeof DIMP !== 'object') {
             }
         };
         var Storage = sg.dos.Storage;
-        Class(Storage, BaseObject, null, null);
+        Class(Storage, BaseObject, null);
         Storage.prototype.getItem = function (key) {
             return this.storage.getItem(key)
         };
@@ -11632,33 +11785,42 @@ if (typeof DIMP !== 'object') {
             level: WARNING_FLAG | ERROR_FLAG,
             showTime: false,
             showCaller: false,
-            logger: null,
             debug: function (msg) {
-                var flag = this.level & DEBUG_FLAG;
-                if (flag > 0) {
-                    this.logger.debug.apply(this.logger, arguments)
-                }
+                this.logger.debug.apply(this.logger, arguments)
             },
             info: function (msg) {
-                var flag = this.level & INFO_FLAG;
-                if (flag > 0) {
-                    this.logger.info.apply(this.logger, arguments)
-                }
+                this.logger.info.apply(this.logger, arguments)
             },
             warning: function (msg) {
-                var flag = this.level & WARNING_FLAG;
-                if (flag > 0) {
-                    this.logger.warning.apply(this.logger, arguments)
-                }
+                this.logger.warning.apply(this.logger, arguments)
             },
             error: function (msg) {
-                var flag = this.level & ERROR_FLAG;
-                if (flag > 0) {
-                    this.logger.error.apply(this.logger, arguments)
-                }
-            }
+                this.logger.error.apply(this.logger, arguments)
+            },
+            logger: null
         };
         var Log = sg.lnc.Log;
+        sg.lnc.Logging = Mixin(null, {
+            logDebug: function (msg) {
+                Log.debug.apply(Log, logging_args(this, arguments))
+            }, logInfo: function (msg) {
+                Log.info.apply(Log, logging_args(this, arguments))
+            }, logWarning: function (msg) {
+                Log.warning.apply(Log, logging_args(this, arguments))
+            }, logError: function (msg) {
+                Log.error.apply(Log, logging_args(this, arguments))
+            }
+        });
+        var logging_args = function (obj, args) {
+            var getClassName = obj.getClassName;
+            if (typeof getClassName !== 'function') {
+                getClassName = BaseObject.prototype.getClassName
+            }
+            var clazz = getClassName.call(obj);
+            args = Array.prototype.slice.call(args);
+            args.unshift(clazz + ' > ');
+            return args
+        };
         sg.lnc.Logger = Interface(null, null);
         var Logger = sg.lnc.Logger;
         Logger.prototype.debug = function (msg) {
@@ -11673,26 +11835,36 @@ if (typeof DIMP !== 'object') {
             BaseObject.call(this)
         };
         var DefaultLogger = sg.lnc.DefaultLogger;
-        Class(DefaultLogger, BaseObject, [Logger], {
-            debug: function () {
-                console.debug.apply(console, log_args(arguments))
-            }, info: function () {
-                console.info.apply(console, log_args(arguments))
-            }, warning: function () {
-                console.warn.apply(console, log_args(arguments))
-            }, error: function () {
-                console.error.apply(console, log_args(arguments))
+        Class(DefaultLogger, BaseObject, [Logger]);
+        Implementation(DefaultLogger, {
+            debug: function (msg) {
+                var flag = Log.level & DEBUG_FLAG;
+                if (flag > 0) {
+                    console.debug.apply(console, log_args(arguments))
+                }
+            }, info: function (msg) {
+                var flag = Log.level & INFO_FLAG;
+                if (flag > 0) {
+                    console.info.apply(console, log_args(arguments))
+                }
+            }, warning: function (msg) {
+                var flag = Log.level & WARNING_FLAG;
+                if (flag > 0) {
+                    console.warn.apply(console, log_args(arguments))
+                }
+            }, error: function (msg) {
+                var flag = Log.level & ERROR_FLAG;
+                if (flag > 0) {
+                    console.error.apply(console, log_args(arguments))
+                }
             }
         });
         var log_args = function (args) {
-            if (Log.showTime === false) {
-                return args
+            if (Log.showTime) {
+                args = Array.prototype.slice.call(args);
+                args.unshift('[' + current_time() + ']')
             }
-            var array = ['[' + current_time() + ']'];
-            for (var i = 0; i < args.length; ++i) {
-                array.push(args[i])
-            }
-            return array
+            return args
         };
         var current_time = function () {
             var now = new Date();
@@ -11723,7 +11895,8 @@ if (typeof DIMP !== 'object') {
             this.__info = userInfo
         };
         var Notification = sg.lnc.Notification;
-        Class(Notification, BaseObject, null, {
+        Class(Notification, BaseObject, null);
+        Implementation(Notification, {
             toString: function () {
                 var clazz = this.getClassName();
                 return '<' + clazz + ' name="' + this.getName() + '>\n' + '\t<sender>' + this.getSender() + '</sender>\n' + '\t<info>' + this.getUserInfo() + '</info>\n' + '</' + clazz + '>'
@@ -11743,7 +11916,7 @@ if (typeof DIMP !== 'object') {
             this.__observers = {}
         };
         var BaseCenter = sg.lnc.BaseCenter;
-        Class(BaseCenter, BaseObject, null, null);
+        Class(BaseCenter, BaseObject, null);
         BaseCenter.prototype.addObserver = function (observer, name) {
             var listeners = this.__observers[name];
             if (!listeners) {
@@ -11814,7 +11987,8 @@ if (typeof DIMP !== 'object') {
             this.__thread = null
         };
         var AsyncCenter = sg.lnc.AsyncCenter;
-        Class(AsyncCenter, BaseCenter, [Runnable], {
+        Class(AsyncCenter, BaseCenter, [Runnable]);
+        Implementation(AsyncCenter, {
             postNotification: function (name, sender, userInfo) {
                 var notification = new Notification(name, sender, userInfo);
                 this.__notifications.push(notification)
@@ -11964,7 +12138,7 @@ if (typeof DIMP !== 'object') {
             this.__pools = {};
             this.__thread = new Thread(this)
         };
-        Class(CacheRunner, Runner, null, null);
+        Class(CacheRunner, Runner, null);
         CacheRunner.prototype.start = function () {
             this.__thread.start()
         };
@@ -12024,7 +12198,7 @@ if (typeof DIMP !== 'object') {
             this.data = data
         };
         var Host = sg.ip.Host;
-        Class(Host, ConstantString, null, null);
+        Class(Host, ConstantString, null);
         Host.prototype.toArray = function (default_port) {
             var data = this.data;
             var port = this.port;
@@ -12071,7 +12245,7 @@ if (typeof DIMP !== 'object') {
             Host.call(this, string, ip, port, data)
         };
         var IPv4 = sg.ip.IPv4;
-        Class(IPv4, Host, null, null);
+        Class(IPv4, Host, null);
         IPv4.patten = /^(\d{1,3}\.){3}\d{1,3}(:\d{1,5})?$/;
         IPv4.parse = function (host) {
             if (!this.patten.test(host)) {
@@ -12324,7 +12498,8 @@ if (typeof DIMP !== 'object') {
             ChannelController.call(this, channel)
         };
         var StreamChannelReader = sg.ws.StreamChannelReader;
-        Class(StreamChannelReader, ChannelController, [SocketReader], {
+        Class(StreamChannelReader, ChannelController, [SocketReader]);
+        Implementation(StreamChannelReader, {
             read: function (maxLen) {
                 var sock = this.getSocket();
                 if (sock && sock.isOpen()) {
@@ -12347,7 +12522,8 @@ if (typeof DIMP !== 'object') {
             ChannelController.call(this, channel)
         };
         var StreamChannelWriter = sg.ws.StreamChannelWriter;
-        Class(StreamChannelWriter, ChannelController, [SocketWriter], {
+        Class(StreamChannelWriter, ChannelController, [SocketWriter]);
+        Implementation(StreamChannelWriter, {
             write: function (data) {
                 var sock = this.getSocket();
                 if (sock && sock.isOpen()) {
@@ -12363,7 +12539,8 @@ if (typeof DIMP !== 'object') {
             BaseChannel.call(this, remote, local)
         };
         var StreamChannel = sg.ws.StreamChannel;
-        Class(StreamChannel, BaseChannel, null, {
+        Class(StreamChannel, BaseChannel, null);
+        Implementation(StreamChannel, {
             createReader: function () {
                 return new StreamChannelReader(this)
             }, createWriter: function () {
@@ -12374,7 +12551,8 @@ if (typeof DIMP !== 'object') {
             AddressPairMap.call(this)
         };
         var ChannelPool = sg.ws.ChannelPool;
-        Class(ChannelPool, AddressPairMap, null, {
+        Class(ChannelPool, AddressPairMap, null);
+        Implementation(ChannelPool, {
             set: function (remote, local, value) {
                 var cached = AddressPairMap.prototype.remove.call(this, remote, local, value);
                 AddressPairMap.prototype.set.call(this, remote, local, value);
@@ -12386,7 +12564,7 @@ if (typeof DIMP !== 'object') {
             this.__channelPool = this.createChannelPool()
         };
         var StreamHub = sg.ws.StreamHub;
-        Class(StreamHub, BaseHub, null, null);
+        Class(StreamHub, BaseHub, null);
         StreamHub.prototype.createChannelPool = function () {
             return new ChannelPool()
         };
@@ -12397,13 +12575,13 @@ if (typeof DIMP !== 'object') {
             return this.__channelPool.items()
         };
         StreamHub.prototype.removeChannel = function (remote, local, channel) {
-            this.__channelPool.remove(remote, null, channel)
+            return this.__channelPool.remove(remote, null, channel)
         };
         StreamHub.prototype.getChannel = function (remote, local) {
             return this.__channelPool.get(remote, null)
         };
         StreamHub.prototype.setChannel = function (remote, local, channel) {
-            this.__channelPool.set(remote, null, channel)
+            return this.__channelPool.set(remote, null, channel)
         };
         StreamHub.prototype.removeConnection = function (remote, local, connection) {
             return BaseHub.prototype.removeConnection.call(this, remote, null, connection)
@@ -12418,7 +12596,8 @@ if (typeof DIMP !== 'object') {
             StreamHub.call(this, delegate)
         };
         var ClientHub = sg.ws.ClientHub;
-        Class(ClientHub, StreamHub, null, {
+        Class(ClientHub, StreamHub, null);
+        Implementation(ClientHub, {
             createConnection: function (remote, local) {
                 var conn = new ActiveConnection(remote, local);
                 conn.setDelegate(this.getDelegate());
@@ -12473,7 +12652,7 @@ if (typeof DIMP !== 'object') {
             this.__data = data
         };
         var PlainArrival = sg.PlainArrival;
-        Class(PlainArrival, ArrivalShip, null, null);
+        Class(PlainArrival, ArrivalShip, null);
         PlainArrival.prototype.getPayload = function () {
             return this.__data
         };
@@ -12492,7 +12671,7 @@ if (typeof DIMP !== 'object') {
             this.__fragments = [data]
         };
         var PlainDeparture = sg.PlainDeparture;
-        Class(PlainDeparture, DepartureShip, null, null);
+        Class(PlainDeparture, DepartureShip, null);
         PlainDeparture.prototype.getPayload = function () {
             return this.__completed
         };
@@ -12512,7 +12691,8 @@ if (typeof DIMP !== 'object') {
             StarPorter.call(this, remote, local)
         };
         var PlainPorter = sg.PlainPorter;
-        Class(PlainPorter, StarPorter, null, {
+        Class(PlainPorter, StarPorter, null);
+        Implementation(PlainPorter, {
             createArrival: function (data) {
                 return new PlainArrival(data, null)
             }, createDeparture: function (data, priority) {
@@ -12527,7 +12707,7 @@ if (typeof DIMP !== 'object') {
                 if (data.length === 4) {
                     init_bytes();
                     if (bytes_equal(data, PING)) {
-                        this.send(PONG, Departure.Priority.SLOWER.getValue());
+                        this.send(PONG, Departure.Priority.SLOWER);
                         return null
                     } else if (bytes_equal(data, PONG) || bytes_equal(data, NOOP)) {
                         return null
@@ -12538,11 +12718,11 @@ if (typeof DIMP !== 'object') {
                 var ship = this.createDeparture(payload, priority);
                 return this.sendShip(ship)
             }, sendData: function (payload) {
-                var priority = Departure.Priority.NORMAL.getValue();
+                var priority = Departure.Priority.NORMAL;
                 return this.send(payload, priority)
             }, heartbeat: function () {
                 init_bytes();
-                var priority = Departure.Priority.SLOWER.getValue();
+                var priority = Departure.Priority.SLOWER;
                 this.send(PING, priority)
             }
         });
@@ -12572,7 +12752,8 @@ if (typeof DIMP !== 'object') {
             this.__hub = null
         };
         var BaseGate = sg.BaseGate;
-        Class(BaseGate, StarGate, null, {
+        Class(BaseGate, StarGate, null);
+        Implementation(BaseGate, {
             setHub: function (hub) {
                 this.__hub = hub
             }, getHub: function () {
@@ -12615,7 +12796,8 @@ if (typeof DIMP !== 'object') {
             this.__thread = new Thread(this)
         };
         var AutoGate = sg.AutoGate;
-        Class(AutoGate, BaseGate, [Runnable], {
+        Class(AutoGate, BaseGate, [Runnable]);
+        Implementation(AutoGate, {
             isRunning: function () {
                 return this.__running
             }, start: function () {
@@ -12650,7 +12832,8 @@ if (typeof DIMP !== 'object') {
             AutoGate.call(this, delegate)
         };
         var WSClientGate = sg.WSClientGate;
-        Class(WSClientGate, AutoGate, null, {
+        Class(WSClientGate, AutoGate, null);
+        Implementation(WSClientGate, {
             createPorter: function (remote, local) {
                 var docker = new PlainPorter(remote, local);
                 docker.setDelegate(this.getDelegate());
@@ -12696,6 +12879,7 @@ if (typeof DIMP !== 'object') {
     }
     var Interface = mk.type.Interface;
     var Class = mk.type.Class;
+    var Implementation = mk.type.Implementation;
     var Converter = mk.type.Converter;
     var Wrapper = mk.type.Wrapper;
     var Mapper = mk.type.Mapper;
@@ -12840,6 +13024,8 @@ if (typeof DIMP !== 'object') {
     var GeneralContentProcessorFactory = sdk.cpu.GeneralContentProcessorFactory;
     var BaseContentProcessor = sdk.cpu.BaseContentProcessor;
     var BaseCommandProcessor = sdk.cpu.BaseCommandProcessor;
+    var BaseCustomizedHandler = sdk.cpu.BaseCustomizedHandler;
+    var CustomizedContentProcessor = sdk.cpu.CustomizedContentProcessor;
     var BaseContentProcessorCreator = sdk.cpu.BaseContentProcessorCreator;
     var Duration = fsm.type.Duration;
     var Processor = fsm.skywalker.Processor;
@@ -12875,7 +13061,7 @@ if (typeof DIMP !== 'object') {
         this.__caches = {}
     };
     var ThanosCache = app.utils.ThanosCache;
-    Class(ThanosCache, BaseObject, [MemoryCache], null);
+    Class(ThanosCache, BaseObject, [MemoryCache]);
     ThanosCache.prototype.get = function (key) {
         return this.__caches[key]
     };
@@ -12914,7 +13100,7 @@ if (typeof DIMP !== 'object') {
         this.__records = {}
     };
     var FrequencyChecker = app.utils.FrequencyChecker;
-    Class(FrequencyChecker, BaseObject, null, null);
+    Class(FrequencyChecker, BaseObject, null);
     FrequencyChecker.prototype.checkExpired = function (key, now) {
         var expired = this.__records[key];
         if (expired && expired.getTime() > now.getTime()) {
@@ -12942,7 +13128,7 @@ if (typeof DIMP !== 'object') {
         this.__times = {}
     };
     var RecentTimeChecker = app.utils.RecentTimeChecker
-    Class(RecentTimeChecker, null, null, null);
+    Class(RecentTimeChecker, null, null);
     RecentTimeChecker.prototype.setLastTime = function (key, when) {
         if (!when) {
             return false
@@ -13030,7 +13216,8 @@ if (typeof DIMP !== 'object') {
         this.__list = list
     };
     var BaseBlockCommand = dkd.dkd.BaseBlockCommand;
-    Class(BaseBlockCommand, BaseCommand, [BlockCommand], {
+    Class(BaseBlockCommand, BaseCommand, [BlockCommand]);
+    Implementation(BaseBlockCommand, {
         setBlockCList: function (list) {
             this.__list = list;
             if (list) {
@@ -13073,7 +13260,8 @@ if (typeof DIMP !== 'object') {
         }
     };
     var QueryGroupCommand = dkd.dkd.QueryGroupCommand;
-    Class(QueryGroupCommand, BaseGroupCommand, [QueryCommand], {
+    Class(QueryGroupCommand, BaseGroupCommand, [QueryCommand]);
+    Implementation(QueryGroupCommand, {
         getLastTime: function () {
             return this.getDateTime('last_time', null)
         }
@@ -13183,7 +13371,8 @@ if (typeof DIMP !== 'object') {
         }
     };
     var BaseHandshakeCommand = dkd.dkd.BaseHandshakeCommand;
-    Class(BaseHandshakeCommand, BaseCommand, [HandshakeCommand], {
+    Class(BaseHandshakeCommand, BaseCommand, [HandshakeCommand]);
+    Implementation(BaseHandshakeCommand, {
         getTitle: function () {
             return this.getString('title', null)
         }, getSessionKey: function () {
@@ -13225,7 +13414,8 @@ if (typeof DIMP !== 'object') {
         }
     };
     var BaseLoginCommand = dkd.dkd.BaseLoginCommand;
-    Class(BaseLoginCommand, BaseCommand, [LoginCommand], {
+    Class(BaseLoginCommand, BaseCommand, [LoginCommand]);
+    Implementation(BaseLoginCommand, {
         getIdentifier: function () {
             return ID.parse(this.getValue('did'))
         }, getDevice: function () {
@@ -13324,7 +13514,8 @@ if (typeof DIMP !== 'object') {
         this.__list = list
     };
     var BaseMuteCommand = dkd.dkd.BaseMuteCommand;
-    Class(BaseMuteCommand, BaseCommand, [MuteCommand], {
+    Class(BaseMuteCommand, BaseCommand, [MuteCommand]);
+    Implementation(BaseMuteCommand, {
         getMuteCList: function () {
             if (this.__list === null) {
                 var list = this.getValue('list');
@@ -13347,7 +13538,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var Password = mk.protocol.Password;
-    Class(Password, BaseObject, null, null);
+    Class(Password, BaseObject, null);
     Password.KEY_SIZE = 32;
     Password.BLOCK_SIZE = 16;
     Password.generate = function (password) {
@@ -13393,7 +13584,8 @@ if (typeof DIMP !== 'object') {
         }
     };
     var BaseReportCommand = dkd.dkd.BaseReportCommand;
-    Class(BaseReportCommand, BaseCommand, [ReportCommand], {
+    Class(BaseReportCommand, BaseCommand, [ReportCommand]);
+    Implementation(BaseReportCommand, {
         setTitle: function (title) {
             this.setValue('title', title)
         }, getTitle: function () {
@@ -13437,7 +13629,8 @@ if (typeof DIMP !== 'object') {
         }
     };
     var BaseSearchCommand = dkd.dkd.BaseSearchCommand;
-    Class(BaseSearchCommand, BaseCommand, [SearchCommand], {
+    Class(BaseSearchCommand, BaseCommand, [SearchCommand]);
+    Implementation(BaseSearchCommand, {
         setKeywords: function (keywords) {
             if (keywords instanceof Array) {
                 keywords = keywords.join(' ')
@@ -13507,7 +13700,8 @@ if (typeof DIMP !== 'object') {
         this.__password = null
     };
     var BaseStorageCommand = dkd.dkd.BaseStorageCommand;
-    Class(BaseStorageCommand, BaseCommand, [StorageCommand], {
+    Class(BaseStorageCommand, BaseCommand, [StorageCommand]);
+    Implementation(BaseStorageCommand, {
         setTitle: function (title) {
             this.setValue('title', title)
         }, getTitle: function () {
@@ -13655,7 +13849,8 @@ if (typeof DIMP !== 'object') {
         ConstantString.call(this, string)
     };
     var UnknownAddress = app.compat.UnknownAddress;
-    Class(UnknownAddress, ConstantString, [Address], {
+    Class(UnknownAddress, ConstantString, [Address]);
+    Implementation(UnknownAddress, {
         getType: function () {
             return 0
         }
@@ -13664,7 +13859,7 @@ if (typeof DIMP !== 'object') {
         BaseAddressFactory.call(this)
     };
     var CompatibleAddressFactory = app.compat.CompatibleAddressFactory;
-    Class(CompatibleAddressFactory, BaseAddressFactory, null, null);
+    Class(CompatibleAddressFactory, BaseAddressFactory, null);
     CompatibleAddressFactory.prototype.reduceMemory = function () {
         var finger = 0;
         finger = thanos(this._addresses, finger);
@@ -13905,7 +14100,8 @@ if (typeof DIMP !== 'object') {
         MessageCompressor.call(this, new CompatibleShortener())
     };
     var CompatibleCompressor = app.compat.CompatibleCompressor;
-    Class(CompatibleCompressor, MessageCompressor, null, {
+    Class(CompatibleCompressor, MessageCompressor, null);
+    Implementation(CompatibleCompressor, {
         extractContent: function (data, key) {
             var content = MessageCompressor.prototype.extractContent.call(this, data, key);
             if (content) {
@@ -13918,7 +14114,8 @@ if (typeof DIMP !== 'object') {
         MessageShortener.call(this)
     };
     var CompatibleShortener = app.compat.CompatibleShortener;
-    Class(CompatibleShortener, MessageShortener, null, {
+    Class(CompatibleShortener, MessageShortener, null);
+    Implementation(CompatibleShortener, {
         moveKey: function (from, to, info) {
             var value = info[from];
             if (value) {
@@ -13970,7 +14167,8 @@ if (typeof DIMP !== 'object') {
         Identifier.call(this, identifier, name, address, terminal)
     };
     var EntityID = app.compat.EntityID;
-    Class(EntityID, Identifier, null, {
+    Class(EntityID, Identifier, null);
+    Implementation(EntityID, {
         getType: function () {
             var name = this.getName();
             if (!name || name.length === 0) {
@@ -13984,7 +14182,7 @@ if (typeof DIMP !== 'object') {
         IdentifierFactory.call(this)
     };
     var EntityIDFactory = app.compat.EntityIDFactory;
-    Class(EntityIDFactory, IdentifierFactory, null, null);
+    Class(EntityIDFactory, IdentifierFactory, null);
     EntityIDFactory.prototype.newID = function (string, name, address, terminal) {
         return new EntityID(string, name, address, terminal)
     };
@@ -14019,7 +14217,8 @@ if (typeof DIMP !== 'object') {
         BaseMetaFactory.call(this, type)
     };
     var CompatibleMetaFactory = app.compat.CompatibleMetaFactory;
-    Class(CompatibleMetaFactory, BaseMetaFactory, null, {
+    Class(CompatibleMetaFactory, BaseMetaFactory, null);
+    Implementation(CompatibleMetaFactory, {
         parseMeta: function (meta) {
             var out;
             var helper = SharedAccountExtensions.getHelper();
@@ -14050,7 +14249,8 @@ if (typeof DIMP !== 'object') {
         ExtensionLoader.call(this)
     };
     var CommonExtensionLoader = app.compat.CommonExtensionLoader;
-    Class(CommonExtensionLoader, ExtensionLoader, null, {
+    Class(CommonExtensionLoader, ExtensionLoader, null);
+    Implementation(CommonExtensionLoader, {
         registerCustomizedFactories: function () {
             this.setContentFactory(ContentType.CUSTOMIZED, 'customized', null, AppCustomizedContent);
             this.setContentFactory(ContentType.APPLICATION, 'application', null, AppCustomizedContent)
@@ -14076,7 +14276,8 @@ if (typeof DIMP !== 'object') {
         PluginLoader.call(this)
     };
     var CommonPluginLoader = app.compat.CommonPluginLoader;
-    Class(CommonPluginLoader, PluginLoader, null, {
+    Class(CommonPluginLoader, PluginLoader, null);
+    Implementation(CommonPluginLoader, {
         registerIDFactory: function () {
             ID.setFactory(new EntityIDFactory())
         }, registerAddressFactory: function () {
@@ -14457,7 +14658,7 @@ if (typeof DIMP !== 'object') {
         this.__tables = {}
     };
     var AddressNameServer = app.AddressNameServer;
-    Class(AddressNameServer, BaseObject, [AddressNameService], null);
+    Class(AddressNameServer, BaseObject, [AddressNameService]);
     AddressNameServer.prototype.isReserved = function (name) {
         return this.__reserved[name] === true
     };
@@ -14502,7 +14703,7 @@ if (typeof DIMP !== 'object') {
         this.__groupCache = this.createGroupCache()
     };
     var CommonArchivist = app.CommonArchivist;
-    Class(CommonArchivist, Barrack, [Archivist], null);
+    Class(CommonArchivist, Barrack, [Archivist]);
     CommonArchivist.prototype.getDatabase = function () {
         return this.__database
     };
@@ -14646,7 +14847,7 @@ if (typeof DIMP !== 'object') {
         this.__lastActiveMembers = {}
     };
     var EntityChecker = app.EntityChecker;
-    Class(EntityChecker, BaseObject, null, null);
+    Class(EntityChecker, BaseObject, null);
     EntityChecker.QUERY_EXPIRES = Duration.ofMinutes(10);
     EntityChecker.RESPOND_EXPIRES = Duration.ofMinutes(10);
     EntityChecker.prototype.getDatabase = function () {
@@ -14785,7 +14986,7 @@ if (typeof DIMP !== 'object') {
         this.__currentUser = null
     };
     var CommonFacebook = app.CommonFacebook;
-    Class(CommonFacebook, Facebook, null, null);
+    Class(CommonFacebook, Facebook, null);
     CommonFacebook.prototype.getDatabase = function () {
         return this.__database
     };
@@ -14811,7 +15012,7 @@ if (typeof DIMP !== 'object') {
         }
         var db = this.getDatabase();
         var array = db.getLocalUsers();
-        if (!array || array.length) {
+        if (!array || array.length === 0) {
             return null
         }
         current = this.getUser(array[0]);
@@ -14944,7 +15145,7 @@ if (typeof DIMP !== 'object') {
         this.__compressor = new CompatibleCompressor()
     };
     var CommonMessenger = app.CommonMessenger;
-    Class(CommonMessenger, Messenger, null, null);
+    Class(CommonMessenger, Messenger, null);
     CommonMessenger.prototype.getSession = function () {
         return this.__session
     };
@@ -15089,7 +15290,7 @@ if (typeof DIMP !== 'object') {
         MessagePacker.call(this, facebook, messenger)
     };
     var CommonPacker = app.CommonPacker;
-    Class(CommonPacker, MessagePacker, null, null);
+    Class(CommonPacker, MessagePacker, null);
     CommonPacker.prototype.suspendReliableMessage = function (rMsg, info) {
     };
     CommonPacker.prototype.suspendInstantMessage = function (iMsg, info) {
@@ -15162,7 +15363,7 @@ if (typeof DIMP !== 'object') {
         MessageProcessor.call(this, facebook, messenger)
     };
     var CommonProcessor = app.CommonProcessor;
-    Class(CommonProcessor, MessageProcessor, null, null);
+    Class(CommonProcessor, MessageProcessor, null);
     CommonProcessor.prototype.getEntityChecker = function () {
         var facebook = this.getFacebook();
         if (facebook instanceof CommonFacebook) {
@@ -15177,7 +15378,7 @@ if (typeof DIMP !== 'object') {
     CommonProcessor.prototype.createCreator = function (facebook, messenger) {
     };
     CommonProcessor.prototype.processContent = function (content, rMsg) {
-        var responses = MessageProcessor.processContent.call(this, content, rMsg);
+        var responses = MessageProcessor.prototype.processContent.call(this, content, rMsg);
         this.checkVisaTime(content, rMsg);
         return responses
     };
@@ -15209,7 +15410,7 @@ if (typeof DIMP !== 'object') {
         this.__database = database
     };
     var Register = app.Register;
-    Class(Register, BaseObject, null, null);
+    Class(Register, BaseObject, null);
     Register.prototype.getDatabase = function () {
         return this.__database
     };
@@ -15262,7 +15463,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var DocumentStorage = app.database.DocumentStorage;
-    Class(DocumentStorage, BaseObject, [DocumentDBI], null);
+    Class(DocumentStorage, BaseObject, [DocumentDBI]);
     DocumentStorage.prototype.saveDocument = function (doc) {
         var entity = doc.getIdentifier();
         var type = doc.getString('type', '');
@@ -15348,7 +15549,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var MetaStorage = app.database.MetaStorage;
-    Class(MetaStorage, BaseObject, [MetaDBI], null);
+    Class(MetaStorage, BaseObject, [MetaDBI]);
     MetaStorage.prototype.saveMeta = function (meta, entity) {
         var path = db_meta_path(entity);
         return Storage.saveJSON(meta.toMap(), path)
@@ -15368,7 +15569,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var PrivateKeyStorage = app.database.PrivateKeyStorage;
-    Class(PrivateKeyStorage, BaseObject, [PrivateKeyDBI], {
+    Class(PrivateKeyStorage, BaseObject, [PrivateKeyDBI]);
+    Implementation(PrivateKeyStorage, {
         savePrivateKey: function (key, type, user) {
             if (type === PrivateKeyDBI.META) {
                 return this.saveIdKey(key, user)
@@ -15429,7 +15631,8 @@ if (typeof DIMP !== 'object') {
         groupBotsManager.setMessenger(messenger)
     };
     var GroupDelegate = app.group.GroupDelegate;
-    Class(GroupDelegate, TwinsHelper, [GroupDataSource], {
+    Class(GroupDelegate, TwinsHelper, [GroupDataSource]);
+    Implementation(GroupDelegate, {
         buildGroupName: function (members) {
             var barrack = this.getFacebook();
             var text = barrack.getName(members[0]);
@@ -15548,7 +15751,7 @@ if (typeof DIMP !== 'object') {
         this.__delegate = delegate
     };
     var TripletsHelper = app.group.TripletsHelper;
-    Class(TripletsHelper, BaseObject, null, null);
+    Class(TripletsHelper, BaseObject, null);
     TripletsHelper.prototype.getDelegate = function () {
         return this.__delegate
     };
@@ -15713,7 +15916,7 @@ if (typeof DIMP !== 'object') {
         TripletsHelper.call(this, delegate)
     };
     var AdminManager = app.group.AdminManager;
-    Class(AdminManager, TripletsHelper, null, null);
+    Class(AdminManager, TripletsHelper, null);
     AdminManager.prototype.updateAdministrators = function (newAdmins, group) {
         var delegate = this.getDelegate();
         var barrack = this.getFacebook();
@@ -15800,7 +16003,7 @@ if (typeof DIMP !== 'object') {
         TripletsHelper.call(this, delegate)
     };
     var GroupCommandHelper = app.group.GroupCommandHelper;
-    Class(GroupCommandHelper, TripletsHelper, null, null);
+    Class(GroupCommandHelper, TripletsHelper, null);
     GroupCommandHelper.prototype.saveGroupHistory = function (content, rMsg, group) {
         if (this.isCommandExpired(content)) {
             Log.warning('drop expired command', content.getCmd(), rMsg.getSender(), group);
@@ -15876,7 +16079,7 @@ if (typeof DIMP !== 'object') {
         TripletsHelper.call(this, delegate)
     };
     var GroupPacker = app.group.GroupPacker;
-    Class(GroupPacker, TripletsHelper, null, null);
+    Class(GroupPacker, TripletsHelper, null);
     GroupPacker.prototype.packMessage = function (content, sender) {
         var envelope = Envelope.create(sender, ID.ANYONE, null);
         var iMsg = InstantMessage.create(envelope, content);
@@ -15959,7 +16162,7 @@ if (typeof DIMP !== 'object') {
         this.__helper = this.createHelper()
     };
     var GroupHistoryBuilder = app.group.GroupHistoryBuilder;
-    Class(GroupHistoryBuilder, TripletsHelper, null, null);
+    Class(GroupHistoryBuilder, TripletsHelper, null);
     GroupHistoryBuilder.prototype.getHelper = function () {
         return this.__helper
     };
@@ -16076,7 +16279,7 @@ if (typeof DIMP !== 'object') {
         this.__packer = this.createPacker()
     };
     var GroupEmitter = app.group.GroupEmitter
-    Class(GroupEmitter, TripletsHelper, null, null);
+    Class(GroupEmitter, TripletsHelper, null);
     GroupEmitter.POLYLOGUE_LIMIT = 32;
     GroupEmitter.SECRET_GROUP_LIMIT = 16;
     GroupEmitter.prototype.getPacker = function () {
@@ -16227,7 +16430,7 @@ if (typeof DIMP !== 'object') {
         this.__builder = this.createBuilder()
     };
     var GroupManager = app.group.GroupManager;
-    Class(GroupManager, TripletsHelper, null, null);
+    Class(GroupManager, TripletsHelper, null);
     GroupManager.prototype.getPacker = function () {
         return this.__packer
     };
@@ -16486,7 +16689,7 @@ if (typeof DIMP !== 'object') {
         this.__emitter = null
     };
     var SharedGroupManager = app.group.SharedGroupManager;
-    Class(SharedGroupManager, BaseObject, [GroupDataSource], null);
+    Class(SharedGroupManager, BaseObject, [GroupDataSource]);
     SharedGroupManager.prototype.getFacebook = function () {
         return this.__barrack
     };
@@ -16662,7 +16865,7 @@ if (typeof DIMP !== 'object') {
         this.__ship = departure
     };
     var MessageWrapper = app.network.MessageWrapper;
-    Class(MessageWrapper, BaseObject, [Departure], null);
+    Class(MessageWrapper, BaseObject, [Departure]);
     MessageWrapper.prototype.getMessage = function () {
         return this.__msg
     };
@@ -16693,7 +16896,7 @@ if (typeof DIMP !== 'object') {
         this.__fleets = {}
     };
     var MessageQueue = app.network.MessageQueue
-    Class(MessageQueue, BaseObject, null, null);
+    Class(MessageQueue, BaseObject, null);
     MessageQueue.prototype.append = function (rMsg, departure) {
         var ok = true;
         var priority = departure.getPriority();
@@ -16776,7 +16979,8 @@ if (typeof DIMP !== 'object') {
         CommonGate.call(this, keeper)
     };
     var AckEnableGate = app.network.AckEnableGate;
-    Class(AckEnableGate, CommonGate, null, {
+    Class(AckEnableGate, CommonGate, null);
+    Implementation(AckEnableGate, {
         createPorter: function (remote, local) {
             var docker = new AckEnablePorter(remote, local);
             docker.setDelegate(this.getDelegate());
@@ -16787,7 +16991,8 @@ if (typeof DIMP !== 'object') {
         PlainPorter.call(this, remote, local)
     };
     var AckEnablePorter = app.network.AckEnablePorter;
-    Class(AckEnablePorter, PlainPorter, null, {
+    Class(AckEnablePorter, PlainPorter, null);
+    Implementation(AckEnablePorter, {
         checkArrival: function (income) {
             if (income instanceof PlainArrival) {
                 var payload = income.getPayload();
@@ -16909,7 +17114,7 @@ if (typeof DIMP !== 'object') {
         this.__reconnect_time = 0
     };
     var GateKeeper = app.network.GateKeeper;
-    Class(GateKeeper, Runner, [PorterDelegate], null);
+    Class(GateKeeper, Runner, [PorterDelegate]);
     GateKeeper.prototype.createGate = function (remote) {
         var gate = new AckEnableGate(this);
         var hub = this.createHub(gate, remote);
@@ -17064,7 +17269,8 @@ if (typeof DIMP !== 'object') {
         this.__messenger = null
     };
     var BaseSession = app.network.BaseSession;
-    Class(BaseSession, GateKeeper, [Session], {
+    Class(BaseSession, GateKeeper, [Session]);
+    Implementation(BaseSession, {
         queueMessagePackage: function (rMsg, data, priority) {
             var ship = new PlainDeparture(data, priority);
             return this.queueAppend(rMsg, ship)
@@ -17118,7 +17324,7 @@ if (typeof DIMP !== 'object') {
         this.addState(builder.getErrorState())
     };
     var StateMachine = app.network.SessionStateMachine;
-    Class(StateMachine, AutoMachine, null, null);
+    Class(StateMachine, AutoMachine, null);
     StateMachine.prototype.createStateBuilder = function () {
         var stb = new TransitionBuilder();
         return new StateBuilder(stb)
@@ -17158,14 +17364,15 @@ if (typeof DIMP !== 'object') {
         RUNNING: 4,
         ERROR: 5
     });
-    var StateOrder = app.network.SessionStateOrder;
+    var SessionStateOrder = app.network.SessionStateOrder;
     app.network.SessionState = function (order) {
         BaseState.call(this, Enum.getInt(order));
         this.__name = order.getName();
         this.__enterTime = null
     };
     var SessionState = app.network.SessionState;
-    Class(SessionState, BaseState, null, {
+    Class(SessionState, BaseState, null);
+    Implementation(SessionState, {
         getName: function () {
             return this.__name
         }, getEnterTime: function () {
@@ -17180,7 +17387,7 @@ if (typeof DIMP !== 'object') {
                     return true
                 }
                 other = other.getIndex()
-            } else if (other instanceof StateOrder) {
+            } else if (other instanceof SessionStateOrder) {
                 other = other.getValue()
             }
             return this.getIndex() === other
@@ -17202,34 +17409,35 @@ if (typeof DIMP !== 'object') {
         this.builder = transitionBuilder
     };
     var StateBuilder = app.network.SessionStateBuilder;
-    Class(StateBuilder, BaseObject, null, {
+    Class(StateBuilder, BaseObject, null);
+    Implementation(StateBuilder, {
         getDefaultState: function () {
-            var state = new SessionState(StateOrder.DEFAULT);
+            var state = new SessionState(SessionStateOrder.DEFAULT);
             state.addTransition(this.builder.getDefaultConnectingTransition());
             return state
         }, getConnectingState: function () {
-            var state = new SessionState(StateOrder.CONNECTING);
+            var state = new SessionState(SessionStateOrder.CONNECTING);
             state.addTransition(this.builder.getConnectingConnectedTransition());
             state.addTransition(this.builder.getConnectingErrorTransition());
             return state
         }, getConnectedState: function () {
-            var state = new SessionState(StateOrder.CONNECTED);
+            var state = new SessionState(SessionStateOrder.CONNECTED);
             state.addTransition(this.builder.getConnectedHandshakingTransition());
             state.addTransition(this.builder.getConnectedErrorTransition());
             return state
         }, getHandshakingState: function () {
-            var state = new SessionState(StateOrder.HANDSHAKING);
+            var state = new SessionState(SessionStateOrder.HANDSHAKING);
             state.addTransition(this.builder.getHandshakingRunningTransition());
             state.addTransition(this.builder.getHandshakingConnectedTransition());
             state.addTransition(this.builder.getHandshakingErrorTransition());
             return state
         }, getRunningState: function () {
-            var state = new SessionState(StateOrder.RUNNING);
+            var state = new SessionState(SessionStateOrder.RUNNING);
             state.addTransition(this.builder.getRunningDefaultTransition());
             state.addTransition(this.builder.getRunningErrorTransition());
             return state
         }, getErrorState: function () {
-            var state = new SessionState(StateOrder.ERROR);
+            var state = new SessionState(SessionStateOrder.ERROR);
             state.addTransition(this.builder.getErrorDefaultTransition());
             return state
         }
@@ -17239,7 +17447,7 @@ if (typeof DIMP !== 'object') {
         this.__evaluate = evaluate
     };
     var StateTransition = app.network.SessionStateTransition;
-    Class(StateTransition, BaseTransition, null, null);
+    Class(StateTransition, BaseTransition, null);
     StateTransition.prototype.evaluate = function (ctx, now) {
         return this.__evaluate.call(this, ctx, now)
     };
@@ -17255,9 +17463,10 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var TransitionBuilder = app.network.SessionStateTransitionBuilder;
-    Class(TransitionBuilder, BaseObject, null, {
+    Class(TransitionBuilder, BaseObject, null);
+    Implementation(TransitionBuilder, {
         getDefaultConnectingTransition: function () {
-            return new StateTransition(StateOrder.CONNECTING, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.CONNECTING, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     return false
                 }
@@ -17265,12 +17474,12 @@ if (typeof DIMP !== 'object') {
                 return PorterStatus.PREPARING.equals(status) || PorterStatus.READY.equals(status)
             })
         }, getConnectingConnectedTransition: function () {
-            return new StateTransition(StateOrder.CONNECTED, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.CONNECTED, function (ctx, now) {
                 var status = ctx.getStatus();
                 return PorterStatus.READY.equals(status)
             })
         }, getConnectingErrorTransition: function () {
-            return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.ERROR, function (ctx, now) {
                 if (is_state_expired(ctx.getCurrentState(), now)) {
                     return true
                 }
@@ -17278,7 +17487,7 @@ if (typeof DIMP !== 'object') {
                 return !(PorterStatus.PREPARING.equals(status) || PorterStatus.READY.equals(status))
             })
         }, getConnectedHandshakingTransition: function () {
-            return new StateTransition(StateOrder.HANDSHAKING, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.HANDSHAKING, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     return false
                 }
@@ -17286,7 +17495,7 @@ if (typeof DIMP !== 'object') {
                 return PorterStatus.READY.equals(status)
             })
         }, getConnectedErrorTransition: function () {
-            return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.ERROR, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     return true
                 }
@@ -17294,7 +17503,7 @@ if (typeof DIMP !== 'object') {
                 return !PorterStatus.READY.equals(status)
             })
         }, getHandshakingRunningTransition: function () {
-            return new StateTransition(StateOrder.RUNNING, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.RUNNING, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     return false
                 }
@@ -17305,7 +17514,7 @@ if (typeof DIMP !== 'object') {
                 return !!ctx.getSessionKey()
             })
         }, getHandshakingConnectedTransition: function () {
-            return new StateTransition(StateOrder.CONNECTED, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.CONNECTED, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     return false
                 }
@@ -17319,7 +17528,7 @@ if (typeof DIMP !== 'object') {
                 return is_state_expired(ctx.getCurrentState(), now)
             })
         }, getHandshakingErrorTransition: function () {
-            return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.ERROR, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     return true
                 }
@@ -17327,7 +17536,7 @@ if (typeof DIMP !== 'object') {
                 return !PorterStatus.READY.equals(status)
             })
         }, getRunningDefaultTransition: function () {
-            return new StateTransition(StateOrder.DEFAULT, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.DEFAULT, function (ctx, now) {
                 var status = ctx.getStatus();
                 if (!PorterStatus.READY.equals(status)) {
                     return false
@@ -17336,12 +17545,12 @@ if (typeof DIMP !== 'object') {
                 return !(session && session.isReady())
             })
         }, getRunningErrorTransition: function () {
-            return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.ERROR, function (ctx, now) {
                 var status = ctx.getStatus();
                 return !PorterStatus.READY.equals(status)
             })
         }, getErrorDefaultTransition: function () {
-            return new StateTransition(StateOrder.DEFAULT, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.DEFAULT, function (ctx, now) {
                 var status = ctx.getStatus();
                 return !PorterStatus.ERROR.equals(status)
             })
@@ -17432,7 +17641,8 @@ if (typeof DIMP !== 'object') {
         this.__thread = null
     };
     var ClientSession = app.network.ClientSession;
-    Class(ClientSession, BaseSession, null, {
+    Class(ClientSession, BaseSession, null);
+    Implementation(ClientSession, {
         getStation: function () {
             return this.__station
         }, getState: function () {
@@ -17581,7 +17791,8 @@ if (typeof DIMP !== 'object') {
         BaseCommandProcessor.call(this, facebook, messenger)
     };
     var LoginCommandProcessor = app.cpu.LoginCommandProcessor;
-    Class(LoginCommandProcessor, BaseCommandProcessor, null, {
+    Class(LoginCommandProcessor, BaseCommandProcessor, null);
+    Implementation(LoginCommandProcessor, {
         getDatabase: function () {
             var manager = this.getMessenger();
             var session = manager.getSession();
@@ -17601,7 +17812,7 @@ if (typeof DIMP !== 'object') {
         BaseCommandProcessor.call(this, facebook, messenger)
     };
     var ReceiptCommandProcessor = app.cpu.ReceiptCommandProcessor;
-    Class(ReceiptCommandProcessor, BaseCommandProcessor, null, null);
+    Class(ReceiptCommandProcessor, BaseCommandProcessor, null);
     ReceiptCommandProcessor.prototype.processContent = function (content, rMsg) {
         if (Interface.conforms(content, ReceiptCommand)) {
             var envelope = rMsg.getEnvelope();
@@ -17615,7 +17826,8 @@ if (typeof DIMP !== 'object') {
         BaseCommandProcessor.call(this, facebook, messenger)
     };
     var HandshakeCommandProcessor = app.cpu.HandshakeCommandProcessor
-    Class(HandshakeCommandProcessor, BaseCommandProcessor, null, {
+    Class(HandshakeCommandProcessor, BaseCommandProcessor, null);
+    Implementation(HandshakeCommandProcessor, {
         processContent: function (content, rMsg) {
             var messenger = this.getMessenger();
             var session = messenger.getSession();
@@ -17663,7 +17875,7 @@ if (typeof DIMP !== 'object') {
         this.__builder = this.createGroupBuilder()
     };
     var HistoryCommandProcessor = app.cpu.HistoryCommandProcessor
-    Class(HistoryCommandProcessor, BaseCommandProcessor, null, null);
+    Class(HistoryCommandProcessor, BaseCommandProcessor, null);
     HistoryCommandProcessor.prototype.createGroupDelegate = function () {
         var facebook = this.getFacebook();
         var messenger = this.getMessenger();
@@ -17697,7 +17909,8 @@ if (typeof DIMP !== 'object') {
         HistoryCommandProcessor.call(this, facebook, messenger)
     };
     var GroupCommandProcessor = app.cpu.GroupCommandProcessor;
-    Class(GroupCommandProcessor, HistoryCommandProcessor, null, {
+    Class(GroupCommandProcessor, HistoryCommandProcessor, null);
+    Implementation(GroupCommandProcessor, {
         getOwner: function (group) {
             var delegate = this.getGroupDelegate();
             return delegate.getOwner(group)
@@ -17797,7 +18010,8 @@ if (typeof DIMP !== 'object') {
         GroupCommandProcessor.call(this, facebook, messenger)
     };
     var InviteCommandProcessor = app.cpu.InviteCommandProcessor
-    Class(InviteCommandProcessor, GroupCommandProcessor, null, {
+    Class(InviteCommandProcessor, GroupCommandProcessor, null);
+    Implementation(InviteCommandProcessor, {
         processContent: function (content, rMsg) {
             var errors;
             var pair = this.checkCommandExpired(content, rMsg);
@@ -17875,7 +18089,8 @@ if (typeof DIMP !== 'object') {
         GroupCommandProcessor.call(this, facebook, messenger)
     };
     var ExpelCommandProcessor = app.cpu.ExpelCommandProcessor;
-    Class(ExpelCommandProcessor, GroupCommandProcessor, null, {
+    Class(ExpelCommandProcessor, GroupCommandProcessor, null);
+    Implementation(ExpelCommandProcessor, {
         processContent: function (content, rMsg) {
             return []
         }
@@ -17884,7 +18099,8 @@ if (typeof DIMP !== 'object') {
         GroupCommandProcessor.call(this, facebook, messenger)
     };
     var QuitCommandProcessor = app.cpu.QuitCommandProcessor;
-    Class(QuitCommandProcessor, GroupCommandProcessor, null, {
+    Class(QuitCommandProcessor, GroupCommandProcessor, null);
+    Implementation(QuitCommandProcessor, {
         processContent: function (content, rMsg) {
             var errors;
             var pair = this.checkCommandExpired(content, rMsg);
@@ -17939,7 +18155,8 @@ if (typeof DIMP !== 'object') {
         GroupCommandProcessor.call(this, facebook, messenger)
     };
     var QueryCommandProcessor = app.cpu.QueryCommandProcessor
-    Class(QueryCommandProcessor, GroupCommandProcessor, null, {
+    Class(QueryCommandProcessor, GroupCommandProcessor, null);
+    Implementation(QueryCommandProcessor, {
         processContent: function (content, rMsg) {
             var errors;
             var pair = this.checkCommandExpired(content, rMsg);
@@ -17994,7 +18211,8 @@ if (typeof DIMP !== 'object') {
         GroupCommandProcessor.call(this, facebook, messenger)
     };
     var ResetCommandProcessor = app.cpu.ResetCommandProcessor;
-    Class(ResetCommandProcessor, GroupCommandProcessor, null, {
+    Class(ResetCommandProcessor, GroupCommandProcessor, null);
+    Implementation(ResetCommandProcessor, {
         processContent: function (content, rMsg) {
             var errors;
             var pair = this.checkCommandExpired(content, rMsg);
@@ -18092,15 +18310,24 @@ if (typeof DIMP !== 'object') {
         BaseContentProcessorCreator.call(this, facebook, messenger)
     };
     var ClientContentProcessorCreator = app.cpu.ClientContentProcessorCreator;
-    Class(ClientContentProcessorCreator, BaseContentProcessorCreator, null, {
-        createContentProcessor: function (type) {
+    Class(ClientContentProcessorCreator, BaseContentProcessorCreator, null);
+    Implementation(ClientContentProcessorCreator, {
+        createCustomizedContentProcessor: function (facebook, messenger) {
+            var cpu = new AppCustomizedProcessor(facebook, messenger);
+            cpu.setHandler(GroupHistory.APP, GroupHistory.MOD, new GroupHistoryHandler(facebook, messenger));
+            return cpu
+        }, createContentProcessor: function (type) {
             var facebook = this.getFacebook();
             var messenger = this.getMessenger();
-            if (ContentType.HISTORY.equals(type)) {
-                return new HistoryCommandProcessor(facebook, messenger)
-            }
-            if (type === 0) {
-                return new BaseContentProcessor(facebook, messenger)
+            switch (type) {
+                case ContentType.APPLICATION:
+                case'application':
+                case ContentType.CUSTOMIZED:
+                case'customized':
+                    return this.createCustomizedContentProcessor(facebook, messenger);
+                case ContentType.HISTORY:
+                case'history':
+                    return new HistoryCommandProcessor(facebook, messenger)
             }
             return BaseContentProcessorCreator.prototype.createContentProcessor.call(this, type)
         }, createCommandProcessor: function (type, cmd) {
@@ -18135,7 +18362,7 @@ if (typeof DIMP !== 'object') {
         this.__messenger = null
     };
     var ClientChecker = app.ClientChecker;
-    Class(ClientChecker, EntityChecker, null, null);
+    Class(ClientChecker, EntityChecker, null);
     ClientChecker.prototype.getFacebook = function () {
         return this.__facebook
     };
@@ -18311,7 +18538,7 @@ if (typeof DIMP !== 'object') {
         CommonArchivist.call(this, facebook, database)
     };
     var ClientArchivist = app.ClientArchivist;
-    Class(ClientArchivist, CommonArchivist, null, null);
+    Class(ClientArchivist, CommonArchivist, null);
     ClientArchivist.prototype.cacheGroup = function (group) {
         var man = SharedGroupManager.getInstance();
         group.setDataSource(man);
@@ -18334,7 +18561,7 @@ if (typeof DIMP !== 'object') {
         CommonFacebook.call(this, database)
     };
     var ClientFacebook = app.ClientFacebook;
-    Class(ClientFacebook, CommonFacebook, null, null);
+    Class(ClientFacebook, CommonFacebook, null);
     ClientFacebook.prototype.getFounder = function (group) {
         if (group.isBroadcast()) {
             return BroadcastUtils.getBroadcastFounder(group)
@@ -18420,7 +18647,7 @@ if (typeof DIMP !== 'object') {
         CommonMessenger.call(this, session, facebook, mdb)
     };
     var ClientMessenger = app.ClientMessenger;
-    Class(ClientMessenger, CommonMessenger, null, null);
+    Class(ClientMessenger, CommonMessenger, null);
     ClientMessenger.prototype.deserializeMessage = function (data) {
         var msg = CommonMessenger.prototype.deserializeMessage.call(this, data);
         if (msg && this.checkMessageDuplicated(msg)) {
@@ -18574,7 +18801,7 @@ if (typeof DIMP !== 'object') {
         CommonPacker.call(this, facebook, messenger)
     };
     var ClientMessagePacker = app.ClientMessagePacker;
-    Class(ClientMessagePacker, CommonPacker, null, null);
+    Class(ClientMessagePacker, CommonPacker, null);
     ClientMessagePacker.prototype.getMembers = function (group) {
         var facebook = this.getFacebook();
         return facebook.getMembers(group)
@@ -18710,10 +18937,10 @@ if (typeof DIMP !== 'object') {
         return InstantMessage.parse(info)
     };
     app.ClientMessageProcessor = function (facebook, messenger) {
-        MessageProcessor.call(this, facebook, messenger)
+        CommonProcessor.call(this, facebook, messenger)
     };
     var ClientMessageProcessor = app.ClientMessageProcessor;
-    Class(ClientMessageProcessor, MessageProcessor, null, null);
+    Class(ClientMessageProcessor, CommonProcessor, null);
     ClientMessageProcessor.prototype.checkGroupTimes = function (content, rMsg) {
         var group = content.getGroup();
         if (!group) {
@@ -18753,7 +18980,7 @@ if (typeof DIMP !== 'object') {
         return docUpdated || memUpdated
     };
     ClientMessageProcessor.prototype.processContent = function (content, rMsg) {
-        var responses = MessageProcessor.prototype.processContent.call(this, content, rMsg);
+        var responses = CommonProcessor.prototype.processContent.call(this, content, rMsg);
         this.checkGroupTimes(content, rMsg);
         if (!responses || responses.length === 0) {
             return responses
@@ -18764,12 +18991,11 @@ if (typeof DIMP !== 'object') {
         var messenger = this.getMessenger();
         var sender = rMsg.getSender();
         var receiver = rMsg.getReceiver();
-        var user = facebook.selectLocalUser(receiver);
-        if (!user) {
+        var me = facebook.selectLocalUser(receiver);
+        if (!me) {
             Log.error('receiver error', receiver);
             return responses
         }
-        receiver = user.getIdentifier();
         var network = sender.getType();
         var res;
         for (var i = 0; i < responses.length; ++i) {
@@ -18789,7 +19015,7 @@ if (typeof DIMP !== 'object') {
                     continue
                 }
             }
-            messenger.sendContent(res, receiver, sender, 1)
+            messenger.sendContent(res, me, sender, 1)
         }
         return []
     };
@@ -18804,9 +19030,15 @@ if (typeof DIMP !== 'object') {
         this.__last_time = null
     };
     var Terminal = app.Terminal;
-    Class(Terminal, Runner, [SessionState.Delegate], null);
+    Class(Terminal, Runner, [SessionState.Delegate]);
     Terminal.prototype.getUserAgent = function () {
         return navigator.userAgent
+    };
+    Terminal.prototype.getDatabase = function () {
+        return this.__db
+    };
+    Terminal.prototype.getFacebook = function () {
+        return this.__facebook
     };
     Terminal.prototype.getMessenger = function () {
         return this.__messenger
@@ -18821,27 +19053,29 @@ if (typeof DIMP !== 'object') {
     Terminal.prototype.connect = function (host, port) {
         var station;
         var session;
-        var facebook = this.__facebook;
+        var facebook = this.getFacebook();
         var messenger = this.__messenger;
         if (messenger) {
             session = messenger.getSession();
-            if (session.isRunning()) {
+            if (session.isActive()) {
                 station = session.getStation();
                 if (station.getPort() === port && station.getHost() === host) {
                     return messenger
                 }
             }
+            session.stop();
+            this.__messenger = null
         }
         Log.info('connecting to ' + host + ':' + port + ' ...');
         station = this.createStation(host, port);
         session = this.createSession(station);
         messenger = this.createMessenger(session, facebook);
         this.__messenger = messenger;
+        session.setMessenger(messenger);
         var packer = this.createPacker(facebook, messenger);
         var processor = this.createProcessor(facebook, messenger);
         messenger.setPacker(packer);
         messenger.setProcessor(processor);
-        session.setMessenger(messenger);
         var user = facebook.getCurrentUser();
         if (user) {
             session.setIdentifier(user.getIdentifier())
@@ -18849,12 +19083,14 @@ if (typeof DIMP !== 'object') {
         return messenger
     };
     Terminal.prototype.createStation = function (host, port) {
+        var facebook = this.getFacebook();
         var station = new Station(host, port);
-        station.setDataSource(this.__facebook);
+        station.setDataSource(facebook);
         return station
     };
     Terminal.prototype.createSession = function (station) {
-        var session = new ClientSession(this.__db, station);
+        var db = this.getDatabase();
+        var session = new ClientSession(db, station);
         session.start(this);
         return session
     };
@@ -18873,7 +19109,7 @@ if (typeof DIMP !== 'object') {
     Terminal.prototype.finish = function () {
         var messenger = this.__messenger;
         if (messenger) {
-            var session = this.getSession();
+            var session = messenger.getSession();
             if (session) {
                 session.stop()
             }
@@ -18885,7 +19121,7 @@ if (typeof DIMP !== 'object') {
         var session = this.getSession();
         var state = !session ? null : session.getState();
         var ss_index = !state ? -1 : state.getIndex();
-        if (StateOrder.RUNNING.equals(ss_index)) {
+        if (!SessionStateOrder.RUNNING.equals(ss_index)) {
             return false
         } else if (!(session && session.isReady())) {
             return false
@@ -18926,13 +19162,13 @@ if (typeof DIMP !== 'object') {
     Terminal.prototype.exitState = function (previous, ctx, now) {
         var current = ctx.getCurrentState();
         var index = !current ? -1 : current.getIndex();
-        if (index === -1 || StateOrder.ERROR.equals(index)) {
+        if (index === -1 || SessionStateOrder.ERROR.equals(index)) {
             this.__last_time = null;
             return
         }
         var messenger = this.getMessenger();
         var session = this.getSession();
-        if (StateOrder.DEFAULT.equals(index) || StateOrder.CONNECTING.equals(index)) {
+        if (SessionStateOrder.DEFAULT.equals(index) || SessionStateOrder.CONNECTING.equals(index)) {
             var user = ctx.getSessionID();
             if (!user) {
                 Log.warning('current user not set', current);
@@ -18951,9 +19187,9 @@ if (typeof DIMP !== 'object') {
             } else {
                 Log.error('failed to connect: ' + remote.toString())
             }
-        } else if (StateOrder.HANDSHAKING.equals(index)) {
+        } else if (SessionStateOrder.HANDSHAKING.equals(index)) {
             messenger.handshake(null)
-        } else if (StateOrder.RUNNING.equals(index)) {
+        } else if (SessionStateOrder.RUNNING.equals(index)) {
             messenger.handshakeSuccess();
             this.__last_time = now
         }

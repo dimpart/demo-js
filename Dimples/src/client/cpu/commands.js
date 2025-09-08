@@ -40,7 +40,9 @@
     };
     var LoginCommandProcessor = app.cpu.LoginCommandProcessor;
 
-    Class(LoginCommandProcessor, BaseCommandProcessor, null, {
+    Class(LoginCommandProcessor, BaseCommandProcessor, null);
+
+    Implementation(LoginCommandProcessor, {
 
         // private
         getDatabase: function () {
@@ -73,7 +75,7 @@
     };
     var ReceiptCommandProcessor = app.cpu.ReceiptCommandProcessor;
 
-    Class(ReceiptCommandProcessor, BaseCommandProcessor, null, null);
+    Class(ReceiptCommandProcessor, BaseCommandProcessor, null);
 
     // Override
     ReceiptCommandProcessor.prototype.processContent = function (content, rMsg) {

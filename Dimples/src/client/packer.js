@@ -37,7 +37,7 @@
     };
     var ClientMessagePacker = app.ClientMessagePacker;
 
-    Class(ClientMessagePacker, CommonPacker, null, null);
+    Class(ClientMessagePacker, CommonPacker, null);
 
     /**
      *  for checking whether group's ready

@@ -47,7 +47,7 @@
     };
     var MetaStorage = app.database.MetaStorage;
 
-    Class(MetaStorage, BaseObject, [MetaDBI], null);
+    Class(MetaStorage, BaseObject, [MetaDBI]);
 
     // Override
     MetaStorage.prototype.saveMeta = function (meta, entity) {

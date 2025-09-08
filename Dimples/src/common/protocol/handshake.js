@@ -141,7 +141,9 @@
     };
     var BaseHandshakeCommand = dkd.dkd.BaseHandshakeCommand;
 
-    Class(BaseHandshakeCommand, BaseCommand, [HandshakeCommand], {
+    Class(BaseHandshakeCommand, BaseCommand, [HandshakeCommand]);
+
+    Implementation(BaseHandshakeCommand, {
 
         // Override
         getTitle: function () {

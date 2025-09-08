@@ -44,7 +44,7 @@
     };
     var StateTransition = app.network.SessionStateTransition;
 
-    Class(StateTransition, BaseTransition, null, null);
+    Class(StateTransition, BaseTransition, null);
 
     // Override
     StateTransition.prototype.evaluate = function(ctx, now) {
@@ -70,7 +70,9 @@
     };
     var TransitionBuilder = app.network.SessionStateTransitionBuilder;
 
-    Class(TransitionBuilder, BaseObject, null, {
+    Class(TransitionBuilder, BaseObject, null);
+
+    Implementation(TransitionBuilder, {
         ///  Default -> Connecting
         ///  ~~~~~~~~~~~~~~~~~~~~~
         ///  When the session ID was set, and connection is building.
@@ -78,7 +80,7 @@
         ///  The session key must be empty now, it will be set
         ///  after handshake success.
         getDefaultConnectingTransition: function () {
-            return new StateTransition(StateOrder.CONNECTING, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.CONNECTING, function (ctx, now) {
                 // change to 'connecting' when current user set
                 if (!ctx.getSessionID()) {
                     // current user not set yet
@@ -95,7 +97,7 @@
         ///
         ///  The session ID must be set, and the session key must be empty now.
         getConnectingConnectedTransition: function () {
-            return new StateTransition(StateOrder.CONNECTED, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.CONNECTED, function (ctx, now) {
                 var status = ctx.getStatus();
                 return PorterStatus.READY.equals(status);
             });
@@ -106,7 +108,7 @@
         ///
         ///  The session ID must be set, and the session key must be empty now.
         getConnectingErrorTransition: function () {
-            return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.ERROR, function (ctx, now) {
                 if (is_state_expired(ctx.getCurrentState(), now)) {
                     // connecting expired, do it again
                     return true;
@@ -122,7 +124,7 @@
         ///
         ///  The session ID must be set, and the session key must be empty now.
         getConnectedHandshakingTransition: function () {
-            return new StateTransition(StateOrder.HANDSHAKING, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.HANDSHAKING, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     // FIXME: current user lost?
                     //        state will be changed to 'error'
@@ -138,7 +140,7 @@
         ///
         ///  The session ID must be set, and the session key must be empty now.
         getConnectedErrorTransition: function () {
-            return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.ERROR, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     // FIXME: current user lost?
                     return true;
@@ -153,7 +155,7 @@
         ///
         ///  The session ID must be set.
         getHandshakingRunningTransition: function () {
-            return new StateTransition(StateOrder.RUNNING, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.RUNNING, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     // FIXME: current user lost?
                     //        state will be changed to 'error'
@@ -175,7 +177,7 @@
         ///
         ///  The session ID must be set, and the session key must be empty now.
         getHandshakingConnectedTransition: function () {
-            return new StateTransition(StateOrder.CONNECTED, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.CONNECTED, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     // FIXME: current user lost?
                     //        state will be changed to 'error'
@@ -200,7 +202,7 @@
         ///
         ///  The session ID must be set, and the session key must be empty now.
         getHandshakingErrorTransition: function () {
-            return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.ERROR, function (ctx, now) {
                 if (!ctx.getSessionID()) {
                     // FIXME: current user lost?
                     //        state will be changed to 'error'
@@ -219,7 +221,7 @@
         ///  If only session key was erased, but the session id kept the same,
         ///  it means force the user login again.
         getRunningDefaultTransition: function () {
-            return new StateTransition(StateOrder.DEFAULT, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.DEFAULT, function (ctx, now) {
                 var status = ctx.getStatus();
                 if (!PorterStatus.READY.equals(status)) {
                     // connection lost, state will be changed to 'error'
@@ -239,7 +241,7 @@
         ///  ~~~~~~~~~~~~~~~~
         ///  When connection lost.
         getRunningErrorTransition: function () {
-            return new StateTransition(StateOrder.ERROR, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.ERROR, function (ctx, now) {
                 var status = ctx.getStatus();
                 return !PorterStatus.READY.equals(status);
             });
@@ -248,7 +250,7 @@
         ///  ~~~~~~~~~~~~~~~~
         ///  When connection reset.
         getErrorDefaultTransition: function () {
-            return new StateTransition(StateOrder.DEFAULT, function (ctx, now) {
+            return new StateTransition(SessionStateOrder.DEFAULT, function (ctx, now) {
                 var status = ctx.getStatus();
                 return !PorterStatus.ERROR.equals(status);
             });

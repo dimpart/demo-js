@@ -37,7 +37,7 @@
     };
     var CommonPacker = app.CommonPacker;
 
-    Class(CommonPacker, MessagePacker, null, null);
+    Class(CommonPacker, MessagePacker, null);
 
     /**
      *  Add income message in a queue for waiting sender's visa

@@ -46,7 +46,7 @@
     };
     var CommonMessenger = app.CommonMessenger;
 
-    Class(CommonMessenger, Messenger, null, null);
+    Class(CommonMessenger, Messenger, null);
 
     CommonMessenger.prototype.getSession = function () {
         return this.__session;

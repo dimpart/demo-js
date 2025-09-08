@@ -40,7 +40,7 @@
         RUNNING:     4,
         ERROR:       5
     });
-    var StateOrder = app.network.SessionStateOrder;
+    var SessionStateOrder = app.network.SessionStateOrder;
 
 
     /**
@@ -62,7 +62,9 @@
     };
     var SessionState = app.network.SessionState;
 
-    Class(SessionState, BaseState, null, {
+    Class(SessionState, BaseState, null);
+
+    Implementation(SessionState, {
 
         getName: function () {
             return this.__name;
@@ -90,7 +92,7 @@
                     return true;
                 }
                 other = other.getIndex();
-            } else if (other instanceof StateOrder) {
+            } else if (other instanceof SessionStateOrder) {
                 other = other.getValue();
             }
             return this.getIndex() === other;
@@ -135,17 +137,19 @@
     };
     var StateBuilder = app.network.SessionStateBuilder;
 
-    Class(StateBuilder, BaseObject, null, {
+    Class(StateBuilder, BaseObject, null);
+
+    Implementation(StateBuilder, {
 
         getDefaultState: function () {
-            var state = new SessionState(StateOrder.DEFAULT);
+            var state = new SessionState(SessionStateOrder.DEFAULT);
             // Default -> Connecting
             state.addTransition(this.builder.getDefaultConnectingTransition());
             return state;
         },
 
         getConnectingState: function () {
-            var state = new SessionState(StateOrder.CONNECTING);
+            var state = new SessionState(SessionStateOrder.CONNECTING);
             // Connecting -> Connected
             state.addTransition(this.builder.getConnectingConnectedTransition());
             // Connecting -> Error
@@ -154,7 +158,7 @@
         },
 
         getConnectedState: function () {
-            var state = new SessionState(StateOrder.CONNECTED);
+            var state = new SessionState(SessionStateOrder.CONNECTED);
             // Connected -> Handshaking
             state.addTransition(this.builder.getConnectedHandshakingTransition());
             // Connected -> Error
@@ -163,7 +167,7 @@
         },
 
         getHandshakingState: function () {
-            var state = new SessionState(StateOrder.HANDSHAKING);
+            var state = new SessionState(SessionStateOrder.HANDSHAKING);
             // Handshaking -> Running
             state.addTransition(this.builder.getHandshakingRunningTransition());
             // Handshaking -> Connected
@@ -174,7 +178,7 @@
         },
 
         getRunningState: function () {
-            var state = new SessionState(StateOrder.RUNNING);
+            var state = new SessionState(SessionStateOrder.RUNNING);
             // Running -> Default
             state.addTransition(this.builder.getRunningDefaultTransition());
             // Running -> Error
@@ -183,7 +187,7 @@
         },
 
         getErrorState: function () {
-            var state = new SessionState(StateOrder.ERROR);
+            var state = new SessionState(SessionStateOrder.ERROR);
             // Error -> Default
             state.addTransition(this.builder.getErrorDefaultTransition());
             return state;

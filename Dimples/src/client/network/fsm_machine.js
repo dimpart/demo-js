@@ -66,7 +66,7 @@
     };
     var StateMachine = app.network.SessionStateMachine;
 
-    Class(StateMachine, AutoMachine, null, null);
+    Class(StateMachine, AutoMachine, null);
 
     // protected
     StateMachine.prototype.createStateBuilder = function () {

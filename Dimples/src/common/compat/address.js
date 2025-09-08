@@ -41,7 +41,9 @@
     };
     var UnknownAddress = app.compat.UnknownAddress;
 
-    Class(UnknownAddress, ConstantString, [Address], {
+    Class(UnknownAddress, ConstantString, [Address]);
+
+    Implementation(UnknownAddress, {
         // Override
         getType: function () {
             return 0;  // EntityType.USER;
@@ -57,7 +59,7 @@
     };
     var CompatibleAddressFactory = app.compat.CompatibleAddressFactory;
 
-    Class(CompatibleAddressFactory, BaseAddressFactory, null, null);
+    Class(CompatibleAddressFactory, BaseAddressFactory, null);
 
     /**
      *  Call it when received 'UIApplicationDidReceiveMemoryWarningNotification',

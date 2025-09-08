@@ -41,7 +41,7 @@
     };
     var Register = app.Register;
 
-    Class(Register, BaseObject, null, null);
+    Class(Register, BaseObject, null);
 
     Register.prototype.getDatabase = function () {
         return this.__database;

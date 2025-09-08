@@ -30,7 +30,7 @@
 // =============================================================================
 //
 
-//! require 'namespace.js'
+//! require <dimsdk.js>
 
 
     mk.protocol.Password = function () {
@@ -38,7 +38,7 @@
     };
     var Password = mk.protocol.Password;
 
-    Class(Password, BaseObject, null, null);
+    Class(Password, BaseObject, null);
 
     Password.KEY_SIZE = 32;
     Password.BLOCK_SIZE = 16;

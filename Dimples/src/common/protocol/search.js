@@ -112,7 +112,9 @@
     };
     var BaseSearchCommand = dkd.dkd.BaseSearchCommand;
 
-    Class(BaseSearchCommand, BaseCommand, [SearchCommand], {
+    Class(BaseSearchCommand, BaseCommand, [SearchCommand]);
+
+    Implementation(BaseSearchCommand, {
 
         // Override
         setKeywords: function (keywords) {

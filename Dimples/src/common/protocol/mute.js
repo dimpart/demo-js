@@ -91,7 +91,9 @@
     };
     var BaseMuteCommand = dkd.dkd.BaseMuteCommand;
 
-    Class(BaseMuteCommand, BaseCommand, [MuteCommand], {
+    Class(BaseMuteCommand, BaseCommand, [MuteCommand]);
+
+    Implementation(BaseMuteCommand, {
 
         // Override
         getMuteCList: function () {

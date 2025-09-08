@@ -43,7 +43,7 @@
     };
     var CommonFacebook = app.CommonFacebook;
 
-    Class(CommonFacebook, Facebook, null, null);
+    Class(CommonFacebook, Facebook, null);
 
     CommonFacebook.prototype.getDatabase = function () {
         return this.__database;
@@ -82,7 +82,7 @@
         }
         var db = this.getDatabase();
         var array = db.getLocalUsers();
-        if (!array || array.length) {
+        if (!array || array.length === 0) {
             return null;
         }
         current = this.getUser(array[0]);

@@ -37,7 +37,7 @@
     };
     var ClientArchivist = app.ClientArchivist;
 
-    Class(ClientArchivist, CommonArchivist, null, null);
+    Class(ClientArchivist, CommonArchivist, null);
 
     // Override
     ClientArchivist.prototype.cacheGroup = function (group) {
@@ -71,7 +71,7 @@
     };
     var ClientFacebook = app.ClientFacebook;
 
-    Class(ClientFacebook, CommonFacebook, null, null);
+    Class(ClientFacebook, CommonFacebook, null);
 
         //
         //  Group Data Source

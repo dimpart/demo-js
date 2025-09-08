@@ -42,7 +42,9 @@
     };
     var QuitCommandProcessor = app.cpu.QuitCommandProcessor;
 
-    Class(QuitCommandProcessor, GroupCommandProcessor, null, {
+    Class(QuitCommandProcessor, GroupCommandProcessor, null);
+
+    Implementation(QuitCommandProcessor, {
 
         // Override
         processContent: function (content, rMsg) {

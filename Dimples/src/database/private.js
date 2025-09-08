@@ -53,7 +53,9 @@
     };
     var PrivateKeyStorage = app.database.PrivateKeyStorage;
 
-    Class(PrivateKeyStorage, BaseObject, [PrivateKeyDBI], {
+    Class(PrivateKeyStorage, BaseObject, [PrivateKeyDBI]);
+
+    Implementation(PrivateKeyStorage, {
 
         // Override
         savePrivateKey: function (key, type, user) {

@@ -42,7 +42,9 @@
     };
     var GroupDelegate = app.group.GroupDelegate;
 
-    Class(GroupDelegate, TwinsHelper, [GroupDataSource], {
+    Class(GroupDelegate, TwinsHelper, [GroupDataSource]);
+
+    Implementation(GroupDelegate, {
 
         buildGroupName: function (members) {
             var barrack = this.getFacebook();
@@ -237,7 +239,7 @@
     };
     var TripletsHelper = app.group.TripletsHelper;
 
-    Class(TripletsHelper, BaseObject, null, null);
+    Class(TripletsHelper, BaseObject, null);
 
     // protected
     TripletsHelper.prototype.getDelegate = function () {

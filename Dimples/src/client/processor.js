@@ -33,11 +33,11 @@
 //! require 'common/*.js'
 
     app.ClientMessageProcessor = function (facebook, messenger) {
-        MessageProcessor.call(this, facebook, messenger);
+        CommonProcessor.call(this, facebook, messenger);
     };
     var ClientMessageProcessor = app.ClientMessageProcessor;
 
-    Class(ClientMessageProcessor, MessageProcessor, null, null);
+    Class(ClientMessageProcessor, CommonProcessor, null);
 
         // private
         ClientMessageProcessor.prototype.checkGroupTimes = function (content, rMsg) {
@@ -87,7 +87,7 @@
 
         // Override
         ClientMessageProcessor.prototype.processContent = function (content, rMsg) {
-            var responses = MessageProcessor.prototype.processContent.call(this, content, rMsg);
+            var responses = CommonProcessor.prototype.processContent.call(this, content, rMsg);
 
             // check group's document & history times from the message
             // to make sure the group info synchronized
@@ -105,12 +105,11 @@
 
             var sender = rMsg.getSender();
             var receiver = rMsg.getReceiver();
-            var user = facebook.selectLocalUser(receiver);
-            if (!user) {
+            var me = facebook.selectLocalUser(receiver);
+            if (!me) {
                 Log.error('receiver error', receiver);
                 return responses;
             }
-            receiver = user.getIdentifier();
             var network = sender.getType();
             // check responses
             var res;
@@ -137,7 +136,7 @@
                     }
                 }
                 // normal response
-                messenger.sendContent(res, receiver, sender, 1);
+                messenger.sendContent(res, me, sender, 1);
             }
             // DON'T respond to station directly
             return [];

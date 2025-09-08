@@ -42,7 +42,7 @@
     };
     var GroupEmitter = app.group.GroupEmitter
 
-    Class(GroupEmitter, TripletsHelper, null, null);
+    Class(GroupEmitter, TripletsHelper, null);
 
     // NOTICE: group assistants (bots) can help the members to redirect messages
     //

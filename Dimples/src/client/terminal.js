@@ -48,11 +48,19 @@
     };
     var Terminal = app.Terminal;
 
-    Class(Terminal, Runner, [SessionState.Delegate], null);
+    Class(Terminal, Runner, [SessionState.Delegate]);
 
     // "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.113 Safari/537.36"
     Terminal.prototype.getUserAgent = function () {
         return navigator.userAgent;
+    };
+
+    Terminal.prototype.getDatabase = function () {
+        return this.__db;
+    };
+
+    Terminal.prototype.getFacebook = function () {
+        return this.__facebook;
     };
 
     Terminal.prototype.getMessenger = function () {
@@ -74,11 +82,14 @@
     Terminal.prototype.connect = function (host, port) {
         var station;  // Station
         var session;  // ClientSession
-        var facebook = this.__facebook;
+        var facebook = this.getFacebook();
+        //
+        //  0. check old session
+        //
         var messenger = this.__messenger;
         if (messenger) {
             session = messenger.getSession();
-            if (session.isRunning()) {
+            if (session.isActive()) {
                 // current session is running
                 station = session.getStation();
                 if (station.getPort() === port && station.getHost() === host) {
@@ -86,23 +97,33 @@
                     return messenger;
                 }
             }
+            session.stop();
+            this.__messenger = null;
         }
         Log.info('connecting to ' + host + ':' + port + ' ...');
-        // create new messenger with session
+        //
+        //  1. create new session with station
+        //
         station = this.createStation(host, port);
         session = this.createSession(station);
-        // create new messenger with session
+        //
+        //  2. create new messenger with session
+        //
         messenger = this.createMessenger(session, facebook);
         this.__messenger = messenger;
-        // create packer, processor for messenger
-        // they have weak references to facebook & messenger
+        // set weak reference to messenger
+        session.setMessenger(messenger);
+        //
+        //  3. create packer, processor for messenger
+        //     they have weak references to facebook & messenger
+        //
         var packer = this.createPacker(facebook, messenger);
         var processor = this.createProcessor(facebook, messenger);
         messenger.setPacker(packer);
         messenger.setProcessor(processor);
-        // TODO: set weak reference to messenger
-        session.setMessenger(messenger);
-        // login with current user
+        //
+        //  4. login with current user
+        //
         var user = facebook.getCurrentUser();
         if (user) {
             session.setIdentifier(user.getIdentifier());
@@ -112,13 +133,15 @@
 
     // protected
     Terminal.prototype.createStation = function (host, port) {
+        var facebook = this.getFacebook();
         var station = new Station(host, port);
-        station.setDataSource(this.__facebook);
+        station.setDataSource(facebook);
         return station;
     };
     // protected
     Terminal.prototype.createSession = function (station) {
-        var session = new ClientSession(this.__db, station);
+        var db = this.getDatabase();
+        var session = new ClientSession(db, station);
         session.start(this);
         return session;
     };
@@ -147,7 +170,7 @@
         // stop session in messenger
         var messenger = this.__messenger;
         if (messenger) {
-            var session = this.getSession();
+            var session = messenger.getSession();
             if (session) {
                 session.stop();
             }
@@ -158,18 +181,22 @@
 
     // Override
     Terminal.prototype.process = function () {
-        // 1. check connection
+        //
+        //  1. check connection
+        //
         var session = this.getSession();
         var state = !session ? null : session.getState();
         var ss_index = !state ? -1 : state.getIndex();
-        if (StateOrder.RUNNING.equals(ss_index)) {
+        if (!SessionStateOrder.RUNNING.equals(ss_index)) {
             // handshake not accepted
             return false;
         } else if (!(session && session.isReady())) {
             // session not ready
             return false;
         }
-        // 2. check timeout
+        //
+        //  2. check timeout
+        //
         var now = new Date();
         if (this.needsKeepOnline(this.__last_time, now)) {
             // update last online time
@@ -178,7 +205,9 @@
             // not expired yet
             return false;
         }
-        // 3. try to report every 5 minutes to keep user online
+        //
+        //  3. try to report every 5 minutes to keep user online
+        //
         try {
             this.keepOnline();
         } catch (e) {
@@ -230,14 +259,14 @@
         // called after state changed
         var current = ctx.getCurrentState();
         var index = !current ? -1 : current.getIndex();
-        if (index === -1 || StateOrder.ERROR.equals(index)) {
+        if (index === -1 || SessionStateOrder.ERROR.equals(index)) {
             this.__last_time = null;
             return;
         }
         var messenger = this.getMessenger();
         var session = this.getSession();
-        if (StateOrder.DEFAULT.equals(index) ||
-            StateOrder.CONNECTING.equals(index)) {
+        if (SessionStateOrder.DEFAULT.equals(index) ||
+            SessionStateOrder.CONNECTING.equals(index)) {
             // check current user
             var user = ctx.getSessionID();
             if (!user) {
@@ -257,10 +286,10 @@
             } else {
                 Log.error('failed to connect: ' + remote.toString());
             }
-        } else if (StateOrder.HANDSHAKING.equals(index)) {
+        } else if (SessionStateOrder.HANDSHAKING.equals(index)) {
             // start handshake
             messenger.handshake(null);
-        } else if (StateOrder.RUNNING.equals(index)) {
+        } else if (SessionStateOrder.RUNNING.equals(index)) {
             // broadcast current meta & visa document to all stations
             messenger.handshakeSuccess();
             // update last online time

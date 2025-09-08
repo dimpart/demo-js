@@ -32,7 +32,9 @@
     };
     var CompatibleCompressor = app.compat.CompatibleCompressor;
 
-    Class(CompatibleCompressor, MessageCompressor, null, {
+    Class(CompatibleCompressor, MessageCompressor, null);
+
+    Implementation(CompatibleCompressor, {
 
         // // Override
         // compressContent: function (content, key) {
@@ -56,7 +58,9 @@
     };
     var CompatibleShortener = app.compat.CompatibleShortener;
 
-    Class(CompatibleShortener, MessageShortener, null, {
+    Class(CompatibleShortener, MessageShortener, null);
+
+    Implementation(CompatibleShortener, {
 
         // Override
         moveKey: function (from, to, info) {

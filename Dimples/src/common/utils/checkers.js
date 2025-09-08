@@ -46,7 +46,7 @@
     };
     var FrequencyChecker = app.utils.FrequencyChecker;
 
-    Class(FrequencyChecker, BaseObject, null, null);
+    Class(FrequencyChecker, BaseObject, null);
 
     // private
     FrequencyChecker.prototype.checkExpired = function (key, now) {
@@ -90,7 +90,7 @@
     };
     var RecentTimeChecker = app.utils.RecentTimeChecker
 
-    Class(RecentTimeChecker, null, null, null);
+    Class(RecentTimeChecker, null, null);
 
     RecentTimeChecker.prototype.setLastTime = function (key, when) {
         if (!when) {

@@ -87,7 +87,9 @@
     };
     var BaseReportCommand = dkd.dkd.BaseReportCommand;
 
-    Class(BaseReportCommand, BaseCommand, [ReportCommand], {
+    Class(BaseReportCommand, BaseCommand, [ReportCommand]);
+
+    Implementation(BaseReportCommand, {
 
         // Override
         setTitle: function (title) {

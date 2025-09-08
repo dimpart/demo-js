@@ -48,7 +48,9 @@
     };
     var EntityID = app.compat.EntityID;
 
-    Class(EntityID, Identifier, null, {
+    Class(EntityID, Identifier, null);
+
+    Implementation(EntityID, {
 
         // Override
         getType: function () {
@@ -80,7 +82,7 @@
     };
     var EntityIDFactory = app.compat.EntityIDFactory;
 
-    Class(EntityIDFactory, IdentifierFactory, null, null);
+    Class(EntityIDFactory, IdentifierFactory, null);
 
     // Override
     EntityIDFactory.prototype.newID = function (string, name, address, terminal) {

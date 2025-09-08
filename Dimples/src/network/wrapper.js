@@ -40,7 +40,7 @@
     };
     var MessageWrapper = app.network.MessageWrapper;
 
-    Class(MessageWrapper, BaseObject, [Departure], null);
+    Class(MessageWrapper, BaseObject, [Departure]);
 
     MessageWrapper.prototype.getMessage = function () {
         return this.__msg;

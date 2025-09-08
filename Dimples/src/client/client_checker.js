@@ -39,7 +39,7 @@
     };
     var ClientChecker = app.ClientChecker;
 
-    Class(ClientChecker, EntityChecker, null, null);
+    Class(ClientChecker, EntityChecker, null);
 
     // protected
     ClientChecker.prototype.getFacebook = function () {

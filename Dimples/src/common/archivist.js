@@ -42,7 +42,7 @@
     };
     var CommonArchivist = app.CommonArchivist;
 
-    Class(CommonArchivist, Barrack, [Archivist], null);
+    Class(CommonArchivist, Barrack, [Archivist]);
 
     CommonArchivist.prototype.getDatabase = function () {
         return this.__database;

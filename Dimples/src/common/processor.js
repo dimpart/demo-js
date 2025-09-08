@@ -37,7 +37,7 @@
     };
     var CommonProcessor = app.CommonProcessor;
 
-    Class(CommonProcessor, MessageProcessor, null, null);
+    Class(CommonProcessor, MessageProcessor, null);
 
     CommonProcessor.prototype.getEntityChecker = function () {
         var facebook = this.getFacebook();
@@ -58,7 +58,7 @@
 
     // Override
     CommonProcessor.prototype.processContent = function (content, rMsg) {
-        var responses = MessageProcessor.processContent.call(this, content, rMsg);
+        var responses = MessageProcessor.prototype.processContent.call(this, content, rMsg);
 
         // check sender's document times from the message
         // to make sure the user info synchronized

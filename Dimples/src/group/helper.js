@@ -41,7 +41,7 @@
     };
     var GroupCommandHelper = app.group.GroupCommandHelper;
 
-    Class(GroupCommandHelper, TripletsHelper, null, null);
+    Class(GroupCommandHelper, TripletsHelper, null);
 
     /**
      *  Save Group History Command

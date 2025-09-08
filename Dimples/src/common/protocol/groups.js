@@ -90,7 +90,9 @@
     };
     var QueryGroupCommand = dkd.dkd.QueryGroupCommand;
 
-    Class(QueryGroupCommand, BaseGroupCommand, [QueryCommand], {
+    Class(QueryGroupCommand, BaseGroupCommand, [QueryCommand]);
+
+    Implementation(QueryGroupCommand, {
 
         // Override
         getLastTime: function () {

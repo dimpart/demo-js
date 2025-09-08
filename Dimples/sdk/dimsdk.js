@@ -33,45 +33,61 @@ if (typeof DIMP !== 'object') {
         if (typeof mk.ext !== 'object') {
             mk.ext = {}
         }
-        mk.type.Class = function (child, parent, interfaces, methods) {
+        mk.type.Class = function (child, parent, interfaces) {
             if (!child) {
                 child = function () {
                     Object.call(this)
                 }
+            } else if (typeof child === 'function') {
+            } else {
+                throw new TypeError('class params error: ' + child + ', ' + parent + ', ' + interfaces);
             }
-            if (parent) {
+            if (typeof parent === 'function') {
                 child._mk_super_class = parent
             } else {
                 parent = Object
             }
             child.prototype = Object.create(parent.prototype);
             child.prototype.constructor = child;
-            if (interfaces) {
+            if (interfaces instanceof Array) {
                 child._mk_interfaces = interfaces
-            }
-            if (methods) {
-                override_methods(child, methods)
             }
             return child
         };
         var Class = mk.type.Class;
-        var override_methods = function (clazz, methods) {
+        mk.type.Mixin = function (clazz, methods) {
+            if (!clazz) {
+                clazz = function () {
+                }
+            } else if (typeof clazz === 'function') {
+            } else {
+                throw new TypeError('mixin params error: ' + clazz + ', ' + methods);
+            }
+            if (typeof methods === 'function') {
+                methods = methods.prototype
+            }
+            return Implementation(clazz, methods)
+        };
+        var Mixin = mk.type.Mixin;
+        mk.type.Implementation = function (clazz, methods) {
             var names = Object.keys(methods);
-            var key, fn;
+            var key;
             for (var i = 0; i < names.length; ++i) {
                 key = names[i];
-                fn = methods[key];
-                if (typeof fn === 'function') {
-                    clazz.prototype[key] = fn
-                }
+                clazz.prototype[key] = methods[key]
             }
+            return clazz
         };
+        var Implementation = mk.type.Implementation;
         mk.type.Interface = function (child, parents) {
             if (!child) {
                 child = function () {
                 }
+            } else if (typeof child === 'function') {
+            } else {
+                throw new TypeError('interface params error: ' + child + ', ' + parents);
             }
-            if (parents) {
+            if (parents instanceof Array) {
                 child._mk_super_interfaces = parents
             }
             return child
@@ -86,6 +102,9 @@ if (typeof DIMP !== 'object') {
             return check_extends(object.constructor, protocol)
         };
         var check_extends = function (constructor, protocol) {
+            if (!constructor) {
+                return false
+            }
             var interfaces = constructor._mk_interfaces;
             if (interfaces && check_implements(interfaces, protocol)) {
                 return true
@@ -152,13 +171,104 @@ if (typeof DIMP !== 'object') {
             Object.call(this)
         };
         var BaseObject = mk.type.BaseObject;
-        Class(BaseObject, null, [IObject], {
-            getClassName: function () {
-                return Object.getPrototypeOf(this).constructor.name
-            }, equals: function (other) {
-                return this === other
+        Class(BaseObject, null, [IObject]);
+        BaseObject.prototype.getClassName = function () {
+            return Object.getPrototypeOf(this).constructor.name
+        };
+        BaseObject.prototype.equals = function (other) {
+            return this === other
+        };
+        mk.type.Mapper = Interface(null, [IObject]);
+        var Mapper = mk.type.Mapper;
+        Mapper.prototype = {
+            toMap: function () {
+            }, copyMap: function (deepCopy) {
+            }, isEmpty: function () {
+            }, getLength: function () {
+            }, allKeys: function () {
+            }, getValue: function (key) {
+            }, setValue: function (key, value) {
+            }, removeValue: function (key) {
+            }, getString: function (key, defaultValue) {
+            }, getBoolean: function (key, defaultValue) {
+            }, getInt: function (key, defaultValue) {
+            }, getFloat: function (key, defaultValue) {
+            }, getDateTime: function (key, defaultValue) {
+            }, setDateTime: function (key, time) {
+            }, setString: function (key, stringer) {
+            }, setMap: function (key, mapper) {
             }
-        });
+        };
+        Mapper.count = function (dict) {
+            if (!dict) {
+                return 0
+            } else if (Interface.conforms(dict, Mapper)) {
+                dict = dict.toMap()
+            } else if (typeof dict !== 'object') {
+                throw TypeError('not a map: ' + dict);
+            }
+            return Object.keys(dict).length
+        };
+        Mapper.isEmpty = function (dict) {
+            return Mapper.count(dict) === 0
+        };
+        Mapper.keys = function (dict) {
+            if (!dict) {
+                return null
+            } else if (Interface.conforms(dict, Mapper)) {
+                dict = dict.toMap()
+            } else if (typeof dict !== 'object') {
+                throw TypeError('not a map: ' + dict);
+            }
+            return Object.keys(dict)
+        };
+        Mapper.removeKey = function (dict, key) {
+            if (!dict) {
+                return null
+            } else if (Interface.conforms(dict, Mapper)) {
+                dict = dict.toMap()
+            } else if (typeof dict !== 'object') {
+                throw TypeError('not a map: ' + dict);
+            }
+            var value = dict[key];
+            delete dict[key];
+            return value
+        };
+        Mapper.forEach = function (dict, handleKeyValue) {
+            if (!dict) {
+                return -1
+            } else if (Interface.conforms(dict, Mapper)) {
+                dict = dict.toMap()
+            } else if (typeof dict !== 'object') {
+                throw TypeError('not a map: ' + dict);
+            }
+            var keys = Object.keys(dict);
+            var cnt = keys.length;
+            var stop;
+            var i = 0, k, v;
+            for (; i < cnt; ++i) {
+                k = keys[i];
+                v = dict[k];
+                stop = handleKeyValue(k, v);
+                if (stop) {
+                    break
+                }
+            }
+            return i
+        };
+        Mapper.addAll = function (dict, fromDict) {
+            if (!dict) {
+                return -1
+            } else if (Interface.conforms(dict, Mapper)) {
+                dict = dict.toMap()
+            } else if (typeof dict !== 'object') {
+                throw TypeError('not a map: ' + dict);
+            }
+            return Mapper.forEach(fromDict, function (key, value) {
+                dict[key] = value;
+                return false
+            })
+        };
         mk.type.DataConverter = Interface(null, null);
         var DataConverter = mk.type.DataConverter;
         DataConverter.prototype = {
@@ -173,75 +283,79 @@ if (typeof DIMP !== 'object') {
             BaseObject.call(this)
         };
         var BaseConverter = mk.type.BaseConverter;
-        Class(BaseConverter, BaseObject, [DataConverter], {
-            getDateTime: function (value, defaultValue) {
-                if (IObject.isNull(value)) {
-                    return defaultValue
-                } else if (value instanceof Date) {
-                    return value
-                }
-                var seconds = this.getFloat(value, 0);
-                var millis = seconds * 1000;
-                return new Date(millis)
-            }, getFloat: function (value, defaultValue) {
-                if (IObject.isNull(value)) {
-                    return defaultValue
-                } else if (IObject.isNumber(value)) {
-                    return value
-                } else if (IObject.isBoolean(value)) {
-                    return value ? 1.0 : 0.0
-                }
-                var text = this.getStr(value);
-                return parseFloat(text)
-            }, getInt: function (value, defaultValue) {
-                if (IObject.isNull(value)) {
-                    return defaultValue
-                } else if (IObject.isNumber(value)) {
-                    return value
-                } else if (IObject.isBoolean(value)) {
-                    return value ? 1 : 0
-                }
-                var text = this.getStr(value);
-                return parseInt(text)
-            }, getBoolean: function (value, defaultValue) {
-                if (IObject.isNull(value)) {
-                    return defaultValue
-                } else if (IObject.isBoolean(value)) {
-                    return value
-                } else if (IObject.isNumber(value)) {
-                    return value > 0 || value < 0
-                }
-                var text = this.getStr(value);
-                text = text.trim();
-                var size = text.length;
-                if (size === 0) {
-                    return false
-                } else if (size > Converter.MAX_BOOLEAN_LEN) {
-                    throw new TypeError('Boolean value error: "' + value + '"');
-                } else {
-                    text = text.toLowerCase()
-                }
-                var state = Converter.BOOLEAN_STATES[text];
-                if (IObject.isNull(state)) {
-                    throw new TypeError('Boolean value error: "' + value + '"');
-                }
-                return state
-            }, getString: function (value, defaultValue) {
-                if (IObject.isNull(value)) {
-                    return defaultValue
-                } else if (IObject.isString(value)) {
-                    return value
-                } else {
-                    return value.toString()
-                }
-            }, getStr: function (value) {
-                if (IObject.isString(value)) {
-                    return value
-                } else {
-                    return value.toString()
-                }
+        Class(BaseConverter, BaseObject, [DataConverter]);
+        BaseConverter.prototype.getDateTime = function (value, defaultValue) {
+            if (IObject.isNull(value)) {
+                return defaultValue
+            } else if (value instanceof Date) {
+                return value
             }
-        });
+            var seconds = this.getFloat(value, 0);
+            var millis = seconds * 1000;
+            return new Date(millis)
+        };
+        BaseConverter.prototype.getFloat = function (value, defaultValue) {
+            if (IObject.isNull(value)) {
+                return defaultValue
+            } else if (IObject.isNumber(value)) {
+                return value
+            } else if (IObject.isBoolean(value)) {
+                return value ? 1.0 : 0.0
+            }
+            var text = conv_str(value);
+            return parseFloat(text)
+        };
+        BaseConverter.prototype.getInt = function (value, defaultValue) {
+            if (IObject.isNull(value)) {
+                return defaultValue
+            } else if (IObject.isNumber(value)) {
+                return value
+            } else if (IObject.isBoolean(value)) {
+                return value ? 1 : 0
+            }
+            var text = conv_str(value);
+            return parseInt(text)
+        };
+        BaseConverter.prototype.getBoolean = function (value, defaultValue) {
+            if (IObject.isNull(value)) {
+                return defaultValue
+            } else if (IObject.isBoolean(value)) {
+                return value
+            } else if (IObject.isNumber(value)) {
+                return value > 0 || value < 0
+            }
+            var text = conv_str(value);
+            text = text.trim();
+            var size = text.length;
+            if (size === 0) {
+                return false
+            } else if (size > Converter.MAX_BOOLEAN_LEN) {
+                throw new TypeError('Boolean value error: "' + value + '"');
+            } else {
+                text = text.toLowerCase()
+            }
+            var state = Converter.BOOLEAN_STATES[text];
+            if (IObject.isNull(state)) {
+                throw new TypeError('Boolean value error: "' + value + '"');
+            }
+            return state
+        };
+        BaseConverter.prototype.getString = function (value, defaultValue) {
+            if (IObject.isNull(value)) {
+                return defaultValue
+            } else if (IObject.isString(value)) {
+                return value
+            } else {
+                return value.toString()
+            }
+        };
+        var conv_str = function (value) {
+            if (IObject.isString(value)) {
+                return value
+            } else {
+                return value.toString()
+            }
+        };
         mk.type.Converter = {
             getString: function (value, defaultValue) {
                 return this.converter.getString(value, defaultValue)
@@ -275,6 +389,118 @@ if (typeof DIMP !== 'object') {
             MAX_BOOLEAN_LEN: 'undefined'.length
         };
         var Converter = mk.type.Converter;
+        mk.type.Dictionary = function (dict) {
+            BaseObject.call(this);
+            if (!dict) {
+                dict = {}
+            } else if (Interface.conforms(dict, Mapper)) {
+                dict = dict.toMap()
+            }
+            this.__dictionary = dict
+        };
+        var Dictionary = mk.type.Dictionary;
+        Class(Dictionary, BaseObject, [Mapper]);
+        Dictionary.prototype.equals = function (other) {
+            if (Interface.conforms(other, Mapper)) {
+                if (this === other) {
+                    return true
+                }
+                other = other.valueOf()
+            }
+            return Arrays.equals(this.__dictionary, other)
+        };
+        Dictionary.prototype.valueOf = function () {
+            return this.__dictionary
+        };
+        Dictionary.prototype.toString = function () {
+            return mk.format.JSON.encode(this.__dictionary)
+        };
+        Dictionary.prototype.toMap = function () {
+            return this.__dictionary
+        };
+        Dictionary.prototype.copyMap = function (deepCopy) {
+            if (deepCopy) {
+                return Copier.deepCopyMap(this.__dictionary)
+            } else {
+                return Copier.copyMap(this.__dictionary)
+            }
+        };
+        Dictionary.prototype.isEmpty = function () {
+            var keys = Object.keys(this.__dictionary);
+            return keys.length === 0
+        };
+        Dictionary.prototype.getLength = function () {
+            var keys = Object.keys(this.__dictionary);
+            return keys.length
+        };
+        Dictionary.prototype.allKeys = function () {
+            return Object.keys(this.__dictionary)
+        };
+        Dictionary.prototype.getValue = function (key) {
+            return this.__dictionary[key]
+        };
+        Dictionary.prototype.setValue = function (key, value) {
+            if (value) {
+                this.__dictionary[key] = value
+            } else if (this.__dictionary.hasOwnProperty(key)) {
+                delete this.__dictionary[key]
+            }
+        };
+        Dictionary.prototype.removeValue = function (key) {
+            var value;
+            if (this.__dictionary.hasOwnProperty(key)) {
+                value = this.__dictionary[key];
+                delete this.__dictionary[key]
+            } else {
+                value = null
+            }
+            return value
+        };
+        Dictionary.prototype.getString = function (key, defaultValue) {
+            var value = this.__dictionary[key];
+            return Converter.getString(value, defaultValue)
+        };
+        Dictionary.prototype.getBoolean = function (key, defaultValue) {
+            var value = this.__dictionary[key];
+            return Converter.getBoolean(value, defaultValue)
+        };
+        Dictionary.prototype.getInt = function (key, defaultValue) {
+            var value = this.__dictionary[key];
+            return Converter.getInt(value, defaultValue)
+        };
+        Dictionary.prototype.getFloat = function (key, defaultValue) {
+            var value = this.__dictionary[key];
+            return Converter.getFloat(value, defaultValue)
+        };
+        Dictionary.prototype.getDateTime = function (key, defaultValue) {
+            var value = this.__dictionary[key];
+            return Converter.getDateTime(value, defaultValue)
+        };
+        Dictionary.prototype.setDateTime = function (key, time) {
+            if (!time) {
+                this.removeValue(key)
+            } else if (time instanceof Date) {
+                time = time.getTime() / 1000.0;
+                this.__dictionary[key] = time
+            } else {
+                time = Converter.getFloat(time, 0);
+                this.__dictionary[key] = time
+            }
+        };
+        Dictionary.prototype.setString = function (key, string) {
+            if (!string) {
+                this.removeValue(key)
+            } else {
+                this.__dictionary[key] = string.toString()
+            }
+        };
+        Dictionary.prototype.setMap = function (key, map) {
+            if (!map) {
+                this.removeValue(key)
+            } else {
+                this.__dictionary[key] = map.toMap()
+            }
+        };
         var is_array = function (obj) {
             return obj instanceof Array || is_number_array(obj)
         };
@@ -465,30 +691,34 @@ if (typeof DIMP !== 'object') {
             this.__alias = alias
         };
         var BaseEnum = mk.type.BaseEnum;
-        Class(BaseEnum, BaseObject, null, {
-            equals: function (other) {
-                if (other instanceof BaseEnum) {
-                    if (this === other) {
-                        return true
-                    }
-                    other = other.valueOf()
+        Class(BaseEnum, BaseObject, null);
+        BaseEnum.prototype.equals = function (other) {
+            if (other instanceof BaseEnum) {
+                if (this === other) {
+                    return true
                 }
-                return this.__value === other
-            }, toString: function () {
-                return '<' + this.getName() + ': ' + this.getValue() + '>'
-            }, valueOf: function () {
-                return this.__value
-            }, getValue: function () {
-                return this.__value
-            }, getName: function () {
-                return this.__alias
+                other = other.valueOf()
             }
-        });
+            return this.__value === other
+        };
+        BaseEnum.prototype.toString = function () {
+            return '<' + this.getName() + ': ' + this.getValue() + '>'
+        };
+        BaseEnum.prototype.valueOf = function () {
+            return this.__value
+        };
+        BaseEnum.prototype.getValue = function () {
+            return this.__value
+        };
+        BaseEnum.prototype.getName = function () {
+            return this.__alias
+        };
         var enum_class = function (type) {
             var NamedEnum = function (value, alias) {
                 BaseEnum.call(this, value, alias)
             };
-            Class(NamedEnum, BaseEnum, null, {
+            Class(NamedEnum, BaseEnum, null);
+            Implementation(NamedEnum, {
                 toString: function () {
                     var clazz = NamedEnum.__type;
                     if (!clazz) {
@@ -506,7 +736,7 @@ if (typeof DIMP !== 'object') {
             } else if (!enumeration) {
                 enumeration = enum_class(null)
             } else {
-                Class(enumeration, BaseEnum, null, null)
+                Class(enumeration, BaseEnum, null)
             }
             Mapper.forEach(elements, function (alias, value) {
                 if (value instanceof BaseEnum) {
@@ -538,7 +768,7 @@ if (typeof DIMP !== 'object') {
                 return value.getName()
             }
             return Converter.getString(value, defaultValue)
-        }
+        };
         mk.type.Set = Interface(null, [IObject]);
         var Set = mk.type.Set;
         Set.prototype = {
@@ -556,42 +786,50 @@ if (typeof DIMP !== 'object') {
             this.__array = []
         };
         var HashSet = mk.type.HashSet;
-        Class(HashSet, BaseObject, [Set], {
-            equals: function (other) {
-                if (Interface.conforms(other, Set)) {
-                    if (this === other) {
-                        return true
-                    }
-                    other = other.valueOf()
-                }
-                return Arrays.equals(this.__array, other)
-            }, valueOf: function () {
-                return this.__array
-            }, toString: function () {
-                return this.__array.toString()
-            }, isEmpty: function () {
-                return this.__array.length === 0
-            }, getLength: function () {
-                return this.__array.length
-            }, contains: function (item) {
-                var pos = Arrays.find(this.__array, item);
-                return pos >= 0
-            }, add: function (item) {
-                var pos = Arrays.find(this.__array, item);
-                if (pos < 0) {
-                    this.__array.push(item);
+        Class(HashSet, BaseObject, [Set]);
+        HashSet.prototype.equals = function (other) {
+            if (Interface.conforms(other, Set)) {
+                if (this === other) {
                     return true
-                } else {
-                    return false
                 }
-            }, remove: function (item) {
-                return Arrays.remove(this.__array, item)
-            }, clear: function () {
-                this.__array = []
-            }, toArray: function () {
-                return this.__array.slice()
+                other = other.valueOf()
             }
-        });
+            return Arrays.equals(this.__array, other)
+        };
+        HashSet.prototype.valueOf = function () {
+            return this.__array
+        };
+        HashSet.prototype.toString = function () {
+            return this.__array.toString()
+        };
+        HashSet.prototype.isEmpty = function () {
+            return this.__array.length === 0
+        };
+        HashSet.prototype.getLength = function () {
+            return this.__array.length
+        };
+        HashSet.prototype.contains = function (item) {
+            var pos = Arrays.find(this.__array, item);
+            return pos >= 0
+        };
+        HashSet.prototype.add = function (item) {
+            var pos = Arrays.find(this.__array, item);
+            if (pos < 0) {
+                this.__array.push(item);
+                return true
+            } else {
+                return false
+            }
+        };
+        HashSet.prototype.remove = function (item) {
+            return Arrays.remove(this.__array, item)
+        };
+        HashSet.prototype.clear = function () {
+            this.__array = []
+        };
+        HashSet.prototype.toArray = function () {
+            return this.__array.slice()
+        };
         mk.type.Stringer = Interface(null, [IObject]);
         var Stringer = mk.type.Stringer;
         Stringer.prototype = {
@@ -610,35 +848,39 @@ if (typeof DIMP !== 'object') {
             this.__string = str
         };
         var ConstantString = mk.type.ConstantString;
-        Class(ConstantString, BaseObject, [Stringer], {
-            equals: function (other) {
-                if (Interface.conforms(other, Stringer)) {
-                    if (this === other) {
-                        return true
-                    }
-                    other = other.valueOf()
-                }
-                return this.__string === other
-            }, valueOf: function () {
-                return this.__string
-            }, toString: function () {
-                return this.__string
-            }, isEmpty: function () {
-                return this.__string.length === 0
-            }, getLength: function () {
-                return this.__string.length
-            }, equalsIgnoreCase: function (other) {
+        Class(ConstantString, BaseObject, [Stringer]);
+        ConstantString.prototype.equals = function (other) {
+            if (Interface.conforms(other, Stringer)) {
                 if (this === other) {
                     return true
-                } else if (!other) {
-                    return !this.__string
-                } else if (Interface.conforms(other, Stringer)) {
-                    return equalsIgnoreCase(this.__string, other.toString())
-                } else {
-                    return equalsIgnoreCase(this.__string, other)
                 }
+                other = other.valueOf()
             }
-        });
+            return this.__string === other
+        };
+        ConstantString.prototype.valueOf = function () {
+            return this.__string
+        };
+        ConstantString.prototype.toString = function () {
+            return this.__string
+        };
+        ConstantString.prototype.isEmpty = function () {
+            return this.__string.length === 0
+        };
+        ConstantString.prototype.getLength = function () {
+            return this.__string.length
+        };
+        ConstantString.prototype.equalsIgnoreCase = function (other) {
+            if (this === other) {
+                return true
+            } else if (!other) {
+                return !this.__string
+            } else if (Interface.conforms(other, Stringer)) {
+                return equalsIgnoreCase(this.__string, other.toString())
+            } else {
+                return equalsIgnoreCase(this.__string, other)
+            }
+        };
         var equalsIgnoreCase = function (str1, str2) {
             if (str1.length !== str2.length) {
                 return false
@@ -647,192 +889,6 @@ if (typeof DIMP !== 'object') {
             var low2 = str2.toLowerCase();
             return low1 === low2
         };
-        mk.type.Mapper = Interface(null, [IObject]);
-        var Mapper = mk.type.Mapper;
-        Mapper.prototype = {
-            toMap: function () {
-            }, copyMap: function (deepCopy) {
-            }, isEmpty: function () {
-            }, getLength: function () {
-            }, allKeys: function () {
-            }, getValue: function (key) {
-            }, setValue: function (key, value) {
-            }, removeValue: function (key) {
-            }, getString: function (key, defaultValue) {
-            }, getBoolean: function (key, defaultValue) {
-            }, getInt: function (key, defaultValue) {
-            }, getFloat: function (key, defaultValue) {
-            }, getDateTime: function (key, defaultValue) {
-            }, setDateTime: function (key, time) {
-            }, setString: function (key, stringer) {
-            }, setMap: function (key, mapper) {
-            }
-        };
-        Mapper.count = function (dict) {
-            if (!dict) {
-                return 0
-            } else if (Interface.conforms(dict, Mapper)) {
-                dict = dict.toMap()
-            } else if (typeof dict !== 'object') {
-                throw TypeError('not a map: ' + dict);
-            }
-            return Object.keys(dict).length
-        };
-        Mapper.isEmpty = function (dict) {
-            return Mapper.count(dict) === 0
-        };
-        Mapper.keys = function (dict) {
-            if (!dict) {
-                return null
-            } else if (Interface.conforms(dict, Mapper)) {
-                dict = dict.toMap()
-            } else if (typeof dict !== 'object') {
-                throw TypeError('not a map: ' + dict);
-            }
-            return Object.keys(dict)
-        };
-        Mapper.removeKey = function (dict, key) {
-            if (!dict) {
-                return null
-            } else if (Interface.conforms(dict, Mapper)) {
-                dict = dict.toMap()
-            } else if (typeof dict !== 'object') {
-                throw TypeError('not a map: ' + dict);
-            }
-            var value = dict[key];
-            delete dict[key];
-            return value
-        };
-        Mapper.forEach = function (dict, handleKeyValue) {
-            if (!dict) {
-                return -1
-            } else if (Interface.conforms(dict, Mapper)) {
-                dict = dict.toMap()
-            } else if (typeof dict !== 'object') {
-                throw TypeError('not a map: ' + dict);
-            }
-            var keys = Object.keys(dict);
-            var cnt = keys.length;
-            var stop;
-            var i = 0, k, v;
-            for (; i < cnt; ++i) {
-                k = keys[i];
-                v = dict[k];
-                stop = handleKeyValue(k, v);
-                if (stop) {
-                    break
-                }
-            }
-            return i
-        };
-        Mapper.addAll = function (dict, fromDict) {
-            if (!dict) {
-                return -1
-            } else if (Interface.conforms(dict, Mapper)) {
-                dict = dict.toMap()
-            } else if (typeof dict !== 'object') {
-                throw TypeError('not a map: ' + dict);
-            }
-            return Mapper.forEach(fromDict, function (key, value) {
-                dict[key] = value;
-                return false
-            })
-        };
-        mk.type.Dictionary = function (dict) {
-            BaseObject.call(this);
-            if (!dict) {
-                dict = {}
-            } else if (Interface.conforms(dict, Mapper)) {
-                dict = dict.toMap()
-            }
-            this.__dictionary = dict
-        };
-        var Dictionary = mk.type.Dictionary;
-        Class(Dictionary, BaseObject, [Mapper], {
-            equals: function (other) {
-                if (Interface.conforms(other, Mapper)) {
-                    if (this === other) {
-                        return true
-                    }
-                    other = other.valueOf()
-                }
-                return Arrays.equals(this.__dictionary, other)
-            }, valueOf: function () {
-                return this.__dictionary
-            }, toString: function () {
-                return mk.format.JSON.encode(this.__dictionary)
-            }, toMap: function () {
-                return this.__dictionary
-            }, copyMap: function (deepCopy) {
-                if (deepCopy) {
-                    return Copier.deepCopyMap(this.__dictionary)
-                } else {
-                    return Copier.copyMap(this.__dictionary)
-                }
-            }, isEmpty: function () {
-                var keys = Object.keys(this.__dictionary);
-                return keys.length === 0
-            }, getLength: function () {
-                var keys = Object.keys(this.__dictionary);
-                return keys.length
-            }, allKeys: function () {
-                return Object.keys(this.__dictionary)
-            }, getValue: function (key) {
-                return this.__dictionary[key]
-            }, setValue: function (key, value) {
-                if (value) {
-                    this.__dictionary[key] = value
-                } else if (this.__dictionary.hasOwnProperty(key)) {
-                    delete this.__dictionary[key]
-                }
-            }, removeValue: function (key) {
-                var value;
-                if (this.__dictionary.hasOwnProperty(key)) {
-                    value = this.__dictionary[key];
-                    delete this.__dictionary[key]
-                } else {
-                    value = null
-                }
-                return value
-            }, getString: function (key, defaultValue) {
-                var value = this.__dictionary[key];
-                return Converter.getString(value, defaultValue)
-            }, getBoolean: function (key, defaultValue) {
-                var value = this.__dictionary[key];
-                return Converter.getBoolean(value, defaultValue)
-            }, getInt: function (key, defaultValue) {
-                var value = this.__dictionary[key];
-                return Converter.getInt(value, defaultValue)
-            }, getFloat: function (key, defaultValue) {
-                var value = this.__dictionary[key];
-                return Converter.getFloat(value, defaultValue)
-            }, getDateTime: function (key, defaultValue) {
-                var value = this.__dictionary[key];
-                return Converter.getDateTime(value, defaultValue)
-            }, setDateTime: function (key, time) {
-                if (!time) {
-                    this.removeValue(key)
-                } else if (time instanceof Date) {
-                    time = time.getTime() / 1000.0;
-                    this.__dictionary[key] = time
-                } else {
-                    time = Converter.getFloat(time, 0);
-                    this.__dictionary[key] = time
-                }
-            }, setString: function (key, string) {
-                if (!string) {
-                    this.removeValue(key)
-                } else {
-                    this.__dictionary[key] = string.toString()
-                }
-            }, setMap: function (key, map) {
-                if (!map) {
-                    this.removeValue(key)
-                } else {
-                    this.__dictionary[key] = map.toMap()
-                }
-            }
-        });
         mk.type.Wrapper = {
             fetchString: function (str) {
                 if (Interface.conforms(str, Stringer)) {
@@ -1698,11 +1754,10 @@ if (typeof DIMP !== 'object') {
             this.__network = Enum.getInt(network)
         };
         var BroadcastAddress = mkm.mkm.BroadcastAddress;
-        Class(BroadcastAddress, ConstantString, [Address], {
-            getType: function () {
-                return this.__network
-            }
-        });
+        Class(BroadcastAddress, ConstantString, [Address]);
+        BroadcastAddress.prototype.getType = function () {
+            return this.__network
+        };
         Address.ANYWHERE = new BroadcastAddress('anywhere', EntityType.ANY);
         Address.EVERYWHERE = new BroadcastAddress('everywhere', EntityType.EVERY);
         mkm.mkm.Identifier = function (identifier, name, address, terminal) {
@@ -1712,27 +1767,32 @@ if (typeof DIMP !== 'object') {
             this.__terminal = terminal
         };
         var Identifier = mkm.mkm.Identifier;
-        Class(Identifier, ConstantString, [ID], {
-            getName: function () {
-                return this.__name
-            }, getAddress: function () {
-                return this.__address
-            }, getTerminal: function () {
-                return this.__terminal
-            }, getType: function () {
-                var address = this.__address;
-                return address.getType()
-            }, isBroadcast: function () {
-                var network = this.getType();
-                return EntityType.isBroadcast(network)
-            }, isUser: function () {
-                var network = this.getType();
-                return EntityType.isUser(network)
-            }, isGroup: function () {
-                var network = this.getType();
-                return EntityType.isGroup(network)
-            }
-        });
+        Class(Identifier, ConstantString, [ID]);
+        Identifier.prototype.getName = function () {
+            return this.__name
+        };
+        Identifier.prototype.getAddress = function () {
+            return this.__address
+        };
+        Identifier.prototype.getTerminal = function () {
+            return this.__terminal
+        };
+        Identifier.prototype.getType = function () {
+            var address = this.__address;
+            return address.getType()
+        };
+        Identifier.prototype.isBroadcast = function () {
+            var network = this.getType();
+            return EntityType.isBroadcast(network)
+        };
+        Identifier.prototype.isUser = function () {
+            var network = this.getType();
+            return EntityType.isUser(network)
+        };
+        Identifier.prototype.isGroup = function () {
+            var network = this.getType();
+            return EntityType.isGroup(network)
+        };
         Identifier.create = function (name, address, terminal) {
             var string = Identifier.concat(name, address, terminal);
             return new Identifier(string, name, address, terminal)
@@ -2205,6 +2265,7 @@ if (typeof DIMP !== 'object') {
         }
         var Interface = mk.type.Interface;
         var Class = mk.type.Class;
+        var Implementation = mk.type.Implementation;
         var IObject = mk.type.Object;
         var Dictionary = mk.type.Dictionary;
         var Converter = mk.type.Converter;
@@ -2758,11 +2819,10 @@ if (typeof DIMP !== 'object') {
             Dictionary.call(this, dict)
         };
         var BaseKey = mk.crypto.BaseKey;
-        Class(BaseKey, Dictionary, [CryptographyKey], {
-            getAlgorithm: function () {
-                return BaseKey.getKeyAlgorithm(this.toMap())
-            }
-        });
+        Class(BaseKey, Dictionary, [CryptographyKey]);
+        BaseKey.prototype.getAlgorithm = function () {
+            return BaseKey.getKeyAlgorithm(this.toMap())
+        };
         BaseKey.getKeyAlgorithm = function (key) {
             var helper = SharedCryptoExtensions.getHelper();
             var algorithm = helper.getKeyAlgorithm(key);
@@ -2790,52 +2850,53 @@ if (typeof DIMP !== 'object') {
             Dictionary.call(this, dict)
         };
         var BaseSymmetricKey = mk.crypto.BaseSymmetricKey;
-        Class(BaseSymmetricKey, Dictionary, [SymmetricKey], {
-            equals: function (other) {
-                return Interface.conforms(other, SymmetricKey) && BaseKey.symmetricKeyEquals(other, this)
-            }, matchEncryptKey: function (pKey) {
-                return BaseKey.matchEncryptKey(pKey, this)
-            }, getAlgorithm: function () {
-                return BaseKey.getKeyAlgorithm(this.toMap())
-            }
-        });
+        Class(BaseSymmetricKey, Dictionary, [SymmetricKey]);
+        BaseSymmetricKey.prototype.equals = function (other) {
+            return Interface.conforms(other, SymmetricKey) && BaseKey.symmetricKeyEquals(other, this)
+        };
+        BaseSymmetricKey.prototype.matchEncryptKey = function (pKey) {
+            return BaseKey.matchEncryptKey(pKey, this)
+        };
+        BaseSymmetricKey.prototype.getAlgorithm = function () {
+            return BaseKey.getKeyAlgorithm(this.toMap())
+        };
         mk.crypto.BaseAsymmetricKey = function (dict) {
             Dictionary.call(this, dict)
         };
         var BaseAsymmetricKey = mk.crypto.BaseAsymmetricKey;
-        Class(BaseAsymmetricKey, Dictionary, [AsymmetricKey], {
-            getAlgorithm: function () {
-                return BaseKey.getKeyAlgorithm(this.toMap())
-            }
-        });
+        Class(BaseAsymmetricKey, Dictionary, [AsymmetricKey]);
+        BaseAsymmetricKey.prototype.getAlgorithm = function () {
+            return BaseKey.getKeyAlgorithm(this.toMap())
+        };
         mk.crypto.BasePrivateKey = function (dict) {
             Dictionary.call(this, dict)
         };
         var BasePrivateKey = mk.crypto.BasePrivateKey;
-        Class(BasePrivateKey, Dictionary, [PrivateKey], {
-            equals: function (other) {
-                return Interface.conforms(other, PrivateKey) && BaseKey.privateKeyEquals(other, this)
-            }, getAlgorithm: function () {
-                return BaseKey.getKeyAlgorithm(this.toMap())
-            }
-        });
+        Class(BasePrivateKey, Dictionary, [PrivateKey]);
+        BasePrivateKey.prototype.equals = function (other) {
+            return Interface.conforms(other, PrivateKey) && BaseKey.privateKeyEquals(other, this)
+        };
+        BasePrivateKey.prototype.getAlgorithm = function () {
+            return BaseKey.getKeyAlgorithm(this.toMap())
+        };
         mk.crypto.BasePublicKey = function (dict) {
             Dictionary.call(this, dict)
         };
         var BasePublicKey = mk.crypto.BasePublicKey;
-        Class(BasePublicKey, Dictionary, [PublicKey], {
-            matchSignKey: function (sKey) {
-                return BaseKey.matchSignKey(sKey, this)
-            }, getAlgorithm: function () {
-                return BaseKey.getKeyAlgorithm(this.toMap())
-            }
-        });
+        Class(BasePublicKey, Dictionary, [PublicKey]);
+        BasePublicKey.prototype.matchSignKey = function (sKey) {
+            return BaseKey.matchSignKey(sKey, this)
+        };
+        BasePublicKey.prototype.getAlgorithm = function () {
+            return BaseKey.getKeyAlgorithm(this.toMap())
+        };
         mk.format.BaseDataWrapper = function (dict) {
             Dictionary.call(this, dict);
             this.__data = null
         };
         var BaseDataWrapper = mk.format.BaseDataWrapper;
-        Class(BaseDataWrapper, Dictionary, null, {
+        Class(BaseDataWrapper, Dictionary, null);
+        Implementation(BaseDataWrapper, {
             toString: function () {
                 var encoded = this.getString('data', null);
                 if (!encoded) {
@@ -2916,7 +2977,8 @@ if (typeof DIMP !== 'object') {
             this.__password = null
         };
         var BaseFileWrapper = mk.format.BaseFileWrapper;
-        Class(BaseFileWrapper, Dictionary, null, {
+        Class(BaseFileWrapper, Dictionary, null);
+        Implementation(BaseFileWrapper, {
             getData: function () {
                 var ted = this.__attachment;
                 if (!ted) {
@@ -3011,7 +3073,8 @@ if (typeof DIMP !== 'object') {
             this.__status = status
         };
         var BaseMeta = mkm.mkm.BaseMeta;
-        Class(BaseMeta, Dictionary, [Meta], {
+        Class(BaseMeta, Dictionary, [Meta]);
+        Implementation(BaseMeta, {
             getType: function () {
                 var type = this.__type;
                 if (type === null) {
@@ -3113,7 +3176,8 @@ if (typeof DIMP !== 'object') {
             this.__status = status
         };
         var BaseDocument = mkm.mkm.BaseDocument;
-        Class(BaseDocument, Dictionary, [Document], {
+        Class(BaseDocument, Dictionary, [Document]);
+        Implementation(BaseDocument, {
             isValid: function () {
                 return this.__status > 0
             }, getIdentifier: function () {
@@ -3242,7 +3306,8 @@ if (typeof DIMP !== 'object') {
             this.__avatar = null
         };
         var BaseVisa = mkm.mkm.BaseVisa;
-        Class(BaseVisa, BaseDocument, [Visa], {
+        Class(BaseVisa, BaseDocument, [Visa]);
+        Implementation(BaseVisa, {
             getPublicKey: function () {
                 var key = this.__key;
                 if (!key) {
@@ -3295,7 +3360,8 @@ if (typeof DIMP !== 'object') {
             this.__assistants = null
         };
         var BaseBulletin = mkm.mkm.BaseBulletin;
-        Class(BaseBulletin, BaseDocument, [Bulletin], {
+        Class(BaseBulletin, BaseDocument, [Bulletin]);
+        Implementation(BaseBulletin, {
             getFounder: function () {
                 return ID.parse(this.getProperty('founder'))
             }, getAssistants: function () {
@@ -3340,7 +3406,8 @@ if (typeof DIMP !== 'object') {
             this.__time = time
         };
         var BaseContent = dkd.dkd.BaseContent;
-        Class(BaseContent, Dictionary, [Content], {
+        Class(BaseContent, Dictionary, [Content]);
+        Implementation(BaseContent, {
             getType: function () {
                 if (this.__type === null) {
                     var helper = SharedMessageExtensions.getHelper();
@@ -3376,7 +3443,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var BaseCommand = dkd.dkd.BaseCommand;
-        Class(BaseCommand, BaseContent, [Command], {
+        Class(BaseCommand, BaseContent, [Command]);
+        Implementation(BaseCommand, {
             getCmd: function () {
                 var helper = SharedCommandExtensions.getHelper();
                 return helper.getCmd(this.toMap(), '')
@@ -3391,7 +3459,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var BaseTextContent = dkd.dkd.BaseTextContent;
-        Class(BaseTextContent, BaseContent, [TextContent], {
+        Class(BaseTextContent, BaseContent, [TextContent]);
+        Implementation(BaseTextContent, {
             getText: function () {
                 return this.getString('text', '')
             }, setText: function (text) {
@@ -3407,7 +3476,8 @@ if (typeof DIMP !== 'object') {
             this.__icon = null
         };
         var WebPageContent = dkd.dkd.WebPageContent;
-        Class(WebPageContent, BaseContent, [PageContent], {
+        Class(WebPageContent, BaseContent, [PageContent]);
+        Implementation(WebPageContent, {
             getTitle: function () {
                 return this.getString('title', '')
             }, setTitle: function (title) {
@@ -3455,7 +3525,8 @@ if (typeof DIMP !== 'object') {
             this.__image = null
         };
         var NameCardContent = dkd.dkd.NameCardContent;
-        Class(NameCardContent, BaseContent, [NameCard], {
+        Class(NameCardContent, BaseContent, [NameCard]);
+        Implementation(NameCardContent, {
             getIdentifier: function () {
                 var id = this.getValue('did');
                 return ID.parse(id)
@@ -3492,7 +3563,8 @@ if (typeof DIMP !== 'object') {
             this.__wrapper = new BaseFileWrapper(this.toMap())
         };
         var BaseFileContent = dkd.dkd.BaseFileContent;
-        Class(BaseFileContent, BaseContent, [FileContent], {
+        Class(BaseFileContent, BaseContent, [FileContent]);
+        Implementation(BaseFileContent, {
             getData: function () {
                 var ted = this.__wrapper.getData();
                 return !ted ? null : ted.getData()
@@ -3523,7 +3595,8 @@ if (typeof DIMP !== 'object') {
             this.__thumbnail = null
         };
         var ImageFileContent = dkd.dkd.ImageFileContent;
-        Class(ImageFileContent, BaseFileContent, [ImageContent], {
+        Class(ImageFileContent, BaseFileContent, [ImageContent]);
+        Implementation(ImageFileContent, {
             getThumbnail: function () {
                 var pnf = this.__thumbnail;
                 if (!pnf) {
@@ -3554,7 +3627,8 @@ if (typeof DIMP !== 'object') {
             this.__snapshot = null
         };
         var VideoFileContent = dkd.dkd.VideoFileContent;
-        Class(VideoFileContent, BaseFileContent, [VideoContent], {
+        Class(VideoFileContent, BaseFileContent, [VideoContent]);
+        Implementation(VideoFileContent, {
             getSnapshot: function () {
                 var pnf = this.__snapshot;
                 if (!pnf) {
@@ -3584,7 +3658,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var AudioFileContent = dkd.dkd.AudioFileContent;
-        Class(AudioFileContent, BaseFileContent, [AudioContent], {
+        Class(AudioFileContent, BaseFileContent, [AudioContent]);
+        Implementation(AudioFileContent, {
             getText: function () {
                 return this.getString('text', null)
             }, setText: function (asr) {
@@ -3613,7 +3688,8 @@ if (typeof DIMP !== 'object') {
             this.__secrets = secrets
         };
         var SecretContent = dkd.dkd.SecretContent;
-        Class(SecretContent, BaseContent, [ForwardContent], {
+        Class(SecretContent, BaseContent, [ForwardContent]);
+        Implementation(SecretContent, {
             getForward: function () {
                 if (this.__forward === null) {
                     var forward = this.getValue('forward');
@@ -3657,7 +3733,8 @@ if (typeof DIMP !== 'object') {
             this.__history = messages
         };
         var CombineForwardContent = dkd.dkd.CombineForwardContent;
-        Class(CombineForwardContent, BaseContent, [CombineContent], {
+        Class(CombineForwardContent, BaseContent, [CombineContent]);
+        Implementation(CombineForwardContent, {
             getTitle: function () {
                 return this.getString('title', '')
             }, getMessages: function () {
@@ -3687,7 +3764,8 @@ if (typeof DIMP !== 'object') {
             this.__list = list
         };
         var ListContent = dkd.dkd.ListContent;
-        Class(ListContent, BaseContent, [ArrayContent], {
+        Class(ListContent, BaseContent, [ArrayContent]);
+        Implementation(ListContent, {
             getContents: function () {
                 var contents = this.__list;
                 if (!contents) {
@@ -3716,7 +3794,8 @@ if (typeof DIMP !== 'object') {
             this.__env = null
         };
         var BaseQuoteContent = dkd.dkd.BaseQuoteContent;
-        Class(BaseQuoteContent, BaseContent, [QuoteContent], {
+        Class(BaseQuoteContent, BaseContent, [QuoteContent]);
+        Implementation(BaseQuoteContent, {
             getText: function () {
                 return this.getString('text', '')
             }, getOrigin: function () {
@@ -3752,7 +3831,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var BaseMoneyContent = dkd.dkd.BaseMoneyContent;
-        Class(BaseMoneyContent, BaseContent, [MoneyContent], {
+        Class(BaseMoneyContent, BaseContent, [MoneyContent]);
+        Implementation(BaseMoneyContent, {
             setCurrency: function (currency) {
                 this.setValue('currency', currency)
             }, getCurrency: function () {
@@ -3773,7 +3853,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var TransferMoneyContent = dkd.dkd.TransferMoneyContent;
-        Class(TransferMoneyContent, BaseMoneyContent, [TransferContent], {
+        Class(TransferMoneyContent, BaseMoneyContent, [TransferContent]);
+        Implementation(TransferMoneyContent, {
             getRemitter: function () {
                 var sender = this.getValue('remitter');
                 return ID.parse(sender)
@@ -3814,7 +3895,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var AppCustomizedContent = dkd.dkd.AppCustomizedContent;
-        Class(AppCustomizedContent, BaseContent, [CustomizedContent], {
+        Class(AppCustomizedContent, BaseContent, [CustomizedContent]);
+        Implementation(AppCustomizedContent, {
             getApplication: function () {
                 return this.getString('app', '')
             }, getModule: function () {
@@ -3841,7 +3923,8 @@ if (typeof DIMP !== 'object') {
             this.__meta = null
         };
         var BaseMetaCommand = dkd.dkd.BaseMetaCommand;
-        Class(BaseMetaCommand, BaseCommand, [MetaCommand], {
+        Class(BaseMetaCommand, BaseCommand, [MetaCommand]);
+        Implementation(BaseMetaCommand, {
             getIdentifier: function () {
                 if (this.__identifier == null) {
                     var identifier = this.getValue("did");
@@ -3868,7 +3951,8 @@ if (typeof DIMP !== 'object') {
             this.__docs = null
         };
         var BaseDocumentCommand = dkd.dkd.BaseDocumentCommand;
-        Class(BaseDocumentCommand, BaseMetaCommand, [DocumentCommand], {
+        Class(BaseDocumentCommand, BaseMetaCommand, [DocumentCommand]);
+        Implementation(BaseDocumentCommand, {
             getDocuments: function () {
                 if (this.__docs === null) {
                     var docs = this.getValue('documents');
@@ -3898,7 +3982,7 @@ if (typeof DIMP !== 'object') {
             }
         };
         var BaseHistoryCommand = dkd.dkd.BaseHistoryCommand;
-        Class(BaseHistoryCommand, BaseCommand, [HistoryCommand], null);
+        Class(BaseHistoryCommand, BaseCommand, [HistoryCommand]);
         dkd.dkd.BaseGroupCommand = function () {
             if (arguments.length === 1) {
                 BaseHistoryCommand.call(this, arguments[0])
@@ -3910,7 +3994,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var BaseGroupCommand = dkd.dkd.BaseGroupCommand;
-        Class(BaseGroupCommand, BaseHistoryCommand, [GroupCommand], {
+        Class(BaseGroupCommand, BaseHistoryCommand, [GroupCommand]);
+        Implementation(BaseGroupCommand, {
             setMember: function (identifier) {
                 this.setString('member', identifier);
                 this.removeValue('members')
@@ -3942,7 +4027,7 @@ if (typeof DIMP !== 'object') {
             }
         };
         var InviteGroupCommand = dkd.dkd.InviteGroupCommand;
-        Class(InviteGroupCommand, BaseGroupCommand, [InviteCommand], null);
+        Class(InviteGroupCommand, BaseGroupCommand, [InviteCommand]);
         dkd.dkd.ExpelGroupCommand = function (info) {
             if (Interface.conforms(info, ID)) {
                 BaseGroupCommand.call(this, GroupCommand.EXPEL, info)
@@ -3951,7 +4036,7 @@ if (typeof DIMP !== 'object') {
             }
         };
         var ExpelGroupCommand = dkd.dkd.ExpelGroupCommand;
-        Class(ExpelGroupCommand, BaseGroupCommand, [ExpelCommand], null);
+        Class(ExpelGroupCommand, BaseGroupCommand, [ExpelCommand]);
         dkd.dkd.JoinGroupCommand = function (info) {
             if (Interface.conforms(info, ID)) {
                 BaseGroupCommand.call(this, GroupCommand.JOIN, info)
@@ -3960,7 +4045,7 @@ if (typeof DIMP !== 'object') {
             }
         };
         var JoinGroupCommand = dkd.dkd.JoinGroupCommand;
-        Class(JoinGroupCommand, BaseGroupCommand, [JoinCommand], null);
+        Class(JoinGroupCommand, BaseGroupCommand, [JoinCommand]);
         dkd.dkd.QuitGroupCommand = function (info) {
             if (Interface.conforms(info, ID)) {
                 BaseGroupCommand.call(this, GroupCommand.QUIT, info)
@@ -3969,7 +4054,7 @@ if (typeof DIMP !== 'object') {
             }
         };
         var QuitGroupCommand = dkd.dkd.QuitGroupCommand;
-        Class(QuitGroupCommand, BaseGroupCommand, [QuitCommand], null);
+        Class(QuitGroupCommand, BaseGroupCommand, [QuitCommand]);
         dkd.dkd.ResetGroupCommand = function (info) {
             if (Interface.conforms(info, ID)) {
                 BaseGroupCommand.call(this, GroupCommand.RESET, info)
@@ -3978,7 +4063,7 @@ if (typeof DIMP !== 'object') {
             }
         };
         var ResetGroupCommand = dkd.dkd.ResetGroupCommand;
-        Class(ResetGroupCommand, BaseGroupCommand, [ResetCommand], null);
+        Class(ResetGroupCommand, BaseGroupCommand, [ResetCommand]);
         dkd.dkd.HireGroupCommand = function (info) {
             if (Interface.conforms(info, ID)) {
                 BaseGroupCommand.call(this, GroupCommand.HIRE, info)
@@ -3987,7 +4072,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var HireGroupCommand = dkd.dkd.HireGroupCommand;
-        Class(HireGroupCommand, BaseGroupCommand, [HireCommand], {
+        Class(HireGroupCommand, BaseGroupCommand, [HireCommand]);
+        Implementation(HireGroupCommand, {
             getAdministrators: function () {
                 var array = this.getValue('administrators');
                 return !array ? null : ID.convert(array)
@@ -4018,7 +4104,8 @@ if (typeof DIMP !== 'object') {
             }
         };
         var FireGroupCommand = dkd.dkd.FireGroupCommand;
-        Class(FireGroupCommand, BaseGroupCommand, [FireCommand], {
+        Class(FireGroupCommand, BaseGroupCommand, [FireCommand]);
+        Implementation(FireGroupCommand, {
             getAssistants: function () {
                 var array = this.getValue('assistants');
                 return !array ? null : ID.convert(array)
@@ -4049,7 +4136,7 @@ if (typeof DIMP !== 'object') {
             }
         };
         var ResignGroupCommand = dkd.dkd.ResignGroupCommand;
-        Class(ResignGroupCommand, BaseGroupCommand, [ResignCommand], null);
+        Class(ResignGroupCommand, BaseGroupCommand, [ResignCommand]);
         dkd.dkd.BaseReceiptCommand = function () {
             if (arguments.length === 1) {
                 BaseCommand.call(this, arguments[0])
@@ -4064,7 +4151,8 @@ if (typeof DIMP !== 'object') {
             this.__env = null
         };
         var BaseReceiptCommand = dkd.dkd.BaseReceiptCommand;
-        Class(BaseReceiptCommand, BaseCommand, [ReceiptCommand], {
+        Class(BaseReceiptCommand, BaseCommand, [ReceiptCommand]);
+        Implementation(BaseReceiptCommand, {
             getText: function () {
                 return this.getString('text', '')
             }, getOrigin: function () {
@@ -4121,7 +4209,8 @@ if (typeof DIMP !== 'object') {
             this.__time = when
         };
         var MessageEnvelope = dkd.msg.MessageEnvelope;
-        Class(MessageEnvelope, Dictionary, [Envelope], {
+        Class(MessageEnvelope, Dictionary, [Envelope]);
+        Implementation(MessageEnvelope, {
             getSender: function () {
                 var sender = this.__sender;
                 if (!sender) {
@@ -4166,7 +4255,8 @@ if (typeof DIMP !== 'object') {
             this.__envelope = env
         };
         var BaseMessage = dkd.msg.BaseMessage;
-        Class(BaseMessage, Dictionary, [Message], {
+        Class(BaseMessage, Dictionary, [Message]);
+        Implementation(BaseMessage, {
             getEnvelope: function () {
                 var env = this.__envelope;
                 if (!env) {
@@ -4220,7 +4310,8 @@ if (typeof DIMP !== 'object') {
             this.__content = body
         };
         var PlainMessage = dkd.msg.PlainMessage;
-        Class(PlainMessage, BaseMessage, [InstantMessage], {
+        Class(PlainMessage, BaseMessage, [InstantMessage]);
+        Implementation(PlainMessage, {
             getTime: function () {
                 var body = this.getContent();
                 var time = body.getTime();
@@ -4254,7 +4345,8 @@ if (typeof DIMP !== 'object') {
             this.__keys = null
         };
         var EncryptedMessage = dkd.msg.EncryptedMessage;
-        Class(EncryptedMessage, BaseMessage, [SecureMessage], {
+        Class(EncryptedMessage, BaseMessage, [SecureMessage]);
+        Implementation(EncryptedMessage, {
             getData: function () {
                 var binary = this.__data;
                 if (!binary) {
@@ -4300,7 +4392,8 @@ if (typeof DIMP !== 'object') {
             this.__signature = null
         };
         var NetworkMessage = dkd.msg.NetworkMessage;
-        Class(NetworkMessage, EncryptedMessage, [ReliableMessage], {
+        Class(NetworkMessage, EncryptedMessage, [ReliableMessage]);
+        Implementation(NetworkMessage, {
             getSignature: function () {
                 var ted = this.__signature;
                 if (!ted) {
@@ -4355,6 +4448,7 @@ if (typeof DIMP !== 'object') {
     }
     var Interface = mk.type.Interface;
     var Class = mk.type.Class;
+    var Implementation = mk.type.Implementation;
     var Converter = mk.type.Converter;
     var Wrapper = mk.type.Wrapper;
     var Mapper = mk.type.Mapper;
@@ -4622,7 +4716,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var Base58Coder = mk.format.Base58Coder;
-    Class(Base58Coder, BaseObject, [DataCoder], {
+    Class(Base58Coder, BaseObject, [DataCoder]);
+    Implementation(Base58Coder, {
         encode: function (data) {
             return bs58.encode(data)
         }, decode: function (string) {
@@ -4694,7 +4789,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var Base64Coder = mk.format.Base64Coder;
-    Class(Base64Coder, BaseObject, [DataCoder], {
+    Class(Base64Coder, BaseObject, [DataCoder]);
+    Implementation(Base64Coder, {
         encode: function (data) {
             return base64_encode(data)
         }, decode: function (string) {
@@ -4753,7 +4849,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var HexCoder = mk.format.HexCoder;
-    Class(HexCoder, BaseObject, [DataCoder], {
+    Class(HexCoder, BaseObject, [DataCoder]);
+    Implementation(HexCoder, {
         encode: function (data) {
             return hex_encode(data)
         }, decode: function (string) {
@@ -4764,7 +4861,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var JSONCoder = mk.format.JSONCoder;
-    Class(JSONCoder, BaseObject, [ObjectCoder], {
+    Class(JSONCoder, BaseObject, [ObjectCoder]);
+    Implementation(JSONCoder, {
         encode: function (object) {
             return JSON.stringify(object)
         }, decode: function (string) {
@@ -4800,7 +4898,8 @@ if (typeof DIMP !== 'object') {
         this.__wrapper = wrapper
     };
     var BaseNetworkFile = mk.format.BaseNetworkFile;
-    Class(BaseNetworkFile, Dictionary, [PortableNetworkFile], {
+    Class(BaseNetworkFile, Dictionary, [PortableNetworkFile]);
+    Implementation(BaseNetworkFile, {
         getData: function () {
             var ted = this.__wrapper.getData();
             return !ted ? null : ted.getData()
@@ -4852,7 +4951,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var BaseNetworkFileFactory = mk.format.BaseNetworkFileFactory;
-    Class(BaseNetworkFileFactory, BaseObject, [PortableNetworkFileFactory], {
+    Class(BaseNetworkFileFactory, BaseObject, [PortableNetworkFileFactory]);
+    Implementation(BaseNetworkFileFactory, {
         createPortableNetworkFile: function (ted, filename, url, password) {
             return new BaseNetworkFile(ted, filename, url, password)
         }, parsePortableNetworkFile: function (pnf) {
@@ -4880,7 +4980,8 @@ if (typeof DIMP !== 'object') {
         this.__wrapper = wrapper
     };
     var Base64Data = mk.format.Base64Data;
-    Class(Base64Data, Dictionary, [TransportableData], {
+    Class(Base64Data, Dictionary, [TransportableData]);
+    Implementation(Base64Data, {
         getAlgorithm: function () {
             return this.__wrapper.getAlgorithm()
         }, getData: function () {
@@ -4897,7 +4998,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var Base64DataFactory = mk.format.Base64DataFactory;
-    Class(Base64DataFactory, BaseObject, [TransportableDataFactory], {
+    Class(Base64DataFactory, BaseObject, [TransportableDataFactory]);
+    Implementation(Base64DataFactory, {
         createTransportableData: function (data) {
             return new Base64Data(data)
         }, parseTransportableData: function (ted) {
@@ -4976,7 +5078,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var UTF8Coder = mk.format.UTF8Coder;
-    Class(UTF8Coder, BaseObject, [StringCoder], {
+    Class(UTF8Coder, BaseObject, [StringCoder]);
+    Implementation(UTF8Coder, {
         encode: function (string) {
             return utf8_encode(string)
         }, decode: function (data) {
@@ -4987,7 +5090,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var SHA256Digester = mk.digest.SHA256Digester;
-    Class(SHA256Digester, BaseObject, [MessageDigester], {
+    Class(SHA256Digester, BaseObject, [MessageDigester]);
+    Implementation(SHA256Digester, {
         digest: function (data) {
             var hex = Hex.encode(data);
             var array = CryptoJS.enc.Hex.parse(hex);
@@ -4999,7 +5103,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var RIPEMD160Digester = mk.digest.RIPEMD160Digester;
-    Class(RIPEMD160Digester, BaseObject, [MessageDigester], {
+    Class(RIPEMD160Digester, BaseObject, [MessageDigester]);
+    Implementation(RIPEMD160Digester, {
         digest: function (data) {
             var hex = Hex.encode(data);
             var array = CryptoJS.enc.Hex.parse(hex);
@@ -5011,7 +5116,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var KECCAK256Digester = mk.digest.KECCAK256Digester;
-    Class(KECCAK256Digester, BaseObject, [MessageDigester], {
+    Class(KECCAK256Digester, BaseObject, [MessageDigester]);
+    Implementation(KECCAK256Digester, {
         digest: function (data) {
             var array = window.keccak256.update(data).digest();
             return new Uint8Array(array)
@@ -5046,7 +5152,8 @@ if (typeof DIMP !== 'object') {
     };
     var AESKey = mk.crypto.AESKey;
     AESKey.AES_CBC_PKCS7 = 'AES/CBC/PKCS7Padding';
-    Class(AESKey, BaseSymmetricKey, null, {
+    Class(AESKey, BaseSymmetricKey, null);
+    Implementation(AESKey, {
         generateKeyData: function () {
             var keySize = this.getKeySize();
             var pwd = random_data(keySize);
@@ -5125,7 +5232,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var AESKeyFactory = mk.crypto.AESKeyFactory;
-    Class(AESKeyFactory, BaseObject, [SymmetricKeyFactory], null);
+    Class(AESKeyFactory, BaseObject, [SymmetricKeyFactory]);
     AESKeyFactory.prototype.generateSymmetricKey = function () {
         return new AESKey({'algorithm': SymmetricAlgorithms.AES})
     };
@@ -5264,7 +5371,8 @@ if (typeof DIMP !== 'object') {
         BasePublicKey.call(this, key)
     };
     var ECCPublicKey = mk.crypto.ECCPublicKey;
-    Class(ECCPublicKey, BasePublicKey, null, {
+    Class(ECCPublicKey, BasePublicKey, null);
+    Implementation(ECCPublicKey, {
         getData: function () {
             var pem = this.getValue('data');
             if (!pem || pem.length === 0) {
@@ -5313,7 +5421,8 @@ if (typeof DIMP !== 'object') {
         this.__publicKey = keyPair.publicKey
     };
     var ECCPrivateKey = mk.crypto.ECCPrivateKey;
-    Class(ECCPrivateKey, BasePrivateKey, null, {
+    Class(ECCPrivateKey, BasePrivateKey, null);
+    Implementation(ECCPrivateKey, {
         getData: function () {
             var data = this.getValue('data');
             if (data && data.length > 0) {
@@ -5369,7 +5478,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var ECCPrivateKeyFactory = mk.crypto.ECCPrivateKeyFactory;
-    Class(ECCPrivateKeyFactory, BaseObject, [PrivateKeyFactory], null);
+    Class(ECCPrivateKeyFactory, BaseObject, [PrivateKeyFactory]);
     ECCPrivateKeyFactory.prototype.generatePrivateKey = function () {
         return new ECCPrivateKey({'algorithm': AsymmetricAlgorithms.ECC})
     };
@@ -5383,7 +5492,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var ECCPublicKeyFactory = mk.crypto.ECCPublicKeyFactory;
-    Class(ECCPublicKeyFactory, BaseObject, [PublicKeyFactory], null);
+    Class(ECCPublicKeyFactory, BaseObject, [PublicKeyFactory]);
     ECCPublicKeyFactory.prototype.parsePublicKey = function (key) {
         if (key['data'] === null) {
             return null
@@ -5470,7 +5579,8 @@ if (typeof DIMP !== 'object') {
         BaseSymmetricKey.call(this, key)
     };
     var PlainKey = mk.crypto.PlainKey;
-    Class(PlainKey, BaseSymmetricKey, null, {
+    Class(PlainKey, BaseSymmetricKey, null);
+    Implementation(PlainKey, {
         getData: function () {
             return null
         }, encrypt: function (data, extra) {
@@ -5491,7 +5601,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var PlainKeyFactory = mk.crypto.PlainKeyFactory;
-    Class(PlainKeyFactory, BaseObject, [SymmetricKeyFactory], null);
+    Class(PlainKeyFactory, BaseObject, [SymmetricKeyFactory]);
     PlainKeyFactory.prototype.generateSymmetricKey = function () {
         return PlainKey.getInstance()
     };
@@ -5527,7 +5637,8 @@ if (typeof DIMP !== 'object') {
         BasePublicKey.call(this, key)
     };
     var RSAPublicKey = mk.crypto.RSAPublicKey;
-    Class(RSAPublicKey, BasePublicKey, [EncryptKey], {
+    Class(RSAPublicKey, BasePublicKey, [EncryptKey]);
+    Implementation(RSAPublicKey, {
         getData: function () {
             var data = this.getValue('data');
             if (data) {
@@ -5567,7 +5678,8 @@ if (typeof DIMP !== 'object') {
         }
     };
     var RSAPrivateKey = mk.crypto.RSAPrivateKey;
-    Class(RSAPrivateKey, BasePrivateKey, [DecryptKey], {
+    Class(RSAPrivateKey, BasePrivateKey, [DecryptKey]);
+    Implementation(RSAPrivateKey, {
         getData: function () {
             var data = this.getValue('data');
             if (data) {
@@ -5620,7 +5732,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var RSAPrivateKeyFactory = mk.crypto.RSAPrivateKeyFactory;
-    Class(RSAPrivateKeyFactory, BaseObject, [PrivateKeyFactory], null);
+    Class(RSAPrivateKeyFactory, BaseObject, [PrivateKeyFactory]);
     RSAPrivateKeyFactory.prototype.generatePrivateKey = function () {
         return new RSAPrivateKey({'algorithm': AsymmetricAlgorithms.RSA})
     };
@@ -5634,7 +5746,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var RSAPublicKeyFactory = mk.crypto.RSAPublicKeyFactory;
-    Class(RSAPublicKeyFactory, BaseObject, [PublicKeyFactory], null);
+    Class(RSAPublicKeyFactory, BaseObject, [PublicKeyFactory]);
     RSAPublicKeyFactory.prototype.parsePublicKey = function (key) {
         if (key['data'] === null) {
             return null
@@ -5646,7 +5758,7 @@ if (typeof DIMP !== 'object') {
         this._addresses = {}
     };
     var BaseAddressFactory = mkm.mkm.BaseAddressFactory;
-    Class(BaseAddressFactory, BaseObject, [AddressFactory], null);
+    Class(BaseAddressFactory, BaseObject, [AddressFactory]);
     BaseAddressFactory.prototype.generateAddress = function (meta, network) {
         var address = meta.generateAddress(network);
         if (address) {
@@ -5693,7 +5805,8 @@ if (typeof DIMP !== 'object') {
         this.__type = network
     };
     var BTCAddress = mkm.mkm.BTCAddress;
-    Class(BTCAddress, ConstantString, [Address], {
+    Class(BTCAddress, ConstantString, [Address]);
+    Implementation(BTCAddress, {
         getType: function () {
             return this.__type
         }
@@ -5742,7 +5855,7 @@ if (typeof DIMP !== 'object') {
         this.__type = type
     };
     var GeneralDocumentFactory = mkm.mkm.GeneralDocumentFactory;
-    Class(GeneralDocumentFactory, BaseObject, [DocumentFactory], null);
+    Class(GeneralDocumentFactory, BaseObject, [DocumentFactory]);
     GeneralDocumentFactory.prototype.getType = function (docType, identifier) {
         if (!identifier) {
             return this.__type
@@ -5801,7 +5914,8 @@ if (typeof DIMP !== 'object') {
         ConstantString.call(this, string)
     };
     var ETHAddress = mkm.mkm.ETHAddress;
-    Class(ETHAddress, ConstantString, [Address], {
+    Class(ETHAddress, ConstantString, [Address]);
+    Implementation(ETHAddress, {
         getType: function () {
             return EntityType.USER
         }
@@ -5880,7 +5994,7 @@ if (typeof DIMP !== 'object') {
         this._identifiers = {}
     };
     var IdentifierFactory = mkm.mkm.IdentifierFactory;
-    Class(IdentifierFactory, BaseObject, [IDFactory], null);
+    Class(IdentifierFactory, BaseObject, [IDFactory]);
     IdentifierFactory.prototype.generateIdentifier = function (meta, network, terminal) {
         var address = Address.generate(meta, network);
         return ID.create(meta.getSeed(), address, terminal)
@@ -5939,7 +6053,8 @@ if (typeof DIMP !== 'object') {
         this.__addresses = {}
     };
     var DefaultMeta = mkm.mkm.DefaultMeta;
-    Class(DefaultMeta, BaseMeta, null, {
+    Class(DefaultMeta, BaseMeta, null);
+    Implementation(DefaultMeta, {
         hasSeed: function () {
             return true
         }, generateAddress: function (network) {
@@ -5965,7 +6080,8 @@ if (typeof DIMP !== 'object') {
         this.__addresses = {}
     };
     var BTCMeta = mkm.mkm.BTCMeta;
-    Class(BTCMeta, BaseMeta, null, {
+    Class(BTCMeta, BaseMeta, null);
+    Implementation(BTCMeta, {
         hasSeed: function () {
             return false
         }, generateAddress: function (network) {
@@ -5992,7 +6108,8 @@ if (typeof DIMP !== 'object') {
         this.__address = null
     };
     var ETHMeta = mkm.mkm.ETHMeta;
-    Class(ETHMeta, BaseMeta, null, {
+    Class(ETHMeta, BaseMeta, null);
+    Implementation(ETHMeta, {
         hasSeed: function () {
             return false
         }, generateAddress: function (network) {
@@ -6011,7 +6128,7 @@ if (typeof DIMP !== 'object') {
         this.__type = algorithm
     };
     var BaseMetaFactory = mkm.mkm.BaseMetaFactory;
-    Class(BaseMetaFactory, BaseObject, [MetaFactory], null);
+    Class(BaseMetaFactory, BaseObject, [MetaFactory]);
     BaseMetaFactory.prototype.getType = function () {
         return this.__type
     };
@@ -6072,7 +6189,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var GeneralCommandFactory = dkd.dkd.GeneralCommandFactory;
-    Class(GeneralCommandFactory, BaseObject, [ContentFactory, CommandFactory], null);
+    Class(GeneralCommandFactory, BaseObject, [ContentFactory, CommandFactory]);
     GeneralCommandFactory.prototype.parseContent = function (content) {
         var helper = SharedCommandExtensions.getHelper();
         var cmdHelper = SharedCommandExtensions.getCommandHelper();
@@ -6098,7 +6215,7 @@ if (typeof DIMP !== 'object') {
         GeneralCommandFactory.call(this)
     };
     var HistoryCommandFactory = dkd.dkd.HistoryCommandFactory;
-    Class(HistoryCommandFactory, GeneralCommandFactory, null, null);
+    Class(HistoryCommandFactory, GeneralCommandFactory, null);
     HistoryCommandFactory.prototype.parseCommand = function (content) {
         if (!content['sn'] || !content['command'] || !content['time']) {
             return null
@@ -6109,7 +6226,7 @@ if (typeof DIMP !== 'object') {
         HistoryCommandFactory.call(this)
     };
     var GroupCommandFactory = dkd.dkd.GroupCommandFactory;
-    Class(GroupCommandFactory, HistoryCommandFactory, null, null);
+    Class(GroupCommandFactory, HistoryCommandFactory, null);
     GroupCommandFactory.prototype.parseContent = function (content) {
         var helper = SharedCommandExtensions.getHelper();
         var cmdHelper = SharedCommandExtensions.getCommandHelper();
@@ -6134,7 +6251,7 @@ if (typeof DIMP !== 'object') {
         this.__sn = random_int(0x7fffffff)
     };
     var MessageFactory = dkd.msg.MessageFactory;
-    Class(MessageFactory, BaseObject, [EnvelopeFactory, InstantMessageFactory, SecureMessageFactory, ReliableMessageFactory], null);
+    Class(MessageFactory, BaseObject, [EnvelopeFactory, InstantMessageFactory, SecureMessageFactory, ReliableMessageFactory]);
     MessageFactory.prototype.next = function () {
         var sn = this.__sn;
         if (sn < 0x7fffffff) {
@@ -6188,7 +6305,7 @@ if (typeof DIMP !== 'object') {
         this.__publicKeyFactories = {}
     };
     var CryptoKeyGeneralFactory = mk.ext.CryptoKeyGeneralFactory;
-    Class(CryptoKeyGeneralFactory, BaseObject, [GeneralCryptoHelper, SymmetricKeyHelper, PrivateKeyHelper, PublicKeyHelper], null);
+    Class(CryptoKeyGeneralFactory, BaseObject, [GeneralCryptoHelper, SymmetricKeyHelper, PrivateKeyHelper, PublicKeyHelper]);
     CryptoKeyGeneralFactory.prototype.getKeyAlgorithm = function (key, defaultValue) {
         var algorithm = key['algorithm'];
         return Converter.getString(algorithm, defaultValue)
@@ -6291,7 +6408,7 @@ if (typeof DIMP !== 'object') {
         this.__pnfFactory = null
     };
     var FormatGeneralFactory = mk.ext.FormatGeneralFactory;
-    Class(FormatGeneralFactory, BaseObject, [GeneralFormatHelper, PortableNetworkFileHelper, TransportableDataHelper], null);
+    Class(FormatGeneralFactory, BaseObject, [GeneralFormatHelper, PortableNetworkFileHelper, TransportableDataHelper]);
     FormatGeneralFactory.prototype.split = function (text) {
         var pos1 = text.indexOf('://');
         if (pos1 > 0) {
@@ -6427,7 +6544,7 @@ if (typeof DIMP !== 'object') {
         this.__docsFactories = {}
     };
     var AccountGeneralFactory = mkm.ext.AccountGeneralFactory;
-    Class(AccountGeneralFactory, BaseObject, [GeneralAccountHelper, AddressHelper, IdentifierHelper, MetaHelper, DocumentHelper], null);
+    Class(AccountGeneralFactory, BaseObject, [GeneralAccountHelper, AddressHelper, IdentifierHelper, MetaHelper, DocumentHelper]);
     AccountGeneralFactory.prototype.getMetaType = function (meta, defaultValue) {
         var type = meta['type'];
         return Converter.getString(type, defaultValue)
@@ -6597,7 +6714,7 @@ if (typeof DIMP !== 'object') {
         this.__reliableMessageFactory = null
     };
     var MessageGeneralFactory = dkd.ext.MessageGeneralFactory
-    Class(MessageGeneralFactory, BaseObject, [GeneralMessageHelper, ContentHelper, EnvelopeHelper, InstantMessageHelper, SecureMessageHelper, ReliableMessageHelper], null);
+    Class(MessageGeneralFactory, BaseObject, [GeneralMessageHelper, ContentHelper, EnvelopeHelper, InstantMessageHelper, SecureMessageHelper, ReliableMessageHelper]);
     MessageGeneralFactory.prototype.getContentType = function (content, defaultValue) {
         var type = content['type'];
         return Converter.getString(type, defaultValue)
@@ -6742,7 +6859,7 @@ if (typeof DIMP !== 'object') {
         this.__commandFactories = {}
     };
     var CommandGeneralFactory = dkd.ext.CommandGeneralFactory
-    Class(CommandGeneralFactory, BaseObject, [GeneralCommandHelper, CommandHelper], null);
+    Class(CommandGeneralFactory, BaseObject, [GeneralCommandHelper, CommandHelper]);
     CommandGeneralFactory.prototype.getCmd = function (content, defaultValue) {
         var cmd = content['command'];
         return Converter.getString(cmd, defaultValue)
@@ -6793,7 +6910,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var ExtensionLoader = dimp.ext.ExtensionLoader;
-    Class(ExtensionLoader, BaseObject, null, {
+    Class(ExtensionLoader, BaseObject, null);
+    Implementation(ExtensionLoader, {
         load: function () {
             this.registerCoreHelpers();
             this.registerMessageFactories();
@@ -6904,7 +7022,7 @@ if (typeof DIMP !== 'object') {
         this.__class = clazz
     };
     var ContentParser = dkd.dkd.ContentParser;
-    Class(ContentParser, BaseObject, [ContentFactory], null);
+    Class(ContentParser, BaseObject, [ContentFactory]);
     ContentParser.prototype.parseContent = function (content) {
         return new this.__class(content)
     };
@@ -6913,7 +7031,7 @@ if (typeof DIMP !== 'object') {
         this.__class = clazz
     };
     var CommandParser = dkd.dkd.CommandParser;
-    Class(CommandParser, BaseObject, [CommandFactory], null);
+    Class(CommandParser, BaseObject, [CommandFactory]);
     CommandParser.prototype.parseCommand = function (content) {
         return new this.__class(content)
     };
@@ -6921,7 +7039,8 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var PluginLoader = dimp.ext.PluginLoader;
-    Class(PluginLoader, BaseObject, null, {
+    Class(PluginLoader, BaseObject, null);
+    Implementation(PluginLoader, {
         load: function () {
             this.registerCoders();
             this.registerDigesters();
@@ -7036,6 +7155,7 @@ if (typeof DIMP !== 'object') {
     }
     var Interface = mk.type.Interface;
     var Class = mk.type.Class;
+    var Implementation = mk.type.Implementation;
     var Converter = mk.type.Converter;
     var Mapper = mk.type.Mapper;
     var IObject = mk.type.Object;
@@ -7210,7 +7330,7 @@ if (typeof DIMP !== 'object') {
         this.__facebook = null
     };
     var BaseEntity = mkm.mkm.BaseEntity;
-    Class(BaseEntity, BaseObject, [Entity], null);
+    Class(BaseEntity, BaseObject, [Entity]);
     BaseEntity.prototype.equals = function (other) {
         if (this === other) {
             return true
@@ -7280,7 +7400,8 @@ if (typeof DIMP !== 'object') {
         this.__founder = null
     };
     var BaseGroup = mkm.mkm.BaseGroup;
-    Class(BaseGroup, BaseEntity, [Group], {
+    Class(BaseGroup, BaseEntity, [Group]);
+    Implementation(BaseGroup, {
         getBulletin: function () {
             var docs = this.getDocuments();
             return DocumentUtils.lastBulletin(docs)
@@ -7343,7 +7464,8 @@ if (typeof DIMP !== 'object') {
         BaseEntity.call(this, identifier)
     };
     var BaseUser = mkm.mkm.BaseUser;
-    Class(BaseUser, BaseEntity, [User], {
+    Class(BaseUser, BaseEntity, [User]);
+    Implementation(BaseUser, {
         getVisa: function () {
             var docs = this.getDocuments();
             return DocumentUtils.lastVisa(docs)
@@ -7406,7 +7528,8 @@ if (typeof DIMP !== 'object') {
         BaseUser.call(this, identifier)
     };
     var Bot = mkm.mkm.Bot;
-    Class(Bot, BaseUser, null, {
+    Class(Bot, BaseUser, null);
+    Implementation(Bot, {
         getProfile: function () {
             return this.getVisa()
         }, getProvider: function () {
@@ -7441,7 +7564,8 @@ if (typeof DIMP !== 'object') {
         this.__isp = null
     };
     var Station = mkm.mkm.Station;
-    Class(Station, BaseObject, [User], {
+    Class(Station, BaseObject, [User]);
+    Implementation(Station, {
         equals: function (other) {
             if (this === other) {
                 return true
@@ -7538,7 +7662,8 @@ if (typeof DIMP !== 'object') {
         BaseGroup.call(this, identifier)
     };
     var ServiceProvider = mkm.mkm.ServiceProvider;
-    Class(ServiceProvider, BaseGroup, null, {
+    Class(ServiceProvider, BaseGroup, null);
+    Implementation(ServiceProvider, {
         getProfile: function () {
             var docs = this.getDocuments();
             return DocumentUtils.lastDocument(docs, '*')
@@ -7628,7 +7753,7 @@ if (typeof DIMP !== 'object') {
         this.__messenger = messenger
     };
     var InstantMessagePacker = InstantMessage.Packer;
-    Class(InstantMessagePacker, BaseObject, null, null);
+    Class(InstantMessagePacker, BaseObject, null);
     InstantMessagePacker.prototype.getDelegate = function () {
         return this.__messenger
     };
@@ -7683,7 +7808,7 @@ if (typeof DIMP !== 'object') {
         this.__messenger = messenger
     };
     var SecureMessagePacker = SecureMessage.Packer;
-    Class(SecureMessagePacker, BaseObject, null, null);
+    Class(SecureMessagePacker, BaseObject, null);
     SecureMessagePacker.prototype.getDelegate = function () {
         return this.__messenger
     };
@@ -7734,7 +7859,7 @@ if (typeof DIMP !== 'object') {
         this.__messenger = messenger
     };
     var ReliableMessagePacker = ReliableMessage.Packer;
-    Class(ReliableMessagePacker, BaseObject, null, null);
+    Class(ReliableMessagePacker, BaseObject, null);
     ReliableMessagePacker.prototype.getDelegate = function () {
         return this.__messenger
     };
@@ -7779,7 +7904,7 @@ if (typeof DIMP !== 'object') {
         this.__command_processors = {}
     };
     var GeneralContentProcessorFactory = sdk.cpu.GeneralContentProcessorFactory;
-    Class(GeneralContentProcessorFactory, BaseObject, [ContentProcessorFactory], null);
+    Class(GeneralContentProcessorFactory, BaseObject, [ContentProcessorFactory]);
     GeneralContentProcessorFactory.prototype.getContentProcessor = function (content) {
         var cpu;
         var type = content.getType();
@@ -7821,7 +7946,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var Barrack = sdk.core.Barrack;
-    Class(Barrack, BaseObject, null, null);
+    Class(Barrack, BaseObject, null);
     Barrack.prototype.cacheUser = function (user) {
     };
     Barrack.prototype.cacheGroup = function (group) {
@@ -7876,7 +8001,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var MessageShortener = sdk.core.MessageShortener;
-    Class(MessageShortener, BaseObject, [Shortener], null);
+    Class(MessageShortener, BaseObject, [Shortener]);
     MessageShortener.prototype.moveKey = function (from, to, info) {
         var value = info[from];
         if (value) {
@@ -7950,7 +8075,7 @@ if (typeof DIMP !== 'object') {
         this.__shortener = shortener
     };
     var MessageCompressor = sdk.core.MessageCompressor;
-    Class(MessageCompressor, BaseObject, [Compressor], null);
+    Class(MessageCompressor, BaseObject, [Compressor]);
     MessageCompressor.prototype.getShortener = function () {
         return this.__shortener
     };
@@ -8060,7 +8185,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var Transceiver = sdk.core.Transceiver;
-    Class(Transceiver, BaseObject, [InstantMessageDelegate, SecureMessageDelegate, ReliableMessageDelegate], null);
+    Class(Transceiver, BaseObject, [InstantMessageDelegate, SecureMessageDelegate, ReliableMessageDelegate]);
     Transceiver.prototype.getFacebook = function () {
     };
     Transceiver.prototype.getCompressor = function () {
@@ -8142,7 +8267,7 @@ if (typeof DIMP !== 'object') {
         this.__messenger = messenger
     };
     var TwinsHelper = sdk.TwinsHelper;
-    Class(TwinsHelper, BaseObject, null, null);
+    Class(TwinsHelper, BaseObject, null);
     TwinsHelper.prototype.getFacebook = function () {
         return this.__facebook
     }
@@ -8153,7 +8278,7 @@ if (typeof DIMP !== 'object') {
         BaseObject.call(this)
     };
     var Facebook = sdk.Facebook;
-    Class(Facebook, BaseObject, [EntityDelegate, UserDataSource, GroupDataSource], null);
+    Class(Facebook, BaseObject, [EntityDelegate, UserDataSource, GroupDataSource]);
     Facebook.prototype.getBarrack = function () {
     };
     Facebook.prototype.getArchivist = function () {
@@ -8263,7 +8388,7 @@ if (typeof DIMP !== 'object') {
         Transceiver.call(this)
     };
     var Messenger = sdk.Messenger;
-    Class(Messenger, Transceiver, [Packer, Processor], null);
+    Class(Messenger, Transceiver, [Packer, Processor]);
     Messenger.prototype.getCipherKeyDelegate = function () {
     };
     Messenger.prototype.getPacker = function () {
@@ -8341,7 +8466,7 @@ if (typeof DIMP !== 'object') {
         this.__reliablePacker = this.createReliableMessagePacker(messenger)
     };
     var MessagePacker = sdk.MessagePacker;
-    Class(MessagePacker, TwinsHelper, [Packer], null);
+    Class(MessagePacker, TwinsHelper, [Packer]);
     MessagePacker.prototype.createInstantMessagePacker = function (delegate) {
         return new InstantMessagePacker(delegate)
     };
@@ -8436,7 +8561,7 @@ if (typeof DIMP !== 'object') {
         this.__factory = this.createFactory(facebook, messenger)
     };
     var MessageProcessor = sdk.MessageProcessor;
-    Class(MessageProcessor, TwinsHelper, [Processor], null);
+    Class(MessageProcessor, TwinsHelper, [Processor]);
     MessageProcessor.prototype.createFactory = function (facebook, messenger) {
     };
     MessageProcessor.prototype.getFactory = function () {
@@ -8558,7 +8683,7 @@ if (typeof DIMP !== 'object') {
         TwinsHelper.call(this, facebook, messenger)
     };
     var BaseContentProcessor = sdk.cpu.BaseContentProcessor;
-    Class(BaseContentProcessor, TwinsHelper, [ContentProcessor], null);
+    Class(BaseContentProcessor, TwinsHelper, [ContentProcessor]);
     BaseContentProcessor.prototype.processContent = function (content, rMsg) {
         var text = 'Content not support.';
         return this.respondReceipt(text, rMsg.getEnvelope(), content, {
@@ -8580,7 +8705,8 @@ if (typeof DIMP !== 'object') {
         BaseContentProcessor.call(this, facebook, messenger)
     };
     var BaseCommandProcessor = sdk.cpu.BaseCommandProcessor;
-    Class(BaseCommandProcessor, BaseContentProcessor, null, {
+    Class(BaseCommandProcessor, BaseContentProcessor, null);
+    Implementation(BaseCommandProcessor, {
         processContent: function (content, rMsg) {
             var text = 'Command not support.';
             return this.respondReceipt(text, rMsg.getEnvelope(), content, {
@@ -8593,7 +8719,8 @@ if (typeof DIMP !== 'object') {
         BaseContentProcessor.call(this, facebook, messenger)
     };
     var ForwardContentProcessor = sdk.cpu.ForwardContentProcessor;
-    Class(ForwardContentProcessor, BaseContentProcessor, null, {
+    Class(ForwardContentProcessor, BaseContentProcessor, null);
+    Implementation(ForwardContentProcessor, {
         processContent: function (content, rMsg) {
             var secrets = content.getSecrets();
             if (!secrets) {
@@ -8621,7 +8748,8 @@ if (typeof DIMP !== 'object') {
         BaseContentProcessor.call(this, facebook, messenger)
     };
     var ArrayContentProcessor = sdk.cpu.ArrayContentProcessor;
-    Class(ArrayContentProcessor, BaseContentProcessor, null, {
+    Class(ArrayContentProcessor, BaseContentProcessor, null);
+    Implementation(ArrayContentProcessor, {
         processContent: function (content, rMsg) {
             var array = content.getContents();
             if (!array) {
@@ -8649,12 +8777,19 @@ if (typeof DIMP !== 'object') {
         BaseCommandProcessor.call(this, facebook, messenger)
     };
     var MetaCommandProcessor = sdk.cpu.MetaCommandProcessor;
-    Class(MetaCommandProcessor, BaseCommandProcessor, null, {
-        processContent: function (content, rMsg) {
+    Class(MetaCommandProcessor, BaseCommandProcessor, null);
+    Implementation(MetaCommandProcessor, {
+        getArchivist: function () {
+            var facebook = this.getFacebook();
+            if (!facebook) {
+                return null
+            }
+            return facebook.getArchivist()
+        }, processContent: function (content, rMsg) {
             var identifier = content.getIdentifier();
             if (!identifier) {
                 var text = 'Meta command error.';
-                return this.respondReceipt(text, rMsg.getEnvelope(), content)
+                return this.respondReceipt(text, rMsg.getEnvelope(), content, null)
             }
             var meta = content.getMeta();
             if (meta) {
@@ -8707,7 +8842,8 @@ if (typeof DIMP !== 'object') {
         MetaCommandProcessor.call(this, facebook, messenger)
     };
     var DocumentCommandProcessor = sdk.cpu.DocumentCommandProcessor;
-    Class(DocumentCommandProcessor, MetaCommandProcessor, null, {
+    Class(DocumentCommandProcessor, MetaCommandProcessor, null);
+    Implementation(DocumentCommandProcessor, {
         processContent: function (content, rMsg) {
             var text;
             var identifier = content.getIdentifier();
@@ -8788,7 +8924,7 @@ if (typeof DIMP !== 'object') {
                     }
                 }
             }
-            if (array.length > 0) {
+            if (errors.length > 0) {
                 return errors
             }
             text = 'Document received.';
@@ -8827,12 +8963,12 @@ if (typeof DIMP !== 'object') {
         TwinsHelper.call(this, facebook, messenger)
     };
     var BaseCustomizedHandler = sdk.cpu.BaseCustomizedHandler;
-    Class(BaseCustomizedHandler, TwinsHelper, [CustomizedContentHandler], null);
+    Class(BaseCustomizedHandler, TwinsHelper, [CustomizedContentHandler]);
     BaseCustomizedHandler.prototype.handleAction = function (act, sender, content, rMsg) {
         var app = content.getApplication();
         var mod = content.getModule();
         var text = 'Content not support.';
-        return this.respondReceipt(text, content, rMsg.getEnvelope(), {
+        return this.respondReceipt(text, rMsg.getEnvelope(), content, {
             'template': 'Customized content (app: ${app}, mod: ${mod}, act: ${act}) not support yet!',
             'replacements': {'app': app, 'mod': mod, 'act': act}
         })
@@ -8845,7 +8981,7 @@ if (typeof DIMP !== 'object') {
         this.__defaultHandler = this.createDefaultHandler(facebook, messenger)
     };
     var CustomizedContentProcessor = sdk.cpu.CustomizedContentProcessor;
-    Class(CustomizedContentProcessor, BaseContentProcessor, [CustomizedContentHandler], null);
+    Class(CustomizedContentProcessor, BaseContentProcessor, [CustomizedContentHandler]);
     CustomizedContentProcessor.prototype.createDefaultHandler = function (facebook, messenger) {
         return new BaseCustomizedHandler(facebook, messenger)
     };
@@ -8867,7 +9003,8 @@ if (typeof DIMP !== 'object') {
         TwinsHelper.call(this, facebook, messenger)
     };
     var BaseContentProcessorCreator = sdk.cpu.BaseContentProcessorCreator;
-    Class(BaseContentProcessorCreator, TwinsHelper, [ContentProcessorCreator], {
+    Class(BaseContentProcessorCreator, TwinsHelper, [ContentProcessorCreator]);
+    Implementation(BaseContentProcessorCreator, {
         createContentProcessor: function (type) {
             var facebook = this.getFacebook();
             var messenger = this.getMessenger();

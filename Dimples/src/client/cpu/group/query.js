@@ -42,7 +42,9 @@
     };
     var QueryCommandProcessor = app.cpu.QueryCommandProcessor
 
-    Class(QueryCommandProcessor, GroupCommandProcessor, null, {
+    Class(QueryCommandProcessor, GroupCommandProcessor, null);
+
+    Implementation(QueryCommandProcessor, {
 
         // Override
         processContent: function (content, rMsg) {

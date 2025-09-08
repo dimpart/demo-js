@@ -48,7 +48,9 @@
     };
     var BaseSession = app.network.BaseSession;
 
-    Class(BaseSession, GateKeeper, [Session], {
+    Class(BaseSession, GateKeeper, [Session]);
+
+    Implementation(BaseSession, {
 
         // Override
         queueMessagePackage: function (rMsg, data, priority) {

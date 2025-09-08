@@ -41,7 +41,7 @@
     };
     var GroupPacker = app.group.GroupPacker;
 
-    Class(GroupPacker, TripletsHelper, null, null);
+    Class(GroupPacker, TripletsHelper, null);
 
     /**
      *  Pack as broadcast message

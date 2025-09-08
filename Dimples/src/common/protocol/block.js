@@ -91,7 +91,9 @@
     };
     var BaseBlockCommand = dkd.dkd.BaseBlockCommand;
 
-    Class(BaseBlockCommand, BaseCommand, [BlockCommand], {
+    Class(BaseBlockCommand, BaseCommand, [BlockCommand]);
+
+    Implementation(BaseBlockCommand, {
 
         // Override
         setBlockCList: function (list) {

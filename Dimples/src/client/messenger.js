@@ -37,7 +37,7 @@
     };
     var ClientMessenger = app.ClientMessenger;
 
-    Class(ClientMessenger, CommonMessenger, null, null);
+    Class(ClientMessenger, CommonMessenger, null);
 
         // Override
         ClientMessenger.prototype.deserializeMessage = function (data) {

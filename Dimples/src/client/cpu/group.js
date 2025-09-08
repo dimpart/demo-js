@@ -40,7 +40,7 @@
     };
     var HistoryCommandProcessor = app.cpu.HistoryCommandProcessor
 
-    Class(HistoryCommandProcessor, BaseCommandProcessor, null, null);
+    Class(HistoryCommandProcessor, BaseCommandProcessor, null);
 
     /// override for customized data source
     HistoryCommandProcessor.prototype.createGroupDelegate = function () {
@@ -104,7 +104,9 @@
     };
     var GroupCommandProcessor = app.cpu.GroupCommandProcessor;
 
-    Class(GroupCommandProcessor, HistoryCommandProcessor, null, {
+    Class(GroupCommandProcessor, HistoryCommandProcessor, null);
+
+    Implementation(GroupCommandProcessor, {
 
         // protected
         getOwner: function (group) {

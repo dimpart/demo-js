@@ -42,7 +42,7 @@
     };
     var GroupHistoryBuilder = app.group.GroupHistoryBuilder;
 
-    Class(GroupHistoryBuilder, TripletsHelper, null, null);
+    Class(GroupHistoryBuilder, TripletsHelper, null);
 
     // protected
     GroupHistoryBuilder.prototype.getHelper = function () {

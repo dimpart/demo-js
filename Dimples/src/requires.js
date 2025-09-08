@@ -32,6 +32,7 @@ if (typeof app.cpu !== 'object') {
 //-------- requires --------
 var Interface      = mk.type.Interface;
 var Class          = mk.type.Class;
+var Implementation = mk.type.Implementation;
 var Converter      = mk.type.Converter;
 var Wrapper        = mk.type.Wrapper;
 var Mapper         = mk.type.Mapper;
@@ -182,6 +183,8 @@ var MessageProcessor = sdk.MessageProcessor;
 var GeneralContentProcessorFactory = sdk.cpu.GeneralContentProcessorFactory;
 var BaseContentProcessor           = sdk.cpu.BaseContentProcessor;
 var BaseCommandProcessor           = sdk.cpu.BaseCommandProcessor;
+var BaseCustomizedHandler          = sdk.cpu.BaseCustomizedHandler;
+var CustomizedContentProcessor     = sdk.cpu.CustomizedContentProcessor;
 var BaseContentProcessorCreator    = sdk.cpu.BaseContentProcessorCreator;
 
 var Duration  = fsm.type.Duration;

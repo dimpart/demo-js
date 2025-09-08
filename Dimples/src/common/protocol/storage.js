@@ -122,7 +122,9 @@
     };
     var BaseStorageCommand = dkd.dkd.BaseStorageCommand;
 
-    Class(BaseStorageCommand, BaseCommand, [StorageCommand], {
+    Class(BaseStorageCommand, BaseCommand, [StorageCommand]);
+
+    Implementation(BaseStorageCommand, {
 
         // Override
         setTitle: function (title) {

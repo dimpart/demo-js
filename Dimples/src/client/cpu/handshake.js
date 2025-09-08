@@ -40,7 +40,9 @@
     };
     var HandshakeCommandProcessor = app.cpu.HandshakeCommandProcessor
 
-    Class(HandshakeCommandProcessor, BaseCommandProcessor, null, {
+    Class(HandshakeCommandProcessor, BaseCommandProcessor, null);
+
+    Implementation(HandshakeCommandProcessor, {
 
         // Override
         processContent: function (content, rMsg) {

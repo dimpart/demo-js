@@ -44,7 +44,7 @@
     };
     var SharedGroupManager = app.group.SharedGroupManager;
 
-    Class(SharedGroupManager, BaseObject, [GroupDataSource], null);
+    Class(SharedGroupManager, BaseObject, [GroupDataSource]);
 
     SharedGroupManager.prototype.getFacebook = function () {
         return this.__barrack;

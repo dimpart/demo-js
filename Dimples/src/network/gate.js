@@ -38,7 +38,9 @@
     };
     var AckEnableGate = app.network.AckEnableGate;
 
-    Class(AckEnableGate, CommonGate, null, {
+    Class(AckEnableGate, CommonGate, null);
+
+    Implementation(AckEnableGate, {
 
         // Override
         createPorter: function (remote, local) {
@@ -54,7 +56,9 @@
     };
     var AckEnablePorter = app.network.AckEnablePorter;
 
-    Class(AckEnablePorter, PlainPorter, null, {
+    Class(AckEnablePorter, PlainPorter, null);
+
+    Implementation(AckEnablePorter, {
 
         // Override
         checkArrival: function (income) {

@@ -40,7 +40,9 @@
     };
     var ExpelCommandProcessor = app.cpu.ExpelCommandProcessor;
 
-    Class(ExpelCommandProcessor, GroupCommandProcessor, null, {
+    Class(ExpelCommandProcessor, GroupCommandProcessor, null);
+
+    Implementation(ExpelCommandProcessor, {
 
         // Override
         processContent: function (content, rMsg) {
